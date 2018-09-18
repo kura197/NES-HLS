@@ -1,18 +1,12 @@
 #include "nes.h"
 
 
-NES::NES(uint8_t* PROM, uint8_t* CROM, uint8_t* VRAM){
-    //cpu = new CPU(this);
-    //ram = new RAM(this, PROM, CROM);
-    //ppu = new PPU(this, VRAM, CROM);
-}
 
-NES::~NES(){
-    //delete cpu;
-    //delete ram;
-    //delete ppu;
+void NES::load_submodule(RAM *r, CPU *c, PPU *p){
+    cpu = c;
+    ram = r;
+    ppu = p;
 }
-
 
 void NES::dump_WRAM(uint16_t start_addr, uint16_t size){
     ram->dump_WRAM(start_addr, size);
@@ -20,10 +14,6 @@ void NES::dump_WRAM(uint16_t start_addr, uint16_t size){
 
 void NES::dump_PPURAM(uint16_t start_addr, uint16_t size){
     ram->dump_PPURAM(start_addr, size);
-}
-
-void NES::enlog(){
-    cpu->enlog();
 }
 
 void NES::nes_reset(){
@@ -49,10 +39,6 @@ void NES::exec_frame(){
     }
     SP_hit_reset();
     ram->frame_end();
-}
-
-void NES::make_bmp(ofstream *bmp){
-    ppu->make_bmp(bmp);
 }
 
 void NES::SP_hit_reset(){

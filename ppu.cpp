@@ -1,17 +1,12 @@
 
 #include "ppu.h"
 
-PPU::PPU(NES *n, uint8_t* vram, uint8_t* crom){
-    nes = n;
-    en_gray = false;
-    PPU_RAM = nes->ram->get_PPU_RAM() - 0x2000;
-    SP_RAM = nes->ram->get_SP_RAM();
-    VRAM = vram;
-    CROM = crom;
+void PPU::load_ppuram(){ 
+    PPU_RAM = nes->ram->get_PPU_RAM() - 0x2000; 
 }
 
-PPU::~PPU(){
-
+void PPU::load_spram(){ 
+    SP_RAM = nes->ram->get_SP_RAM(); 
 }
 
 void PPU::render(uint8_t line){
@@ -256,31 +251,4 @@ void PPU::store_vram(uint8_t line, uint8_t x, uint8_t color, bool sprite){
     //}
 }
 
-void PPU::make_bmp(ofstream *bmp){
-    const uint8_t bfType[] = "BM";
-    const uint32_t bfSize = 184346; 
-    const uint8_t bfReserved = 0;
-    const uint32_t bfOffBits = 0x1A;
-
-    bmp->write((char*)bfType, 2*sizeof(uint8_t));
-    bmp->write((char*)&bfSize, sizeof(uint32_t));
-    bmp->write((char*)&bfReserved, sizeof(uint8_t));
-    bmp->write((char*)&bfReserved, sizeof(uint8_t));
-    bmp->write((char*)&bfReserved, sizeof(uint8_t));
-    bmp->write((char*)&bfReserved, sizeof(uint8_t));
-    bmp->write((char*)&bfOffBits, sizeof(uint32_t));
-
-    const uint32_t bcSize = 12;
-    const uint16_t bcWidth = 256;
-    const uint16_t bcHeight = 240;
-    const uint16_t bcPlanes = 1;
-    const uint16_t bcBitCount = 24;
-
-    bmp->write((char*)&bcSize, sizeof(uint32_t));
-    bmp->write((char*)&bcWidth, sizeof(uint16_t));
-    bmp->write((char*)&bcHeight, sizeof(uint16_t));
-    bmp->write((char*)&bcPlanes, sizeof(uint16_t));
-    bmp->write((char*)&bcBitCount, sizeof(uint16_t));
-    bmp->write((char*)VRAM, 3*256*240*sizeof(uint8_t));
-}
 

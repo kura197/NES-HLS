@@ -4,47 +4,6 @@
 #include <cstdio>
 #include "instr.h"
 
-
-CPU::CPU(NES *n){
-    nes = n;
-    log = false;
-}
-
-CPU::~CPU(){
-
-}
-/*
-uint16_t CPU::_absi(uint16_t opr_pc){
-    uint16_t data;
-    uint16_t addr;
-    PC+=2;
-    addr = read_mem16(opr_pc);
-    if((addr & 0x00FF) != 0x00FF) data = read_mem16(addr);
-    else data = (read_mem8(addr - 0xFF) << 8) | read_mem8(addr);
-    return data;
-}
-
-uint16_t CPU::_zpxi(){
-    uint16_t data;
-    uint8_t addr = read_mem8(PC++) + X;
-    if(addr != 0xFF) data = read_mem16(addr);
-    else data = (read_mem8(addr - 0xFF) << 8) | read_mem8(addr);
-    return data;
-}
-
-uint16_t CPU::_zpiy(){
-    uint16_t data;
-    uint8_t addr = read_mem8(PC++);
-    if((addr & 0x00FF) != 0x00FF) data = read_mem16(addr) + Y;
-    else data = (uint16_t)((read_mem8(addr - 0xFF) << 8) | read_mem8(addr)) + Y;
-    return data;
-}
-*/
-
-void CPU::enlog(){
-    log = true;
-}
-
 void CPU::dump_regs(uint8_t insn){
     printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
                     PC, insn, ACC, X, Y, _bindFlags(), SP);
@@ -56,6 +15,7 @@ uint8_t CPU::read_mem8(uint16_t addr){
 }
 
 uint16_t CPU::read_mem16(uint16_t addr){
+
     uint16_t rddata;
     rddata = read_mem8(addr);
     rddata = rddata | ((uint16_t)read_mem8(addr+1) << 8);

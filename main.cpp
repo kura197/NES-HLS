@@ -2,9 +2,12 @@
 #include <fstream>
 #include <stdint.h>
 #include <string.h>
-#include "nes.h"
 #include <unistd.h>
 #include <stdlib.h>
+#include "nes.h"
+#include "ram.h"
+#include "cpu.h"
+#include "ppu.h"
 
 using namespace std;
 
@@ -14,7 +17,25 @@ void set_vram(uint8_t* COLOR, uint8_t* VRAM);
 void make_bmp(uint8_t* VRAM, int index);
 
 component void exec_nes(uint8_t* PROM, uint8_t* CROM, uint8_t* VRAM, bool res){
-    static NES nes(PROM,CROM,VRAM);
+    static NES nes;
+    static CPU cpu;
+    static RAM ram;
+    static PPU ppu;
+    static bool cnt;
+    if(!cnt){
+        nes.load_submodule(&ram, &cpu, &ppu);
+        ram.load_nes(&nes);
+        ppu.load_nes(&nes);
+        cpu.load_nes(&nes);
+        ppu.load_crom(CROM);
+        ppu.load_vram(VRAM);
+        ram.load_crom(CROM);
+        ram.load_prom(PROM);
+        ppu.load_ppuram();
+        ppu.load_spram();
+        cnt = true;
+    }
+
     if(res) nes.nes_reset();
     //nes.cpu->enlog();
     nes.exec_frame();
@@ -120,19 +141,6 @@ int main(int argc, char* argv[]){
 
     //nes.dump_PPURAM(0x1EC0, 0x137);
     cout << "Finish" << endl;
-    return 0;
-}
-
-int create_bmp(NES *nes, int index){
-    char bmp_file[256];
-    sprintf(bmp_file, "./frame/frame_%d.bmp",index++);
-    ofstream BMP(bmp_file, ios::out|ios::binary);
-    if(!BMP){
-        cout << "cannot create BMP file." << endl;
-        return 1;
-    }
-    nes->make_bmp(&BMP);
-    BMP.close(); 
     return 0;
 }
 

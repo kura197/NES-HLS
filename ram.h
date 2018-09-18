@@ -66,8 +66,8 @@ class RAM{
 
 
 
-        RAM(NES *n, uint8_t* prom, uint8_t* crom);
-        ~RAM();
+        //RAM(NES *n, uint8_t* prom, uint8_t* crom);
+        RAM();
         void load_ROM(ifstream *rom);
         void dump_WRAM(uint16_t start_addr, uint16_t size);
         void dump_PROM(uint16_t start_addr, uint16_t size);
@@ -100,6 +100,9 @@ class RAM{
         uint8_t read_prom(uint16_t addr);
         //void load_CROM(uint8_t* crom){ CROM = crom; };
         //void load_PROM(uint8_t* prom){ PROM = prom; };
+        void load_nes(NES *n) { nes = n; };
+        void load_prom(uint8_t* prom) { PROM = prom; };
+        void load_crom(uint8_t* crom) { CROM = crom; };
 };
 
 

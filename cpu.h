@@ -32,9 +32,6 @@ class CPU{
         bool log;
 
     public:
-        CPU(NES *n);
-        ~CPU();
-        void enlog();
         void dump_regs(uint8_t insn);
         uint8_t read_mem8(uint16_t addr);
         uint16_t read_mem16(uint16_t addr);
@@ -61,6 +58,8 @@ class CPU{
         void write_Y(uint8_t data) { Y = data; };
         void write_SP(uint8_t data) { SP = data; };
         void write_Flag(uint8_t data) { _unbindFlags(data); };
+        void load_nes(NES *n) { nes = n; };
+
 };
 
 #endif

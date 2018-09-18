@@ -18,17 +18,19 @@ class PPU{
         bool en_gray;
 
     public:
-        PPU(NES *n, uint8_t* vram, uint8_t* crom);
-        ~PPU();
         uint8_t read_mem8(uint16_t addr);
         void render(uint8_t line);
         void bg_render(uint8_t line);
         void sp_render(uint8_t line);
         void store_vram(uint8_t line, uint8_t x, uint8_t color, bool sprite);
-        void make_bmp(ofstream *bmp);
         uint8_t* get_VRAM(){ return VRAM; };
         //uint8_t* get_VRAM_gray(){ return VRAM_gray; };
         void enable_gray(){ en_gray = true; };
+        void load_nes(NES *n) { nes = n; };
+        void load_vram(uint8_t* vram) { VRAM = vram; };
+        void load_crom(uint8_t* crom) { CROM = crom; };
+        void load_ppuram();
+        void load_spram();
 };
 
 #endif

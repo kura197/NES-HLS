@@ -5,20 +5,14 @@
 
 using namespace std;
 
-RAM::RAM(NES *n, uint8_t* prom, uint8_t* crom){
-    nes = n;
+//RAM::RAM(NES *n, uint8_t* prom, uint8_t* crom){
+RAM::RAM(){
     BGoffset_sel_X = true;
     PPUAddr_sel_H = true;
     pad_reset_state = 0;
     pad_read_state = 0;
     pad_input = 0;
     spram_buf = 0;
-    PROM = prom;
-    CROM = crom;
-}
-
-RAM::~RAM(){
-
 }
 
 
@@ -62,27 +56,30 @@ uint8_t RAM::read(uint16_t addr){
     uint8_t data;
     if(addr < 0x2000)   addr = addr & 0x7FF;
     else if(addr < 0x4000) addr = addr & 0x2007;
-    switch(addr){
-        case 0x2002: 
-            data = _set(VBlank,7)|_set(SPhit,6)|_set(num_ScanSP,5);
-            VBlank = false;
-            BGoffset_sel_X = true;
-            PPUAddr_sel_H = true;
-            break;
-        case 0x2007:
-            data = read_2007();
-            break;
-        case 0x4016:
-            data = read_pad_1();
-            break;
-        case 0x4017:
-            data = read_pad_2();
-            break;
-        default:
-            data = WRAM[addr];
-            break;
-    }
+
     if(addr >= 0x8000) data = read_prom(addr);
+    else{
+        switch(addr){
+            case 0x2002: 
+                data = _set(VBlank,7)|_set(SPhit,6)|_set(num_ScanSP,5);
+                VBlank = false;
+                BGoffset_sel_X = true;
+                PPUAddr_sel_H = true;
+                break;
+            case 0x2007:
+                data = read_2007();
+                break;
+            case 0x4016:
+                data = read_pad_1();
+                break;
+            case 0x4017:
+                data = read_pad_2();
+                break;
+            default:
+                data = WRAM[addr];
+                break;
+        }
+    }
     return data;
 }
 
