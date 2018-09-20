@@ -49,7 +49,7 @@ void make_bmp(uint8_t* VRAM, int index);
 //    //nes.ram->dump_PROM(0xFF00, 0xFF);
 //}
 
-struct SCROLL exec_cpu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
+component struct SCROLL exec_cpu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
               ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
               ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
               bool res, bool nmi){
@@ -61,7 +61,7 @@ struct SCROLL exec_cpu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, 
     return scr;
 }
 
-component bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
+bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
               ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
               ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
               ihc::mm_master<uint8_t, ihc::aspace<4>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
@@ -71,6 +71,20 @@ component bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>,
     bool nmi = ppu.render(WRAM, PPU_RAM, SP_RAM, VRAM, BG_offset_x, BG_offset_y);
     return nmi;
 }
+
+//component int test(int arg){
+//    int ret;
+//    switch(arg){
+//        case 0:
+//            ret = 1;
+//            break;
+//        default:
+//            ret = 0;
+//            printf("Nooo\n");
+//            break;
+//    }
+//    return ret;
+//}
 
 int main(int argc, char* argv[]){
     if(argc == 1){
@@ -160,7 +174,10 @@ int main(int argc, char* argv[]){
         //exec_nes(PROM, CROM, COLOR, false);
         //create bmp file
         for(int l = 0; l < 256; l++){
-            scr = exec_cpu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, false, nmi);
+            for(int c = 0; c < 40; c++) {
+                scr = exec_cpu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, false, nmi);
+                if(nmi) nmi = false;
+            }
             nmi = exec_ppu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, mm_COLOR, scr.BGoffset_X, scr.BGoffset_Y);
         }
 

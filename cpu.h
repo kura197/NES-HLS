@@ -22,10 +22,10 @@ class CPU : RAM{
         uint8_t Y;
         uint8_t SP;
         uint8_t CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
-        int rest;
-        bool reset_line;
-        bool irq_line;
-        bool nmi_line;
+        //int rest;
+        //bool reset_line;
+        //bool irq_line;
+        //bool nmi_line;
         bool log;
 
     public:
@@ -35,8 +35,8 @@ class CPU : RAM{
         //void write_mem8(uint16_t addr, uint8_t data);
         void write_mem16(uint16_t addr, uint16_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
         //void set_nmi(bool signal);
-        void set_irq(bool signal);
-        void set_reset(bool signal);
+        //void set_irq(bool signal);
+        //void set_reset(bool signal);
         //void reset(uint8_t* WRAM, uint8_t* PPU_RAM);
         struct SCROLL exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
         void exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);

@@ -79,7 +79,8 @@ void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, ui
     else if(addr < 0x4000) addr = addr & 0x2007;
     switch(addr){
         case 0x2000: 
-            write_2000(data);
+            //write_2000(data);
+            PPUInc = (bool)((data >> 2) & 1);    
             break;
         //case 0x2001: 
         //    write_2001(data);
@@ -117,15 +118,15 @@ void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, ui
 //        nes->cpu->set_nmi(VBlank);
 //}
 
-void RAM::write_2000(uint8_t data){
-    //VBlank_NMI = (bool)((data >> 7) & 1);    
-    //SPSize =     (bool)((data >> 5) & 1);    
-    //BGPtnAddr =  (bool)((data >> 4) & 1);    
-    //SPPtnAddr =  (bool)((data >> 3) & 1);    
-    PPUInc =     (bool)((data >> 2) & 1);    
-    //NameAddrH =  (bool)((data >> 1) & 1);    
-    //NameAddrL =  (bool)((data >> 0) & 1);    
-}
+//void RAM::write_2000(uint8_t data){
+//    //VBlank_NMI = (bool)((data >> 7) & 1);    
+//    //SPSize =     (bool)((data >> 5) & 1);    
+//    //BGPtnAddr =  (bool)((data >> 4) & 1);    
+//    //SPPtnAddr =  (bool)((data >> 3) & 1);    
+//    PPUInc =     (bool)((data >> 2) & 1);    
+//    //NameAddrH =  (bool)((data >> 1) & 1);    
+//    //NameAddrL =  (bool)((data >> 0) & 1);    
+//}
 
 //void RAM::write_2001(uint8_t data){
 //    //printf("write $2001. data = %02x\n",data);
@@ -296,11 +297,11 @@ uint8_t RAM::read_pad_2(){
     return 0;
 }
 
-void RAM::frame_end(uint8_t* WRAM){
-    //NameAddrH = false;    
-    //NameAddrL = false;    
-    uint8_t tmp = WRAM[0x2000];
-    tmp &= ~0b00000011;
-    WRAM[0x2000] = tmp;
-}
+//void RAM::frame_end(uint8_t* WRAM){
+//    //NameAddrH = false;    
+//    //NameAddrL = false;    
+//    uint8_t tmp = WRAM[0x2000];
+//    tmp &= ~0b00000011;
+//    WRAM[0x2000] = tmp;
+//}
 

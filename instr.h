@@ -31,7 +31,7 @@
 }
 
 // TODO : decimal support
-#define _adc(cycle,adr) { \
+#define _adc(adr) { \
   uint16_t  s=read(adr, WRAM, PPU_RAM); \
   uint16_t t=ACC+s+CFlag; \
   CFlag=(uint8_t)(t>>8); \
@@ -39,10 +39,9 @@
   NFlag=(t>>7)&1; \
   VFlag=!((ACC^s)&0x80)&&((ACC^t)&0x80); \
   ACC=(uint8_t)t; \
-  rest-=cycle; \
 }
 // TODO : decimal support
-#define _sbc(cycle,adr) { \
+#define _sbc(adr) { \
   uint16_t  s=read(adr, WRAM, PPU_RAM); \
   uint16_t t=ACC-s-(CFlag?0:1); \
   CFlag=t<0x100; \
@@ -50,59 +49,50 @@
   NFlag=(t>>7)&1; \
   VFlag=((ACC^s)&0x80)&&((ACC^t)&0x80); \
   ACC=(uint8_t)t; \
-  rest-=cycle; \
 }
-#define _cmp(cycle,reg,adr) { \
+#define _cmp(reg,adr) { \
   uint16_t t=(uint16_t)reg-read(adr, WRAM, PPU_RAM); \
   CFlag=t<0x100; \
   ZFlag=(t&0xff)==0; \
   NFlag=(t>>7)&1; \
-  rest-=cycle; \
 }
 
-#define _and(cycle,adr) { \
+#define _and(adr) { \
   ACC&=read(adr, WRAM, PPU_RAM); \
   NFlag=ACC>>7; \
   ZFlag=ACC==0; \
-  rest-=cycle; \
 }
-#define _ora(cycle,adr) { \
+#define _ora(adr) { \
   ACC|=read(adr, WRAM, PPU_RAM); \
   NFlag=ACC>>7; \
   ZFlag=ACC==0; \
-  rest-=cycle; \
 }
-#define _eor(cycle,adr) { \
+#define _eor(adr) { \
   ACC^=read(adr, WRAM, PPU_RAM); \
   NFlag=ACC>>7; \
   ZFlag=ACC==0; \
-  rest-=cycle; \
 }
 
-#define _bit(cycle,adr) { \
+#define _bit(adr) { \
   uint8_t t=read(adr, WRAM, PPU_RAM); \
   NFlag=t>>7; \
   VFlag=(t>>6)&1; \
   ZFlag=(ACC&t)==0; \
-  rest-=cycle; \
 }
 
 #define _load(cycle,reg,adr) { \
   reg=read(adr, WRAM, PPU_RAM); \
   NFlag=reg>>7; \
   ZFlag=reg==0; \
-  rest-=cycle; \
 }
 #define _store(cycle,reg,adr) { \
   write(adr,reg, WRAM, PPU_RAM, SP_RAM); \
-  rest-=cycle; \
 }
 
 #define _mov(cycle,dest,src) { \
   dest=src; \
   NFlag=src>>7; \
   ZFlag=src==0; \
-  rest-=cycle; \
 }
 
 #define _asli(arg) \
@@ -136,13 +126,12 @@
   NFlag=arg>>7; \
   ZFlag=arg==0;
 
-#define _sfta(cycle,reg,op) { op(reg);rest-=cycle; }
+#define _sfta(cycle,reg,op) { op(reg); }
 #define _sft(cycle,adr,op) { \
   uint16_t a=adr; \
   uint8_t t=read(a, WRAM, PPU_RAM); \
   op(t); \
   write(a,t, WRAM, PPU_RAM, SP_RAM); \
-  rest-=cycle; \
 }
 
 #define _asla(cycle)    _sfta(cycle,ACC,_asli)
@@ -161,9 +150,7 @@
 
 #define _bra(cycle,cond) { \
   int8_t rel=(int8_t)read(_imm(), WRAM, PPU_RAM); \
-  rest-=cycle; \
   if (cond){ \
-    rest-=(PC&0xff00)==((PC+rel)&0xff)?1:2; \
     PC+=rel; \
   } \
 }

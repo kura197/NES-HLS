@@ -77,7 +77,7 @@ class RAM{
         uint8_t read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM);
         void write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
         //void set_VBlank(bool vblank, bool nmi);
-        void write_2000(uint8_t data);
+        //void write_2000(uint8_t data);
         //void write_2001(uint8_t data);
         void write_2003(uint8_t data);
         void write_2004(uint8_t data, uint8_t* SP_RAM);
@@ -90,7 +90,7 @@ class RAM{
         uint8_t read_pad_1();
         uint8_t read_pad_2();
         void Input_Key(uint8_t key) {key_input = key;};
-        void frame_end(uint8_t* WRAM);
+        //void frame_end(uint8_t* WRAM);
 
 };
 

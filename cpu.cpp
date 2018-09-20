@@ -4,11 +4,11 @@
 #include <cstdio>
 #include "instr.h"
 
-void CPU::dump_regs(uint8_t insn){
-    printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
-                    PC, insn, ACC, X, Y, _bindFlags(), SP);
-    //printf("SP[0xFF]:%02x\tSP[0xFE]:%02x\tSP[0xFD]:%02x\n\n", read_mem8(0x1FF), read_mem8(0x1FE), read_mem8(0x1FD));
-}
+//void CPU::dump_regs(uint8_t insn){
+//    printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
+//                    PC, insn, ACC, X, Y, _bindFlags(), SP);
+//    //printf("SP[0xFF]:%02x\tSP[0xFE]:%02x\tSP[0xFD]:%02x\n\n", read_mem8(0x1FF), read_mem8(0x1FE), read_mem8(0x1FD));
+//}
 
 //uint8_t CPU::read_mem8(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
 //    return read(addr, WRAM, PPU_RAM);
@@ -38,15 +38,15 @@ void CPU::write_mem16(uint16_t addr, uint16_t data, uint8_t* WRAM, uint8_t* PPU_
 //  nmi_line = signal;
 //}
 
-void CPU::set_irq(bool signal)
-{
-  irq_line = signal;
-}
-
-void CPU::set_reset(bool signal)
-{
-  reset_line = signal;
-}
+//void CPU::set_irq(bool signal)
+//{
+//  irq_line = signal;
+//}
+//
+//void CPU::set_reset(bool signal)
+//{
+//  reset_line = signal;
+//}
 
 //void CPU::reset(uint8_t* WRAM, uint8_t* PPU_RAM){
 //    ACC = 0;
@@ -69,17 +69,17 @@ void CPU::set_reset(bool signal)
 
 struct SCROLL CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     //rest += clk;
-    rest += 114;
-    do{
-        if(!IFlag){
-            if (reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM),reset_line=false;
-            else if (irq_line) exec_irq(IRQ, WRAM, PPU_RAM, SP_RAM),irq_line=false;
-            //else if (nmi_line) exec_irq(NMI); nmi_line = false;
-        }
-        //if (nmi) exec_irq(NMI); nmi = false;
+    //rest += 114;
+    //do{
+    //    if(!IFlag){
+    //        if (reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM),reset_line=false;
+    //        else if (irq_line) exec_irq(IRQ, WRAM, PPU_RAM, SP_RAM),irq_line=false;
+    //        //else if (nmi_line) exec_irq(NMI); nmi_line = false;
+    //    }
+    //    //if (nmi) exec_irq(NMI); nmi = false;
 
         uint8_t opc = read(PC, WRAM, PPU_RAM);
-        if(log) dump_regs(opc);
+        //if(log) dump_regs(opc);
         PC++;
         uint16_t opr_pc = PC;
         switch(opc){
@@ -193,7 +193,7 @@ struct SCROLL CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
             case 0x8A: _mov(2,ACC,X); break; // TXA
             case 0x98: _mov(2,ACC,Y); break; // TYA
             case 0xBA: _mov(2,X,SP); break; // TSX
-            case 0x9A: SP=X;rest-=2; break; // TXS
+            case 0x9A: SP=X; break; // TXS
 
               /* shift */
             case 0x0A: _asla(2);       break;
@@ -245,29 +245,29 @@ struct SCROLL CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
             case 0x70: _bra(2, VFlag); break; // BVS
 
               /* jump / call / return */
-            case 0x4C: PC=_abs() ;rest-=3; break; // JMP abs
-            case 0x6C: PC=_absi();rest-=5; break; // JMP (abs)
+            case 0x4C: PC=_abs() ; break; // JMP abs
+            case 0x6C: PC=_absi(); break; // JMP (abs)
 
-            case 0x20: _push16(PC+1);PC=_abs();rest-=6; break; // JSR
+            case 0x20: _push16(PC+1);PC=_abs(); break; // JSR
 
-            case 0x60: PC=_pop16()+1;rest-=6; break; // RTS
-            case 0x40: _unbindFlags(_pop8());PC=_pop16();rest-=6; break; // RTI
+            case 0x60: PC=_pop16()+1; break; // RTS
+            case 0x40: _unbindFlags(_pop8());PC=_pop16(); break; // RTI
 
               /* flag */
-            case 0x38: CFlag=1;rest-=2; break; // SEC
-            case 0xF8: DFlag=1;rest-=2; break; // SED
-            case 0x78: IFlag=1;rest-=2; break; // SEI
+            case 0x38: CFlag=1; break; // SEC
+            case 0xF8: DFlag=1; break; // SED
+            case 0x78: IFlag=1; break; // SEI
 
-            case 0x18: CFlag=0;rest-=2; break; // CLC
-            case 0xD8: DFlag=0;rest-=2; break; // CLD
-            case 0x58: IFlag=0;rest-=2; break; // CLI (この瞬間に割り込みがかかるかも知れん…)
-            case 0xB8: VFlag=0;rest-=2; break; // CLV
+            case 0x18: CFlag=0; break; // CLC
+            case 0xD8: DFlag=0; break; // CLD
+            case 0x58: IFlag=0; break; // CLI (この瞬間に割り込みがかかるかも知れん…)
+            case 0xB8: VFlag=0; break; // CLV
 
               /* stack */
-            case 0x48: _push8(ACC);rest-=3; break; // PHA
-            case 0x08: _push8(_bindFlags());rest-=3; break; // PHP
-            case 0x68: ACC=_pop8();NFlag=ACC>>7;ZFlag=ACC==0;rest-=4; break; // PLA
-            case 0x28: _unbindFlags(_pop8());rest-=4; break; // PLP
+            case 0x48: _push8(ACC); break; // PHA
+            case 0x08: _push8(_bindFlags()); break; // PHP
+            case 0x68: ACC=_pop8();NFlag=ACC>>7;ZFlag=ACC==0; break; // PLA
+            case 0x28: _unbindFlags(_pop8()); break; // PLP
 
               /* others */
             case 0x00: // BRK
@@ -276,13 +276,13 @@ struct SCROLL CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
               exec_irq(IRQ, WRAM, PPU_RAM, SP_RAM);
               break;
 
-            case 0xEA: rest-=2; break; // NOP
+            case 0xEA: ; break; // NOP
 
             default:
-              printf("undefined opcode: %02x", opc);
+              //printf("undefined opcode: %02x", opc);
               break;
         }
-    }while(rest > 0);
+    //}while(rest > 0);
 
     return scr;
 }
@@ -302,5 +302,4 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     _push8(_bindFlags());
     IFlag = 1;
     PC = read_mem16(vect, WRAM, PPU_RAM);
-    rest -= 7;
 }
