@@ -5,12 +5,13 @@
 #include <unistd.h>
 #include <stdlib.h>
 //#include "nes.h"
-//#include "ram.h"
-//#include "cpu.h"
+#include "ram.h"
+#include "cpu.h"
 #include "ppu.h"
 #include "HLS/hls.h"
 
 using namespace std;
+
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint8_t* COLOR, uint8_t* VRAM);
@@ -48,11 +49,17 @@ void make_bmp(uint8_t* VRAM, int index);
 //    //nes.ram->dump_PROM(0xFF00, 0xFF);
 //}
 
-//void exec_cpu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
-//              bool res, bool nmi){
-//    static CPU cpu;
-//    cpu.exec(114);
-//}
+struct SCROLL exec_cpu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
+              ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
+              ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
+              bool res, bool nmi){
+    static CPU cpu;
+    struct SCROLL scr;
+    if(res) cpu.exec_irq(RESET, WRAM, PPU_RAM, SP_RAM);
+    if(nmi) cpu.exec_irq(NMI, WRAM, PPU_RAM, SP_RAM);
+    scr = cpu.exec(WRAM, PPU_RAM, SP_RAM);
+    return scr;
+}
 
 component bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
               ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
@@ -146,10 +153,17 @@ int main(int argc, char* argv[]){
     int index = 0;
     int f = 0;
     uint8_t key = 0;
-    //exec_nes(PROM, CROM, COLOR, true);
+    struct SCROLL scr;
+    bool nmi = false;
+    scr = exec_cpu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, true, false);
     while(f++ < frame){
         //exec_nes(PROM, CROM, COLOR, false);
         //create bmp file
+        for(int l = 0; l < 256; l++){
+            scr = exec_cpu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, false, nmi);
+            nmi = exec_ppu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, mm_COLOR, scr.BGoffset_X, scr.BGoffset_Y);
+        }
+
         if(en_bmp && f % interval == 0){
             set_vram(COLOR, VRAM);
             make_bmp(VRAM, index++);

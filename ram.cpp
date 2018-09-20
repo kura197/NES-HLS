@@ -47,11 +47,12 @@ uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
     if(addr < 0x2000)   addr = addr & 0x7FF;
     else if(addr < 0x4000) addr = addr & 0x2007;
 
+    uint8_t tmp;
     switch(addr){
         case 0x2002: 
             //data = _set(VBlank,7)|_set(SPhit,6)|_set(num_ScanSP,5);
             data = WRAM[addr];
-            uint8_t tmp = data & ~(1 << 7);
+            tmp = data & ~(1 << 7);
             WRAM[addr] = tmp;
             //VBlank = false;
             BGoffset_sel_X = false;
@@ -149,11 +150,11 @@ void RAM::write_2004(uint8_t data, uint8_t* SP_RAM){
 
 void RAM::write_2005(uint8_t data){
     if(!BGoffset_sel_X){
-        BGoffset_X = data;
+        scr.BGoffset_X = data;
         BGoffset_sel_X = true;
     }  
     else{
-        BGoffset_Y = data;
+        scr.BGoffset_Y = data;
         BGoffset_sel_X = false;
     }
 }
@@ -295,8 +296,11 @@ uint8_t RAM::read_pad_2(){
     return 0;
 }
 
-void RAM::frame_end(){
-    NameAddrH = false;    
-    NameAddrL = false;    
+void RAM::frame_end(uint8_t* WRAM){
+    //NameAddrH = false;    
+    //NameAddrL = false;    
+    uint8_t tmp = WRAM[0x2000];
+    tmp &= ~0b00000011;
+    WRAM[0x2000] = tmp;
 }
 

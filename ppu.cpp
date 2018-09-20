@@ -12,6 +12,11 @@ bool PPU::render(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* VRAM
         if(get_bit(WRAM[0x2000], 7))
             nmi = true;
     }
+    else if(line == 255){
+        clr_bit(WRAM, 0x2002, 6);
+        clr_bit(WRAM, 0x2000, 1);
+        clr_bit(WRAM, 0x2000, 0);
+    }
     //if(nes->ram->EnBG)  bg_render(line);
     //if(nes->ram->EnSP)  sp_render(line);
     if(line < 240){

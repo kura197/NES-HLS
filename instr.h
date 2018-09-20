@@ -1,22 +1,22 @@
 #define _imm() (PC++)
 
-#define _abs()  (PC+=2,read_mem16(opr_pc))
-#define _abxi() (PC+=2,read_mem16(read_mem16(opr_pc)+X))
-#define _abx()  (PC+=2,read_mem16(opr_pc)+X)
-#define _aby()  (PC+=2,read_mem16(opr_pc)+Y)
-#define _absi() (PC+=2,read_mem16(read_mem16(opr_pc)))
+#define _abs()  (PC+=2,read_mem16(opr_pc, WRAM, PPU_RAM))
+#define _abxi() (PC+=2,read_mem16(read_mem16(opr_pc)+X, WRAM, PPU_RAM))
+#define _abx()  (PC+=2,read_mem16(opr_pc, WRAM, PPU_RAM)+X)
+#define _aby()  (PC+=2,read_mem16(opr_pc, WRAM, PPU_RAM)+Y)
+#define _absi() (PC+=2,read_mem16(read_mem16(opr_pc, WRAM, PPU_RAM), WRAM, PPU_RAM))
 
-#define _zp()   (read_mem8(PC++))
-#define _zpxi() (read_mem16((uint8_t)(read_mem8(PC++)+X)))
-#define _zpx()  ((uint8_t)(read_mem8(PC++)+X))
-#define _zpy()  ((uint8_t)(read_mem8(PC++)+Y))
-#define _zpi()  (read_mem16(read_mem8(PC++)))
-#define _zpiy() (read_mem16(read_mem8(PC++))+Y)
+#define _zp()   (read(PC++, WRAM, PPU_RAM))
+#define _zpxi() (read_mem16((uint8_t)(read(PC++, WRAM, PPU_RAM)+X), WRAM, PPU_RAM))
+#define _zpx()  ((uint8_t)(read(PC++, WRAM, PPU_RAM)+X))
+#define _zpy()  ((uint8_t)(read(PC++, WRAM, PPU_RAM)+Y))
+#define _zpi()  (read_mem16(read(PC++, WRAM, PPU_RAM)))
+#define _zpiy() (read_mem16(read(PC++, WRAM, PPU_RAM), WRAM, PPU_RAM)+Y)
 
-#define _push8(dat)  write_mem8(0x100|(uint8_t)(SP--),dat)
-#define _pop8()      read_mem8(0x100|(uint8_t)(++SP))
-#define _push16(dat) (write_mem16(0x100|(uint8_t)(SP-1),dat),SP-=2)
-#define _pop16()     (SP+=2,read_mem16(0x100|(uint8_t)(SP-1)))
+#define _push8(dat)  write(0x100|(uint8_t)(SP--),dat, WRAM, PPU_RAM, SP_RAM)
+#define _pop8()      read(0x100|(uint8_t)(++SP), WRAM, PPU_RAM)
+#define _push16(dat) (write_mem16(0x100|(uint8_t)(SP-1),dat, WRAM, PPU_RAM, SP_RAM),SP-=2)
+#define _pop16()     (SP+=2,read_mem16(0x100|(uint8_t)(SP-1), WRAM, PPU_RAM))
 
 #define _bindFlags() ((NFlag<<7)|(VFlag<<6)|0x20|(BFlag<<4)|(DFlag<<3)|(IFlag<<2)|(ZFlag<<1)|CFlag)
 #define _unbindFlags(dd) { \
@@ -32,7 +32,7 @@
 
 // TODO : decimal support
 #define _adc(cycle,adr) { \
-  uint16_t  s=read_mem8(adr); \
+  uint16_t  s=read(adr, WRAM, PPU_RAM); \
   uint16_t t=ACC+s+CFlag; \
   CFlag=(uint8_t)(t>>8); \
   ZFlag=(t&0xff)==0; \
@@ -43,7 +43,7 @@
 }
 // TODO : decimal support
 #define _sbc(cycle,adr) { \
-  uint16_t  s=read_mem8(adr); \
+  uint16_t  s=read(adr, WRAM, PPU_RAM); \
   uint16_t t=ACC-s-(CFlag?0:1); \
   CFlag=t<0x100; \
   ZFlag=(t&0xff)==0; \
@@ -53,7 +53,7 @@
   rest-=cycle; \
 }
 #define _cmp(cycle,reg,adr) { \
-  uint16_t t=(uint16_t)reg-read_mem8(adr); \
+  uint16_t t=(uint16_t)reg-read(adr, WRAM, PPU_RAM); \
   CFlag=t<0x100; \
   ZFlag=(t&0xff)==0; \
   NFlag=(t>>7)&1; \
@@ -61,26 +61,26 @@
 }
 
 #define _and(cycle,adr) { \
-  ACC&=read_mem8(adr); \
+  ACC&=read(adr, WRAM, PPU_RAM); \
   NFlag=ACC>>7; \
   ZFlag=ACC==0; \
   rest-=cycle; \
 }
 #define _ora(cycle,adr) { \
-  ACC|=read_mem8(adr); \
+  ACC|=read(adr, WRAM, PPU_RAM); \
   NFlag=ACC>>7; \
   ZFlag=ACC==0; \
   rest-=cycle; \
 }
 #define _eor(cycle,adr) { \
-  ACC^=read_mem8(adr); \
+  ACC^=read(adr, WRAM, PPU_RAM); \
   NFlag=ACC>>7; \
   ZFlag=ACC==0; \
   rest-=cycle; \
 }
 
 #define _bit(cycle,adr) { \
-  uint8_t t=read_mem8(adr); \
+  uint8_t t=read(adr, WRAM, PPU_RAM); \
   NFlag=t>>7; \
   VFlag=(t>>6)&1; \
   ZFlag=(ACC&t)==0; \
@@ -88,13 +88,13 @@
 }
 
 #define _load(cycle,reg,adr) { \
-  reg=read_mem8(adr); \
+  reg=read(adr, WRAM, PPU_RAM); \
   NFlag=reg>>7; \
   ZFlag=reg==0; \
   rest-=cycle; \
 }
 #define _store(cycle,reg,adr) { \
-  write_mem8(adr,reg); \
+  write(adr,reg, WRAM, PPU_RAM, SP_RAM); \
   rest-=cycle; \
 }
 
@@ -139,9 +139,9 @@
 #define _sfta(cycle,reg,op) { op(reg);rest-=cycle; }
 #define _sft(cycle,adr,op) { \
   uint16_t a=adr; \
-  uint8_t t=read_mem8(a); \
+  uint8_t t=read(a, WRAM, PPU_RAM); \
   op(t); \
-  write_mem8(a,t); \
+  write(a,t, WRAM, PPU_RAM, SP_RAM); \
   rest-=cycle; \
 }
 
@@ -160,7 +160,7 @@
 #define _dec(cycle,adr)  _sft(cycle,adr,_deci)
 
 #define _bra(cycle,cond) { \
-  int8_t rel=(int8_t)read_mem8(_imm()); \
+  int8_t rel=(int8_t)read(_imm(), WRAM, PPU_RAM); \
   rest-=cycle; \
   if (cond){ \
     rest-=(PC&0xff00)==((PC+rel)&0xff)?1:2; \

@@ -16,7 +16,7 @@ void CPU::dump_regs(uint8_t insn){
 
 uint16_t CPU::read_mem16(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
     uint16_t rddata;
-    rddata = read_(addr, WRAM, PPU_RAM);
+    rddata = read(addr, WRAM, PPU_RAM);
     rddata = rddata | ((uint16_t)read(addr+1, WRAM, PPU_RAM) << 8);
     return rddata;
 }
@@ -48,36 +48,37 @@ void CPU::set_reset(bool signal)
   reset_line = signal;
 }
 
-void CPU::reset(uint8_t* WRAM, uint8_t* PPU_RAM){
-    ACC = 0;
-    X = 0;
-    Y = 0;
-    SP = 0xFD;
-    CFlag = 0;
-    ZFlag = 0;
-    IFlag = 1;
-    DFlag = 0;
-    BFlag = 0;
-    VFlag = 0; 
-    NFlag = 0;
-    PC = read_mem16(0xFFFC, WRAM, PPU_RAM);
-    nmi_line = false;
-    irq_line = false;
-    reset_line = false;
-    //printf("PC : %04x\n", PC);
-}
+//void CPU::reset(uint8_t* WRAM, uint8_t* PPU_RAM){
+//    ACC = 0;
+//    X = 0;
+//    Y = 0;
+//    SP = 0xFD;
+//    CFlag = 0;
+//    ZFlag = 0;
+//    IFlag = 1;
+//    DFlag = 0;
+//    BFlag = 0;
+//    VFlag = 0; 
+//    NFlag = 0;
+//    PC = read_mem16(0xFFFC, WRAM, PPU_RAM);
+//    nmi_line = false;
+//    irq_line = false;
+//    reset_line = false;
+//    //printf("PC : %04x\n", PC);
+//}
 
-void CPU::exec(int clk, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
-    rest += clk;
+struct SCROLL CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
+    //rest += clk;
+    rest += 114;
     do{
         if(!IFlag){
-            if (reset_line) exec_irq(RESET),reset_line=false;
-            else if (irq_line) exec_irq(IRQ),irq_line=false;
+            if (reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM),reset_line=false;
+            else if (irq_line) exec_irq(IRQ, WRAM, PPU_RAM, SP_RAM),irq_line=false;
             //else if (nmi_line) exec_irq(NMI); nmi_line = false;
         }
         //if (nmi) exec_irq(NMI); nmi = false;
 
-        uint8_t opc = read_mem8(PC);
+        uint8_t opc = read(PC, WRAM, PPU_RAM);
         if(log) dump_regs(opc);
         PC++;
         uint16_t opr_pc = PC;
@@ -172,11 +173,7 @@ void CPU::exec(int clk, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
 
             case 0x85: _store(3,ACC,_zp());   break;
             case 0x95: _store(4,ACC,_zpx());  break;
-            //case 0x8D: _store(4,ACC,_abs());  break;
-            case 0x8D: 
-                       ad = _abs();
-                       _store(4,ACC,ad);  
-                       break;
+            case 0x8D: _store(4,ACC,_abs());  break;
             case 0x9D: _store(5,ACC,_abx());  break;
             case 0x99: _store(5,ACC,_aby());  break;
             case 0x81: _store(6,ACC,_zpxi()); break;
@@ -276,7 +273,7 @@ void CPU::exec(int clk, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
             case 0x00: // BRK
               BFlag=1;
               PC++;
-              exec_irq(IRQ);
+              exec_irq(IRQ, WRAM, PPU_RAM, SP_RAM);
               break;
 
             case 0xEA: rest-=2; break; // NOP
@@ -286,6 +283,8 @@ void CPU::exec(int clk, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
               break;
         }
     }while(rest > 0);
+
+    return scr;
 }
 
 void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
@@ -302,6 +301,6 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     _push16(PC);
     _push8(_bindFlags());
     IFlag = 1;
-    PC = read_mem16(vect);
+    PC = read_mem16(vect, WRAM, PPU_RAM);
     rest -= 7;
 }
