@@ -4,42 +4,65 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include "nes.h"
-#include "ram.h"
-#include "cpu.h"
+//#include "nes.h"
+//#include "ram.h"
+//#include "cpu.h"
 #include "ppu.h"
+#include "HLS/hls.h"
 
 using namespace std;
 
-int create_bmp(NES *nes, int index);
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint8_t* COLOR, uint8_t* VRAM);
 void make_bmp(uint8_t* VRAM, int index);
 
-component void exec_nes(uint8_t* PROM, uint8_t* CROM, uint8_t* VRAM, bool res){
-    static NES nes;
-    static CPU cpu;
-    static RAM ram;
-    static PPU ppu;
-    static bool cnt;
-    if(!cnt){
-        nes.load_submodule(&ram, &cpu, &ppu);
-        ram.load_nes(&nes);
-        ppu.load_nes(&nes);
-        cpu.load_nes(&nes);
-        ppu.load_crom(CROM);
-        ppu.load_vram(VRAM);
-        ram.load_crom(CROM);
-        ram.load_prom(PROM);
-        ppu.load_ppuram();
-        ppu.load_spram();
-        cnt = true;
-    }
+//ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
+//ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
+//ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
+//ihc::mm_master<uint8_t, ihc::aspace<4>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
 
-    if(res) nes.nes_reset();
-    //nes.cpu->enlog();
-    nes.exec_frame();
-    //nes.ram->dump_PROM(0xFF00, 0xFF);
+
+//void exec_nes(uint8_t* PROM, uint8_t* CROM, uint8_t* VRAM, bool res){
+//    static NES nes;
+//    static CPU cpu;
+//    static RAM ram;
+//    static PPU ppu;
+//    static bool cnt;
+//    if(!cnt){
+//        nes.load_submodule(&ram, &cpu, &ppu);
+//        ram.load_nes(&nes);
+//        ppu.load_nes(&nes);
+//        cpu.load_nes(&nes);
+//        ppu.load_crom(CROM);
+//        ppu.load_vram(VRAM);
+//        ram.load_crom(CROM);
+//        ram.load_prom(PROM);
+//        ppu.load_ppuram();
+//        ppu.load_spram();
+//        cnt = true;
+//    }
+//
+//    if(res) nes.nes_reset();
+//    //nes.cpu->enlog();
+//    nes.exec_frame();
+//    //nes.ram->dump_PROM(0xFF00, 0xFF);
+//}
+
+//void exec_cpu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
+//              bool res, bool nmi){
+//    static CPU cpu;
+//    cpu.exec(114);
+//}
+
+component bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
+              ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
+              ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
+              ihc::mm_master<uint8_t, ihc::aspace<4>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
+              uint8_t BG_offset_x, uint8_t BG_offset_y)
+{
+    static PPU ppu;
+    bool nmi = ppu.render(WRAM, PPU_RAM, SP_RAM, VRAM, BG_offset_x, BG_offset_y);
+    return nmi;
 }
 
 int main(int argc, char* argv[]){
@@ -110,41 +133,34 @@ int main(int argc, char* argv[]){
     //nes.load_ROM(&ROM);
     uint8_t COLOR[256*240];
     uint8_t VRAM[3*256*240];
-    uint8_t PROM[0x8000];
-    uint8_t CROM[0x2000];
-    load_ROM(&ROM, PROM, CROM);
+    uint8_t WRAM[0x10000];
+    uint8_t PPU_RAM[0x4000];
+    uint8_t SP_RAM[0x100];
+    load_ROM(&ROM, WRAM, PPU_RAM);
     ROM.close();
-    //nes.dump_WRAM(0xFF00, 256);
-    //nes.enlog();
-    //nes.nes_reset();
-    //if(en_gray) nes.enable_gray();
-    //NETWORK network(port);
+    ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> > mm_WRAM(WRAM, sizeof(uint8_t)*0x10000);
+    ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> > mm_PPU_RAM(PPU_RAM, sizeof(uint8_t)*0x4000);
+    ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> > mm_SP_RAM(SP_RAM, sizeof(uint8_t)*0x100);
+    ihc::mm_master<uint8_t, ihc::aspace<4>, ihc::awidth<16>, ihc::dwidth<8> > mm_COLOR(COLOR, sizeof(uint8_t)*(256*240));
 
     int index = 0;
     int f = 0;
     uint8_t key = 0;
-    //if(en_log) nes.cpu->enlog();
-    exec_nes(PROM, CROM, COLOR, true);
+    //exec_nes(PROM, CROM, COLOR, true);
     while(f++ < frame){
-        //nes.ram->Input_Key(key);
-        //nes.exec_frame();
-
-        exec_nes(PROM, CROM, COLOR, false);
+        //exec_nes(PROM, CROM, COLOR, false);
         //create bmp file
         if(en_bmp && f % interval == 0){
             set_vram(COLOR, VRAM);
             make_bmp(VRAM, index++);
         }
-        //    if(create_bmp(&nes, index++) < 0)
-        //        return 1;
     }
 
-    //nes.dump_PPURAM(0x1EC0, 0x137);
     cout << "Finish" << endl;
     return 0;
 }
 
-void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM){
+void load_ROM(ifstream *rom, uint8_t* WRAM, uint8_t* PPU_RAM){
     uint32_t magic;
     uint8_t prom_size;
     uint8_t crom_size;
@@ -161,13 +177,13 @@ void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM){
     csize = crom_size * 0x2000;
 
     rom->seekg(16,ios_base::beg);
-    //uint8_t *prom_ptr = (prom_size == 1) ? WRAM + 0xC000 : WRAM + 0x8000;
-    uint8_t *prom_ptr = (prom_size == 1) ? PROM + 0x4000 : PROM;
+    uint8_t *prom_ptr = (prom_size == 1) ? WRAM + 0xC000 : WRAM + 0x8000;
+    //uint8_t *prom_ptr = (prom_size == 1) ? PROM + 0x4000 : PROM;
     for(int i=0;i<psize;i++)
         rom->read((char*)(prom_ptr+i), sizeof(uint8_t));
     
     for(int i=0;i<csize;i++)
-        rom->read((char*)(CROM+i), sizeof(uint8_t));
+        rom->read((char*)(PPU_RAM+i), sizeof(uint8_t));
 }
 
 #define _rgb(r, g, b) (red = r, green = g, blue = b)

@@ -17,13 +17,13 @@ class NES;
 
 class RAM{
     private:
-        uint8_t WRAM[WRAM_SIZE];
-        uint8_t* PROM;
-        uint8_t* CROM;
-        uint8_t PPU_RAM[PPU_RAM_SIZE];
-        uint8_t SP_RAM[SP_RAM_SIZE];
-        uint8_t spram_buf;
-        NES *nes;
+        //uint8_t WRAM[WRAM_SIZE];
+        //uint8_t* PROM;
+        //uint8_t* CROM;
+        //uint8_t PPU_RAM[PPU_RAM_SIZE];
+        //uint8_t SP_RAM[SP_RAM_SIZE];
+        //uint8_t spram_buf;
+        //NES *nes;
 
         //PAD
         uint8_t key_input;
@@ -33,26 +33,26 @@ class RAM{
 
     public:
         //$2000
-        bool VBlank_NMI;
-        bool SPSize;
-        bool BGPtnAddr;
-        bool SPPtnAddr;
+        //bool VBlank_NMI;
+        //bool SPSize;
+        //bool BGPtnAddr;
+        //bool SPPtnAddr;
         bool PPUInc;
-        bool NameAddrH;
-        bool NameAddrL;
+        //bool NameAddrH;
+        //bool NameAddrL;
         //$2001
-        bool BGColor2;
-        bool BGColor1;
-        bool BGColor0;
-        bool EnSP;
-        bool EnBG;
-        bool SPMSK;
-        bool BGMSK;
-        bool DispType;
+        //bool BGColor2;
+        //bool BGColor1;
+        //bool BGColor0;
+        //bool EnSP;
+        //bool EnBG;
+        //bool SPMSK;
+        //bool BGMSK;
+        //bool DispType;
         //$2002
-        bool VBlank;
-        bool SPhit;
-        bool num_ScanSP;
+        //bool VBlank;
+        //bool SPhit;
+        //bool num_ScanSP;
         //$2003
         uint8_t SPAddr;
         //$2005
@@ -68,41 +68,26 @@ class RAM{
 
         //RAM(NES *n, uint8_t* prom, uint8_t* crom);
         RAM();
-        void load_ROM(ifstream *rom);
-        void dump_WRAM(uint16_t start_addr, uint16_t size);
-        void dump_PROM(uint16_t start_addr, uint16_t size);
-        void dump_PPURAM(uint16_t start_addr, uint16_t size);
-        uint8_t read(uint16_t addr);
-        void write(uint16_t addr, uint8_t data);
-        void set_VBlank(bool vblank, bool nmi);
+        //void dump_WRAM(uint16_t start_addr, uint16_t size);
+        //void dump_PROM(uint16_t start_addr, uint16_t size);
+        //void dump_PPURAM(uint16_t start_addr, uint16_t size);
+        uint8_t read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
+        void write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
+        //void set_VBlank(bool vblank, bool nmi);
         void write_2000(uint8_t data);
-        void write_2001(uint8_t data);
+        //void write_2001(uint8_t data);
         void write_2003(uint8_t data);
-        void write_2004(uint8_t data);
+        void write_2004(uint8_t data, uint8_t* SP_RAM){
         void write_2005(uint8_t data);
         void write_2006(uint8_t data);
-        void write_2007(uint8_t data);
-        uint8_t read_2007();
-        void DMA_start(uint8_t data);
+        void write_2007(uint8_t data, uint8_t* PPU_RAM){
+        uint8_t read_2007(uint8_t* PPU_RAM){
+        void DMA_start(uint8_t addr_H, uint8_t* WRAM, uint8_t* SP_RAM){
         void reset_pad(uint8_t data);
         uint8_t read_pad_1();
         uint8_t read_pad_2();
-        uint8_t *get_PPU_RAM() { return PPU_RAM; };
-        uint8_t *get_SP_RAM() { return SP_RAM; };
-        void SP_hit() { SPhit = true; };
-        void SP_hit_reset() { SPhit = false; };
         void Input_Key(uint8_t key) {key_input = key;};
         void frame_end();
-        uint8_t read_SPRAM(uint8_t addr) { return SP_RAM[addr]; };
-        void write_SPRAM(uint8_t addr, uint8_t data) { SP_RAM[addr] = data; };
-        uint8_t read_PPURAM(uint16_t addr);
-        void write_PPURAM(uint16_t addr, uint8_t data);
-        uint8_t read_prom(uint16_t addr);
-        //void load_CROM(uint8_t* crom){ CROM = crom; };
-        //void load_PROM(uint8_t* prom){ PROM = prom; };
-        void load_nes(NES *n) { nes = n; };
-        void load_prom(uint8_t* prom) { PROM = prom; };
-        void load_crom(uint8_t* crom) { CROM = crom; };
 };
 
 

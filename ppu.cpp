@@ -1,28 +1,36 @@
 
 #include "ppu.h"
 
-void PPU::load_ppuram(){ 
-    PPU_RAM = nes->ram->get_PPU_RAM() - 0x2000; 
-}
-
-void PPU::load_spram(){ 
-    SP_RAM = nes->ram->get_SP_RAM(); 
-}
-
-void PPU::render(uint8_t line){
-    //printf("BG:%d\tSP:%d\n",nes->ram->EnBG, nes->ram->EnSP);
-    if(nes->ram->EnBG)  bg_render(line);
-    if(nes->ram->EnSP)  sp_render(line);
+#define get_bit(data, bit) ((data >> bit) & 1)
+bool PPU::render(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* VRAM, uint8_t BG_offset_x, uint8_t BG_offset_y){
+    //if(line < 256) line++;
+    //else line = 0;
+    bool nmi = false;
+    line++;
+    if(line == 240){
+        set_bit(WRAM, 0x2002, 7);
+        if(get_bit(WRAM[0x2000], 7))
+            nmi = true;
+    }
+    //if(nes->ram->EnBG)  bg_render(line);
+    //if(nes->ram->EnSP)  sp_render(line);
+    if(line < 240){
+        if(get_bit(WRAM[0x2001], 3))  bg_render(line, WRAM, PPU_RAM, VRAM, BG_offset_x, BG_offset_y);
+        if(get_bit(WRAM[0x2001], 4))  sp_render(line, WRAM, PPU_RAM, SP_RAM, VRAM);
+    }
+    return nmi;
 }
 
 #define _pttnbit(data, data_bit, ret_bit) (((data >> data_bit) & 1) << ret_bit)
-void PPU::bg_render(uint8_t line){
+void PPU::bg_render(uint8_t line, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* VRAM, uint8_t BG_offset_x, uint8_t BG_offset_y){
 
-    uint8_t sc_x = nes->ram->BGoffset_X;
-    uint8_t sc_y = nes->ram->BGoffset_Y;
+    uint8_t sc_x = BG_offset_x;
+    uint8_t sc_y = BG_offset_y;
     uint8_t tile_offset = sc_x / 8;
-    bool low = nes->ram->NameAddrL;
-    bool high = nes->ram->NameAddrH;
+    //bool low = nes->ram->NameAddrL;
+    //bool high = nes->ram->NameAddrH;
+    bool low = get_bit(WRAM[0x2000], 0);
+    bool high = get_bit(WRAM[0x2000], 1);
     uint16_t name_base = (!low&!high) ? 0x2000 :
                          (low&!high)  ? 0x2400 :
                          (!low&high)  ? 0x2800 :
@@ -31,12 +39,9 @@ void PPU::bg_render(uint8_t line){
                          (low&!high)  ? 0x27C0 :
                          (!low&high)  ? 0x2BC0 :
                          (low&high)   ? 0x2FC0 : 0x23C0;
-    //printf("name_base:%04x\n",name_base);
-    //printf("low:%d\thigh:%d\n",low,high);
     uint8_t x = 0;
     for(int col = 0; col < 33; col++){
         int name_index;
-        //uint32_t name;
         uint16_t name;
         int attr_index;
         uint8_t attr;
@@ -59,11 +64,10 @@ void PPU::bg_render(uint8_t line){
             } 
         }
 
-        uint16_t pttn_base = (nes->ram->BGPtnAddr) ? 0x1000 : 0x0000;
-        //uint8_t pttn_L = PPU_RAM[pttn_base + name + (line % 8)];
-        //uint8_t pttn_H = PPU_RAM[pttn_base + name + (line % 8) + 8];
-        uint8_t pttn_L = CROM[pttn_base + name + (line % 8)];
-        uint8_t pttn_H = CROM[pttn_base + name + (line % 8) + 8];
+        //uint16_t pttn_base = (nes->ram->BGPtnAddr) ? 0x1000 : 0x0000;
+        uint16_t pttn_base = (get_bit(WRAM[0x2000], 4)) ? 0x1000 : 0x0000;
+        uint8_t pttn_L = PPU_RAM[pttn_base + name + (line % 8)];
+        uint8_t pttn_H = PPU_RAM[pttn_base + name + (line % 8) + 8];
         bool upper = (line % 32) < 16;
         bool left = (tile % 4) < 2;
         uint8_t locate;
@@ -90,28 +94,22 @@ void PPU::bg_render(uint8_t line){
             }
             BG_Valid[x] = valid;
             if(col == 0){ 
-                if(i >= (sc_x%8)) store_vram(line, x++, color, false); 
+                if(i >= (sc_x%8)) store_vram(line, x++, color, false, WRAM, VRAM); 
             }
             else if(col == 32){
-                if(i < (sc_x%9)) store_vram(line, x++, color, false);
+                if(i < (sc_x%9)) store_vram(line, x++, color, false, WRAM, VRAM);
             }
-            else store_vram(line, x++, color, false);
-            //printf("vram_addr = %d\n", 256*line + x);
-
-            //store_vram(line, 8*col, i, color);
-            //if(112 <= line && line <= 119 && col == 10)printf("%02x ",color);
+            else store_vram(line, x++, color, false, WRAM, VRAM);
         }
-        //if(112 <= line && line <= 119 && col == 10)printf("\n");
     }
 }
 
-void PPU::sp_render(uint8_t line){
+void PPU::sp_render(uint8_t line, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* VRAM){
     int num_sp = 0;
     for(int spr = 0; spr < 64; spr++){
         uint8_t spr_x = SP_RAM[4*spr+3];
         uint8_t spr_y = SP_RAM[4*spr];
         uint32_t spr_ptn_index = 16*SP_RAM[4*spr+1];
-        //if(line == 0)printf("sprite:%02x\tX:%02x Y:%02x index:%04x\n",spr,spr_x,spr_y,spr_ptn_index);
         if(line < spr_y || spr_y + 8 <= line)
             continue;
         num_sp++;
@@ -122,12 +120,11 @@ void PPU::sp_render(uint8_t line){
         bool lr_rev = (spr_att >> 6) & 0x1;
         bool ud_rev = (spr_att >> 7) & 0x1;
 
-        uint32_t pttn_base = (nes->ram->SPPtnAddr) ? 0x1000 : 0x0000;
+        //uint32_t pttn_base = (nes->ram->SPPtnAddr) ? 0x1000 : 0x0000;
+        uint32_t pttn_base = (get_bit(WRAM[0x2000], 3)) ? 0x1000 : 0x0000;
         uint8_t pttn_offset = (ud_rev) ? 7 - (line - spr_y) : line - spr_y;
-        //uint8_t pttn_L = PPU_RAM[pttn_base + spr_ptn_index + (pttn_offset % 8)];
-        //uint8_t pttn_H = PPU_RAM[pttn_base + spr_ptn_index + (pttn_offset % 8) + 8];
-        uint8_t pttn_L = CROM[pttn_base + spr_ptn_index + (pttn_offset % 8)];
-        uint8_t pttn_H = CROM[pttn_base + spr_ptn_index + (pttn_offset % 8) + 8];
+        uint8_t pttn_L = PPU_RAM[pttn_base + spr_ptn_index + (pttn_offset % 8)];
+        uint8_t pttn_H = PPU_RAM[pttn_base + spr_ptn_index + (pttn_offset % 8) + 8];
         //printf("pttn_H addr : %02x\n",pttn_base + spr_ptn_index + (pttn_offset % 8) + 8);
         //printf("ptn_index : %02x\n",spr_ptn_index);
 
@@ -137,118 +134,37 @@ void PPU::sp_render(uint8_t line){
             int8_t offset;
             if(lr_rev) offset = _pttnbit(pttn_H,i,1) | _pttnbit(pttn_L,i,0);
             else offset = _pttnbit(pttn_H,(7-i),1) | _pttnbit(pttn_L,(7-i),0);
-            //printf("H:%02x\tL:%02x\n",pttn_H,pttn_L);
             if(offset == 0) continue;
-            //if(offset == 0) offset = -16;
-            //if(spr == 0 && BG_Valid[spr_x+i]) nes->ram->SP_hit();
-            if(spr == 0) nes->ram->SP_hit();
+            //if(spr == 0) SP_hit();
+            if(spr == 0) set_bit(WRAM, 0x2002, 6);
             color = PPU_RAM[color_addr_base + offset];
-            if(!(bg_priority & BG_Valid[spr_x+i]))store_vram(line, spr_x+i, color, true);
+            if(!(bg_priority & BG_Valid[spr_x+i])) store_vram(line, spr_x+i, color, true, WRAM, VRAM);
         }
     }
-    if(num_sp >= 9) nes->ram->num_ScanSP = true;
-    else nes->ram->num_ScanSP = false;
+    //if(num_sp >= 9) nes->ram->num_ScanSP = true;
+    //else nes->ram->num_ScanSP = false;
+    if(num_sp >= 9) set_bit(WRAM, 0x2002, 5);
+    else clr_bit(WRAM, 0x2002, 5);
 }
 
 #define _rgb(r, g, b) (red = r, green = g, blue = b)
-void PPU::store_vram(uint8_t line, uint8_t x, uint8_t color, bool sprite){
+void PPU::store_vram(uint8_t line, uint8_t x, uint8_t color, bool sprite, uint8_t* WRAM, uint8_t* VRAM){
     //BGR
-    if(x < 8 && ((!sprite & nes->ram->BGMSK) || (sprite & nes->ram->SPMSK)))
+    //if(x < 8 && ((!sprite & nes->ram->BGMSK) || (sprite & nes->ram->SPMSK)))
+    if(x < 8 && ((!sprite & get_bit(WRAM[0x2001], 1)) || (sprite & get_bit(WRAM[0x2001], 2))))
         VRAM[256*line + x] = 0x3F;
     else 
         VRAM[256*line + x] = color;
-    //uint8_t blue, green, red; 
-    ////printf("%02x\n",color);
-    //switch(color){
-    //    case 0x00: _rgb(0x75,0x75,0x75); break;
-    //    case 0x01: _rgb(0x27,0x1B,0x8F); break;
-    //    case 0x02: _rgb(0x00,0x00,0xAB); break;
-    //    case 0x03: _rgb(0x47,0x00,0x9F); break;
-    //    case 0x04: _rgb(0x8F,0x00,0x77); break;
-    //    case 0x05: _rgb(0xAB,0x00,0x13); break;
-    //    case 0x06: _rgb(0xA7,0x00,0x00); break;
-    //    case 0x07: _rgb(0x7F,0x0B,0x00); break;
-    //    case 0x08: _rgb(0x43,0x2F,0x00); break;
-    //    case 0x09: _rgb(0x00,0x47,0x00); break;
-    //    case 0x0a: _rgb(0x00,0x51,0x00); break;
-    //    case 0x0b: _rgb(0x00,0x3F,0x17); break;
-    //    case 0x0c: _rgb(0x1B,0x3F,0x5F); break;
-    //    case 0x0d: _rgb(0x00,0x00,0x00); break;
-    //    case 0x0e: _rgb(0x00,0x00,0x00); break;
-    //    case 0x0f: _rgb(0x00,0x00,0x00); break;
-
-    //    case 0x10: _rgb(0xBC,0xBC,0xBC); break;
-    //    case 0x11: _rgb(0x00,0x73,0xEF); break;
-    //    case 0x12: _rgb(0x23,0x3B,0xEF); break;
-    //    case 0x13: _rgb(0x83,0x00,0xF3); break;
-    //    case 0x14: _rgb(0xBF,0x00,0xBF); break;
-    //    case 0x15: _rgb(0xE7,0x00,0x5B); break;
-    //    case 0x16: _rgb(0xDB,0x2B,0x00); break;
-    //    case 0x17: _rgb(0xCB,0x4F,0x0F); break;
-    //    case 0x18: _rgb(0x8B,0x73,0x00); break;
-    //    case 0x19: _rgb(0x00,0x97,0x00); break;
-    //    case 0x1a: _rgb(0x00,0xAB,0x00); break;
-    //    case 0x1b: _rgb(0x00,0x93,0x3B); break;
-    //    case 0x1c: _rgb(0x00,0x83,0x8B); break;
-    //    case 0x1d: _rgb(0x00,0x00,0x00); break;
-    //    case 0x1e: _rgb(0x00,0x00,0x00); break;
-    //    case 0x1f: _rgb(0x00,0x00,0x00); break;
-
-    //    case 0x20: _rgb(0xFF,0xFF,0xFF); break;
-    //    case 0x21: _rgb(0x3F,0xBF,0xFF); break;
-    //    case 0x22: _rgb(0x5F,0x73,0xFF); break;
-    //    case 0x23: _rgb(0xA7,0x8B,0xFD); break;
-    //    case 0x24: _rgb(0xF7,0x7B,0xFF); break;
-    //    case 0x25: _rgb(0xFF,0x77,0xB7); break;
-    //    case 0x26: _rgb(0xFF,0x77,0x63); break;
-    //    case 0x27: _rgb(0xFF,0x9B,0x3B); break;
-    //    case 0x28: _rgb(0xF3,0xBF,0x3F); break;
-    //    case 0x29: _rgb(0x83,0xD3,0x13); break;
-    //    case 0x2a: _rgb(0x4F,0xDF,0x4B); break;
-    //    case 0x2b: _rgb(0x58,0xF8,0x98); break;
-    //    case 0x2c: _rgb(0x00,0xEB,0xDB); break;
-    //    case 0x2d: _rgb(0x75,0x75,0x75); break;
-    //    case 0x2e: _rgb(0x00,0x00,0x00); break;
-    //    case 0x2f: _rgb(0x00,0x00,0x00); break;
-
-    //    case 0x30: _rgb(0xFF,0xFF,0xFF); break;
-    //    case 0x31: _rgb(0xAB,0xE7,0xFF); break;
-    //    case 0x32: _rgb(0xC7,0xD7,0xFF); break;
-    //    case 0x33: _rgb(0xD7,0xCB,0xFF); break;
-    //    case 0x34: _rgb(0xFF,0xC7,0xFF); break;
-    //    case 0x35: _rgb(0xFF,0xC7,0xDB); break;
-    //    case 0x36: _rgb(0xFF,0xBF,0xB3); break;
-    //    case 0x37: _rgb(0xFF,0xDB,0xAB); break;
-    //    case 0x38: _rgb(0xFF,0xE7,0xA3); break;
-    //    case 0x39: _rgb(0xE3,0xFF,0xA3); break;
-    //    case 0x3a: _rgb(0xAB,0xF3,0xBF); break;
-    //    case 0x3b: _rgb(0xB3,0xFF,0xCF); break;
-    //    case 0x3c: _rgb(0x9F,0xFF,0xF3); break;
-    //    case 0x3d: _rgb(0xBC,0xBC,0xBC); break;
-    //    case 0x3e: _rgb(0x00,0x00,0x00); break;
-    //    case 0x3f: _rgb(0x00,0x00,0x00); break;
-
-    //    default: _rgb(0,0,0); break;
-    //}
-    //if(x < 8 && ((!sprite & nes->ram->BGMSK) || (sprite & nes->ram->SPMSK))){
-    //    VRAM[3*(256*(239-line) + x)] = 0;
-    //    VRAM[3*(256*(239-line) + x) + 1] = 0;
-    //    VRAM[3*(256*(239-line) + x) + 2] = 0;
-    //}
-    //else{
-    //    if(!en_gray){
-    //        VRAM[3*(256*(239-line) + x)] = blue;
-    //        VRAM[3*(256*(239-line) + x) + 1] = green;
-    //        VRAM[3*(256*(239-line) + x) + 2] = red;
-    //    }
-    //    else{
-    //        uint8_t value = 0.229*red + 0.587*green + 0.114*blue;
-    //        VRAM[3*(256*(239-line) + x)] = value;
-    //        VRAM[3*(256*(239-line) + x) + 1] = value;
-    //        VRAM[3*(256*(239-line) + x) + 2] = value;
-    //    }
-    //    VRAM_gray[256*(239-line) + x] = 0.229*red + 0.587*green + 0.114*blue;
-    //}
 }
 
+void PPU::set_bit(uint8_t* WRAM, uint16_t addr, uint8_t bit){
+    uint8_t tmp = WRAM[addr];
+    tmp |= (1 << bit);
+    WRAM[addr] = tmp;
+}
 
+void PPU::clr_bit(uint8_t* WRAM, uint16_t addr, uint8_t bit){
+    uint8_t tmp = WRAM[addr];
+    tmp &= ~(1 << bit);
+    WRAM[addr] = tmp;
+}

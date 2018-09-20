@@ -1,4 +1,5 @@
-SOURCE_FILES  := main.cpp nes.cpp cpu.cpp ram.cpp ppu.cpp
+#SOURCE_FILES  := main.cpp cpu.cpp ram.cpp ppu.cpp
+SOURCE_FILES  := main.cpp  ppu.cpp
 HLS_CXX_FLAGS := 
 CXX := i++
 override CXXFLAGS := $(CXXFLAGS)
