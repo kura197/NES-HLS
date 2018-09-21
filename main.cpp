@@ -9,6 +9,7 @@
 #include "cpu.h"
 #include "ppu.h"
 #include "HLS/hls.h"
+#include "HLS/stdio.h"
 
 using namespace std;
 
@@ -55,8 +56,10 @@ component struct SCROLL exec_cpu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::aw
               bool res, bool nmi){
     static CPU cpu;
     struct SCROLL scr;
-    if(res) cpu.exec_irq(RESET, WRAM, PPU_RAM, SP_RAM);
-    if(nmi) cpu.exec_irq(NMI, WRAM, PPU_RAM, SP_RAM);
+    //if(res) cpu.exec_irq(RESET, WRAM, PPU_RAM, SP_RAM);
+    //if(nmi) cpu.exec_irq(NMI, WRAM, PPU_RAM, SP_RAM);
+    if(res) cpu.set_reset(true);
+    if(nmi) cpu.set_nmi(true);
     scr = cpu.exec(WRAM, PPU_RAM, SP_RAM);
     return scr;
 }

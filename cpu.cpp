@@ -7,10 +7,7 @@
 //void CPU::dump_regs(uint8_t insn){
 //    printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
 //                    PC, insn, ACC, X, Y, _bindFlags(), SP);
-//}
-
-//uint8_t CPU::read_mem8(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
-//    return read(addr, WRAM, PPU_RAM);
+//
 //}
 
 uint16_t CPU::read_mem16(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
@@ -20,12 +17,40 @@ uint16_t CPU::read_mem16(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
     return rddata;
 }
 
-//void CPU::write_mem8(uint16_t addr, uint8_t data){
-//    nes->ram->write(addr, data);
-//}
 void CPU::write_mem16(uint16_t addr, uint16_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     write(addr, (uint8_t)data, WRAM, PPU_RAM, SP_RAM);
     write(addr+1, (uint8_t)(data >> 8), WRAM, PPU_RAM, SP_RAM);
+}
+
+void CPU::push8(uint8_t data, uint8_t* WRAM){
+    WRAM[0x100|(uint8_t)(SP--)] = data;
+}
+
+uint8_t CPU::pop8(uint8_t* WRAM){
+    return WRAM[0x100|(uint8_t)(++SP)];
+}
+
+void CPU::push16(uint16_t data, uint8_t* WRAM){
+    WRAM[0x100|(uint8_t)(SP--)] = (uint8_t)(data >> 8);
+    WRAM[0x100|(uint8_t)(SP--)] = (uint8_t)data;
+}
+
+uint16_t CPU::pop16(uint8_t* WRAM){
+    uint16_t data;
+    data = WRAM[0x100|(uint8_t)(++SP)];
+    data |= (uint16_t)WRAM[0x100|(uint8_t)(++SP)] << 8;
+    return data;
+}
+
+uint8_t CPU::norm_read8(uint16_t addr, uint8_t* WRAM){
+    return WRAM[addr];
+}
+
+uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM){
+    uint16_t data;
+    data = WRAM[addr];
+    data |= (uint16_t)WRAM[addr+1] << 8;
+    return data;
 }
 
 //void CPU::set_nmi(bool signal)
@@ -72,427 +97,23 @@ void CPU::set_reset(bool signal)
 //}
 
 struct SCROLL CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
-    if(!op){
-        if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM); reset_line = false;
-        if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM); nmi_line = false;
-        exec_addressing(WRAM, PPU_RAM, SP_RAM);
-    }
+    //if(!op){
+    //    if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM); reset_line = false;
+    //    if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM); nmi_line = false;
+    //    exec_addressing(WRAM, PPU_RAM, SP_RAM);
+    //}
     //else exec_op(WRAM, PPU_RAM, SP_RAM);
-    scr.BGoffset_X = (uint8_t)addr;
     
     //if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM); reset_line = false;
     //if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM); nmi_line = false;
     //test_exec(WRAM, PPU_RAM, SP_RAM);
+
+    if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM); reset_line = false;
+    if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM); nmi_line = false;
+    execution(WRAM, PPU_RAM, SP_RAM);
     return scr;
 }
 
-void CPU::exec_addressing(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
-    IR = read(PC, WRAM, PPU_RAM);
-    //dump_regs(IR);
-    PC++;
-    uint16_t opr_pc = PC;
-    switch(IR){
-        /* ALU */
-        case 0x69: addr = _imm(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x65: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0x75: addr = _zpx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x6D: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x7D: addr = _abx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x79: addr = _aby(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x61: addr = _zpxi(opr_pc, WRAM, PPU_RAM); break;
-        case 0x71: addr = _zpiy(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0xE9: addr = _imm(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xE5: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0xF5: addr = _zpx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xED: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xFD: addr = _abx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xF9: addr = _aby(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xE1: addr = _zpxi(opr_pc, WRAM, PPU_RAM); break;
-        case 0xF1: addr = _zpiy(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0xC9: addr = _imm(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xC5: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0xD5: addr = _zpx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xCD: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xDD: addr = _abx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xD9: addr = _aby(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xC1: addr = _zpxi(opr_pc, WRAM, PPU_RAM); break;
-        case 0xD1: addr = _zpiy(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0xE0: addr = _imm(opr_pc, WRAM, PPU_RAM); break;
-        case 0xE4: addr = _zp(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xEC: addr = _abs(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0xC0: addr = _imm(opr_pc, WRAM, PPU_RAM); break;
-        case 0xC4: addr = _zp(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xCC: addr = _abs(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0x29: addr = _imm(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x25: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0x35: addr = _zpx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x2D: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x3D: addr = _abx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x39: addr = _aby(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x21: addr = _zpxi(opr_pc, WRAM, PPU_RAM); break;
-        case 0x31: addr = _zpiy(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0x09: addr = _imm(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x05: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0x15: addr = _zpx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x0D: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x1D: addr = _abx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x19: addr = _aby(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x01: addr = _zpxi(opr_pc, WRAM, PPU_RAM); break;
-        case 0x11: addr = _zpiy(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0x49: addr = _imm(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x45: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0x55: addr = _zpx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x4D: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x5D: addr = _abx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x59: addr = _aby(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x41: addr = _zpxi(opr_pc, WRAM, PPU_RAM); break;
-        case 0x51: addr = _zpiy(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0x24: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0x2C: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-
-                   /* load / store */
-        case 0xA9: addr = _imm(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xA5: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0xB5: addr = _zpx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xAD: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xBD: addr = _abx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xB9: addr = _aby(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xA1: addr = _zpxi(opr_pc, WRAM, PPU_RAM); break;
-        case 0xB1: addr = _zpiy(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0xA2: addr = _imm(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xA6: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0xB6: addr = _zpy(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xAE: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xBE: addr = _aby(opr_pc, WRAM, PPU_RAM);  break;
-
-        case 0xA0: addr = _imm(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xA4: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0xB4: addr = _zpx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xAC: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xBC: addr = _abx(opr_pc, WRAM, PPU_RAM);  break;
-
-        case 0x85: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0x95: addr = _zpx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x8D: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x9D: addr = _abx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x99: addr = _aby(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x81: addr = _zpxi(opr_pc, WRAM, PPU_RAM); break;
-        case 0x91: addr = _zpiy(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0x86: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0x96: addr = _zpy(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x8E: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-
-        case 0x84: addr = _zp(opr_pc, WRAM, PPU_RAM);   break;
-        case 0x94: addr = _zpx(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x8C: addr = _abs(opr_pc, WRAM, PPU_RAM);  break;
-
-        //           // transfer 
-        //case 0xAA: _mov(X,ACC); break; // TAX
-        //case 0xA8: _mov(Y,ACC); break; // TAY
-        //case 0x8A: _mov(ACC,X); break; // TXA
-        //case 0x98: _mov(ACC,Y); break; // TYA
-        //case 0xBA: _mov(X,SP); break; // TSX
-        //case 0x9A: SP=X; break; // TXS
-
-                   /* shift */
-        case 0x06: addr = _zp(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x16: addr = _zpx(opr_pc, WRAM, PPU_RAM); break;
-        case 0x0E: addr = _abs(opr_pc, WRAM, PPU_RAM); break;
-        case 0x1E: addr = _abx(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0x46: addr = _zp(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x56: addr = _zpx(opr_pc, WRAM, PPU_RAM); break;
-        case 0x4E: addr = _abs(opr_pc, WRAM, PPU_RAM); break;
-        case 0x5E: addr = _abx(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0x26: addr = _zp(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x36: addr = _zpx(opr_pc, WRAM, PPU_RAM); break;
-        case 0x2E: addr = _abs(opr_pc, WRAM, PPU_RAM); break;
-        case 0x3E: addr = _abx(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0x66: addr = _zp(opr_pc, WRAM, PPU_RAM);  break;
-        case 0x76: addr = _zpx(opr_pc, WRAM, PPU_RAM); break;
-        case 0x6E: addr = _abs(opr_pc, WRAM, PPU_RAM); break;
-        case 0x7E: addr = _abx(opr_pc, WRAM, PPU_RAM); break;
-
-        case 0xE6: addr = _zp(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xF6: addr = _zpx(opr_pc, WRAM, PPU_RAM); break;
-        case 0xEE: addr = _abs(opr_pc, WRAM, PPU_RAM); break;
-        case 0xFE: addr = _abx(opr_pc, WRAM, PPU_RAM); break;
-        //case 0xE8: _incr(X); break;
-        //case 0xC8: _incr(Y); break;
-
-        case 0xC6: addr = _zp(opr_pc, WRAM, PPU_RAM);  break;
-        case 0xD6: addr = _zpx(opr_pc, WRAM, PPU_RAM); break;
-        case 0xCE: addr = _abs(opr_pc, WRAM, PPU_RAM); break;
-        case 0xDE: addr = _abx(opr_pc, WRAM, PPU_RAM); break;
-        //case 0xCA: _decr(X); break;
-        //case 0x88: _decr(Y); break;
-
-        //           // branch 
-        //case 0x90: _bra(!CFlag); break; // BCC
-        //case 0xB0: _bra( CFlag); break; // BCS
-        //case 0xD0: _bra(!ZFlag); break; // BNE
-        //case 0xF0: _bra( ZFlag); break; // BEQ
-        //case 0x10: _bra(!NFlag); break; // BPL
-        //case 0x30: _bra( NFlag); break; // BMI
-        //case 0x50: _bra(!VFlag); break; // BVC
-        //case 0x70: _bra( VFlag); break; // BVS
-
-                   /* jump / call / return */
-        case 0x4C: addr =_abs(opr_pc, WRAM, PPU_RAM) ; break; // JMP abs
-        case 0x6C: addr =_absi(opr_pc, WRAM, PPU_RAM); break; // JMP (abs)
-
-        case 0x20: _push16(PC+1);addr=_abs(opr_pc, WRAM, PPU_RAM); break; // JSR
-
-        //case 0x60: PC=_pop16()+1; break; // RTS
-        //case 0x40: _unbindFlags(_pop8());PC=_pop16(); break; // RTI
-
-                   /* flag */
-        //case 0x38: CFlag=1; break; // SEC
-        //case 0xF8: DFlag=1; break; // SED
-        //case 0x78: IFlag=1; break; // SEI
-
-        //case 0x18: CFlag=0; break; // CLC
-        //case 0xD8: DFlag=0; break; // CLD
-        //case 0x58: IFlag=0; break; // CLI (この瞬間に割り込みがかかるかも知れん…)
-        //case 0xB8: VFlag=0; break; // CLV
-
-                   /* stack */
-        //case 0x48: _push8(ACC); break; // PHA
-        //case 0x08: _push8(_bindFlags()); break; // PHP
-        //case 0x68: ACC=_pop8();NFlag=ACC>>7;ZFlag=ACC==0; break; // PLA
-        //case 0x28: _unbindFlags(_pop8()); break; // PLP
-
-        //           // others 
-        //case 0x00: // BRK
-        //           BFlag=1;
-        //           PC++;
-        //           exec_irq(IRQ, WRAM, PPU_RAM, SP_RAM);
-        //           break;
-
-       case 0xEA: break; // NOP
-
-        default:
-                   break;
-    }
-
-    op = true;
-}
-
-void CPU::exec_op(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
-    switch(IR){
-        /* ALU */
-        case 0x69: _adc(addr);  break;
-        case 0x65: _adc(addr);  break;
-        case 0x75: _adc(addr);  break;
-        case 0x6D: _adc(addr);  break;
-        case 0x7D: _adc(addr);  break;
-        case 0x79: _adc(addr);  break;
-        case 0x61: _adc(addr); break;
-        case 0x71: _adc(addr); break;
-
-        case 0xE9: _sbc(addr);  break;
-        case 0xE5: _sbc(addr);   break;
-        case 0xF5: _sbc(addr);  break;
-        case 0xED: _sbc(addr);  break;
-        case 0xFD: _sbc(addr);  break;
-        case 0xF9: _sbc(addr);  break;
-        case 0xE1: _sbc(addr); break;
-        case 0xF1: _sbc(addr); break;
-
-        case 0xC9: _cmp(ACC,addr);  break;
-        case 0xC5: _cmp(ACC,addr);   break;
-        case 0xD5: _cmp(ACC,addr);  break;
-        case 0xCD: _cmp(ACC,addr);  break;
-        case 0xDD: _cmp(ACC,addr);  break;
-        case 0xD9: _cmp(ACC,addr);  break;
-        case 0xC1: _cmp(ACC,addr); break;
-        case 0xD1: _cmp(ACC,addr); break;
-
-        case 0xE0: _cmp(X,addr); break;
-        case 0xE4: _cmp(X,addr);  break;
-        case 0xEC: _cmp(X,addr); break;
-
-        case 0xC0: _cmp(Y,addr); break;
-        case 0xC4: _cmp(Y,addr);  break;
-        case 0xCC: _cmp(Y,addr); break;
-
-        case 0x29: _and(addr);  break;
-        case 0x25: _and(addr);   break;
-        case 0x35: _and(addr);  break;
-        case 0x2D: _and(addr);  break;
-        case 0x3D: _and(addr);  break;
-        case 0x39: _and(addr);  break;
-        case 0x21: _and(addr); break;
-        case 0x31: _and(addr); break;
-
-        case 0x09: _ora(addr);  break;
-        case 0x05: _ora(addr);   break;
-        case 0x15: _ora(addr);  break;
-        case 0x0D: _ora(addr);  break;
-        case 0x1D: _ora(addr);  break;
-        case 0x19: _ora(addr);  break;
-        case 0x01: _ora(addr); break;
-        case 0x11: _ora(addr); break;
-
-        case 0x49: _eor(addr);  break;
-        case 0x45: _eor(addr);   break;
-        case 0x55: _eor(addr);  break;
-        case 0x4D: _eor(addr);  break;
-        case 0x5D: _eor(addr);  break;
-        case 0x59: _eor(addr);  break;
-        case 0x41: _eor(addr); break;
-        case 0x51: _eor(addr); break;
-
-        case 0x24: _bit(addr);   break;
-        case 0x2C: _bit(addr);  break;
-
-                   /* laod / store */
-        case 0xA9: _load(ACC,addr);  break;
-        case 0xA5: _load(ACC,addr);   break;
-        case 0xB5: _load(ACC,addr);  break;
-        case 0xAD: _load(ACC,addr);  break;
-        case 0xBD: _load(ACC,addr);  break;
-        case 0xB9: _load(ACC,addr);  break;
-        case 0xA1: _load(ACC,addr); break;
-        case 0xB1: _load(ACC,addr); break;
-
-        case 0xA2: _load(X,addr);  break;
-        case 0xA6: _load(X,addr);   break;
-        case 0xB6: _load(X,addr);  break;
-        case 0xAE: _load(X,addr);  break;
-        case 0xBE: _load(X,addr);  break;
-
-        case 0xA0: _load(Y,addr);  break;
-        case 0xA4: _load(Y,addr);   break;
-        case 0xB4: _load(Y,addr);  break;
-        case 0xAC: _load(Y,addr);  break;
-        case 0xBC: _load(Y,addr);  break;
-
-        case 0x85: _store(ACC,addr);   break;
-        case 0x95: _store(ACC,addr);  break;
-        case 0x8D: _store(ACC,addr);  break;
-        case 0x9D: _store(ACC,addr);  break;
-        case 0x99: _store(ACC,addr);  break;
-        case 0x81: _store(ACC,addr); break;
-        case 0x91: _store(ACC,addr); break;
-
-        case 0x86: _store(X,addr);   break;
-        case 0x96: _store(X,addr);  break;
-        case 0x8E: _store(X,addr);  break;
-
-        case 0x84: _store(Y,addr);   break;
-        case 0x94: _store(Y,addr);  break;
-        case 0x8C: _store(Y,addr);  break;
-
-                   /* transfer */
-        case 0xAA: _mov(X,ACC); break; // TAX
-        case 0xA8: _mov(Y,ACC); break; // TAY
-        case 0x8A: _mov(ACC,X); break; // TXA
-        case 0x98: _mov(ACC,Y); break; // TYA
-        case 0xBA: _mov(X,SP); break; // TSX
-        case 0x9A: SP=X; break; // TXS
-
-                   /* shift */
-        case 0x0A: _asla();       break;
-        case 0x06: _asl(addr);  break;
-        case 0x16: _asl(addr); break;
-        case 0x0E: _asl(addr); break;
-        case 0x1E: _asl(addr); break;
-
-        case 0x4A: _lsra();       break;
-        case 0x46: _lsr(addr);  break;
-        case 0x56: _lsr(addr); break;
-        case 0x4E: _lsr(addr); break;
-        case 0x5E: _lsr(addr); break;
-
-        case 0x2A: _rola();       break;
-        case 0x26: _rol(addr);  break;
-        case 0x36: _rol(addr); break;
-        case 0x2E: _rol(addr); break;
-        case 0x3E: _rol(addr); break;
-
-        case 0x6A: _rora();       break;
-        case 0x66: _ror(addr);  break;
-        case 0x76: _ror(addr); break;
-        case 0x6E: _ror(addr); break;
-        case 0x7E: _ror(addr); break;
-
-        case 0xE6: _inc(addr);  break;
-        case 0xF6: _inc(addr); break;
-        case 0xEE: _inc(addr); break;
-        case 0xFE: _inc(addr); break;
-        case 0xE8: _incr(X); break;
-        case 0xC8: _incr(Y); break;
-
-        case 0xC6: _dec(addr);  break;
-        case 0xD6: _dec(addr); break;
-        case 0xCE: _dec(addr); break;
-        case 0xDE: _dec(addr); break;
-        case 0xCA: _decr(X); break;
-        case 0x88: _decr(Y); break;
-
-                   /* branch */
-        case 0x90: _bra(!CFlag); break; // BCC
-        case 0xB0: _bra( CFlag); break; // BCS
-        case 0xD0: _bra(!ZFlag); break; // BNE
-        case 0xF0: _bra( ZFlag); break; // BEQ
-        case 0x10: _bra(!NFlag); break; // BPL
-        case 0x30: _bra( NFlag); break; // BMI
-        case 0x50: _bra(!VFlag); break; // BVC
-        case 0x70: _bra( VFlag); break; // BVS
-
-                   /* jump / call / return */
-        case 0x4C: PC=addr; break; // JMP abs
-        case 0x6C: PC=addr; break; // JMP (abs)
-
-        case 0x20: PC=addr; break; // JSR
-
-        case 0x60: PC=_pop16()+1; break; // RTS
-        case 0x40: _unbindFlags(_pop8());PC=_pop16(); break; // RTI
-
-                   /* flag */
-        case 0x38: CFlag=1; break; // SEC
-        case 0xF8: DFlag=1; break; // SED
-        case 0x78: IFlag=1; break; // SEI
-
-        case 0x18: CFlag=0; break; // CLC
-        case 0xD8: DFlag=0; break; // CLD
-        case 0x58: IFlag=0; break; // CLI (この瞬間に割り込みがかかるかも知れん…)
-        case 0xB8: VFlag=0; break; // CLV
-
-                   /* stack */
-        case 0x48: _push8(ACC); break; // PHA
-        case 0x08: _push8(_bindFlags()); break; // PHP
-        case 0x68: ACC=_pop8();NFlag=ACC>>7;ZFlag=ACC==0; break; // PLA
-        case 0x28: _unbindFlags(_pop8()); break; // PLP
-
-                   /* others */
-        case 0x00: // BRK
-                   BFlag=1;
-                   PC++;
-                   exec_irq(IRQ, WRAM, PPU_RAM, SP_RAM);
-                   break;
-
-        case 0xEA: break; // NOP
-
-        default:
-                   //printf("undefined opcode: %02x", opc);
-                   break;
-    }
-    op = false;
-}
 
 void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     uint16_t vect;
@@ -505,200 +126,394 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     }
     //if(log) cout << "interrupt occured!! jmp to " << vect << endl;
 
-    _push16(PC);
-    _push8(_bindFlags());
+    //_push16(PC);
+    //_push8(_bindFlags());
+    push16(PC, WRAM);
+    push8(_bindFlags(), WRAM);
     IFlag = 1;
-    PC = read_mem16(vect, WRAM, PPU_RAM);
-    op = false;
+    //PC = read_mem16(vect, WRAM, PPU_RAM);
+    PC = WRAM[vect];
+    PC |= (uint16_t)WRAM[vect+1] << 8;
+    //op = false;
 }
-/*
-void CPU::test_exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
-    IR = read(PC, WRAM, PPU_RAM);
+
+#define set_mode_false {  \
+    imm = false;   \
+    zp = false;    \
+    zpx = false;   \
+    zpy = false;   \
+    abs = false;   \
+    abx = false;   \
+    aby = false;   \
+    zpxi = false;  \
+    zpiy = false;  \
+    absi = false;  \
+    imp = false;   \
+}
+
+#define set_op_false { \
+    op_adc = false;   \
+    op_sbc = false;   \
+    op_cmp = false;   \
+    op_and = false;   \
+    op_ora = false;   \
+    op_eor = false;   \
+    op_bit = false;   \
+    op_load = false;  \
+    op_store = false; \
+    op_mov = false;   \
+    op_asl = false;   \
+    op_lsr = false;   \
+    op_rol = false;   \
+    op_ror = false;   \
+    op_inc = false;   \
+    op_dec = false;   \
+    op_bra = false;   \
+    op_jmp = false;   \
+    op_jsr = false;   \
+    op_rts = false;   \
+    op_rti = false;   \
+}
+
+void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
+    bool imm, zp, zpx, zpy, abs, abx, aby, zpxi, zpiy, absi, imp;
+    bool op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
+    bool op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror;
+    bool op_inc, op_dec, op_bra, op_jmp, op_jsr, op_rts, op_rti;
+    bool acc = false, x = false, y = false;
+    set_mode_false;
+    set_op_false;
+
+    uint16_t addr;
+
+    //uint8_t IR = read(PC, WRAM, PPU_RAM);
+    uint8_t IR = WRAM[PC];
     //dump_regs(IR);
     PC++;
     uint16_t opr_pc = PC;
 
-    uint8_t aaa = (IR >> 5) & 0b111;
-    uint8_t bbb = (IR >> 2) & 0b111;
-    uint8_t cc = IR & 0b11;
+    switch(IR){
+        /* ALU */
+        case 0x69: op_adc = true; imm = true; break;
+        case 0x65: op_adc = true; zp = true; break;
+        case 0x75: op_adc = true; zpx = true; break;
+        case 0x6D: op_adc = true; abs = true; break;
+        case 0x7D: op_adc = true; abx = true; break;
+        case 0x79: op_adc = true; aby = true; break;
+        case 0x61: op_adc = true; zpxi = true; break;
+        case 0x71: op_adc = true; zpiy = true; break;
 
-    bool aflag[8];
-    bool bflag[8];
-    bool cflag[4];
+        case 0xE9: op_sbc = true; imm = true; break;
+        case 0xE5: op_sbc = true; zp = true;  break;
+        case 0xF5: op_sbc = true; zpx = true; break;
+        case 0xED: op_sbc = true; abs = true; break;
+        case 0xFD: op_sbc = true; abx = true; break;
+        case 0xF9: op_sbc = true; aby = true; break;
+        case 0xE1: op_sbc = true; zpxi = true; break;
+        case 0xF1: op_sbc = true; zpiy = true; break;
 
-    DEC_3_8(aflag, aaa, 1);
-    DEC_3_8(bflag, bbb, 1);
-    DEC_2_4(cflag, cc,  1);
+        case 0xC9: op_cmp = true; acc = true; imm = true;  break;
+        case 0xC5: op_cmp = true; acc = true; zp = true;   break;
+        case 0xD5: op_cmp = true; acc = true; zpx = true;  break;
+        case 0xCD: op_cmp = true; acc = true; abs = true;  break;
+        case 0xDD: op_cmp = true; acc = true; abx = true;  break;
+        case 0xD9: op_cmp = true; acc = true; aby = true;  break;
+        case 0xC1: op_cmp = true; acc = true; zpxi = true; break;
+        case 0xD1: op_cmp = true; acc = true; zpiy = true; break;
 
-    bool LDY = (IR == 0xA0 || IR == 0xA4 || IR == 0xB4 || IR == 0xAC || IR == 0xBC);
-    bool CPX = (IR == 0xE0 || IR == 0xE4 || IR == 0xEC);
-    bool CPY = (IR == 0xC0 || IR == 0xC4 || IR == 0xCC);
-    bool JSR = (IR == 0x20);
-    bool acc, imm, zero, zero_x, zero_y, abs, abs_x, abs_y, ind, ind_x, ind_y;
+        case 0xE0: op_cmp = true; x = true; imm = true; break;
+        case 0xE4: op_cmp = true; x = true; zp = true; break;
+        case 0xEC: op_cmp = true; x = true; abs = true; break;
 
-    if(JSR) _push16(PC+1);
+        case 0xC0: op_cmp = true; y = true; imm = true; break;
+        case 0xC4: op_cmp = true; y = true; zp = true;  break;
+        case 0xCC: op_cmp = true; y = true; abs = true; break;
 
-    acc = cflag[2] & bflag[2] & !((aaa >> 2) & 1);
+        case 0x29: op_and = true; imm = true;  break;
+        case 0x25: op_and = true; zp = true;   break;
+        case 0x35: op_and = true; zpx = true;  break;
+        case 0x2D: op_and = true; abs = true;  break;
+        case 0x3D: op_and = true; abx = true;  break;
+        case 0x39: op_and = true; aby = true;  break;
+        case 0x21: op_and = true; zpxi = true; break;
+        case 0x31: op_and = true; zpiy = true; break;
 
-    imm = (cflag[1] & bflag[2]) |
-        (cflag[2] & bflag[0]) |
-        (cflag[0] & bflag[0] & (LDY | CPY | CPX));
+        case 0x09: op_ora = true; imm = true;  break;
+        case 0x05: op_ora = true; zp = true;   break;
+        case 0x15: op_ora = true; zpx = true;  break;
+        case 0x0D: op_ora = true; abs = true;  break;
+        case 0x1D: op_ora = true; abx = true;  break;
+        case 0x19: op_ora = true; aby = true;  break;
+        case 0x01: op_ora = true; zpxi = true; break;
+        case 0x11: op_ora = true; zpiy = true; break;
 
-    zero = (cflag[1] & bflag[1])|
-           (cflag[2] & bflag[1])|
-           (cflag[0] & bflag[1]);
+        case 0x49: op_eor = true; imm = true;  break;
+        case 0x45: op_eor = true; zp = true;   break;
+        case 0x55: op_eor = true; zpx = true;  break;
+        case 0x4D: op_eor = true; abs = true;  break;
+        case 0x5D: op_eor = true; abx = true;  break;
+        case 0x59: op_eor = true; aby = true;  break;
+        case 0x41: op_eor = true; zpxi = true; break;
+        case 0x51: op_eor = true; zpiy = true; break;
 
-    zero_x = (cflag[1] & bflag[5])|
-             (!(aflag[4] | aflag[5]) & cflag[2] & bflag[5])|   //STX, LDX
-             (cflag[0] & bflag[5]);
+        case 0x24: op_bit = true; zp = true;  break;
+        case 0x2C: op_bit = true; abs = true;  break;
 
-    zero_y = (aflag[4] | aflag[5]) & cflag[2] & bflag[5];    //STX. LDX
+                   /* laod / store */
+        case 0xA9: op_load = true; acc = true; imm = true;  break;
+        case 0xA5: op_load = true; acc = true; zp = true;   break;
+        case 0xB5: op_load = true; acc = true; zpx = true;  break;
+        case 0xAD: op_load = true; acc = true; abs = true;  break;
+        case 0xBD: op_load = true; acc = true; abx = true;  break;
+        case 0xB9: op_load = true; acc = true; aby = true;  break;
+        case 0xA1: op_load = true; acc = true; zpxi = true; break;
+        case 0xB1: op_load = true; acc = true; zpiy = true; break;
 
-    abs = (cflag[1] & bflag[3])|
-          (cflag[2] & bflag[3])|
-          (!aflag[3] & cflag[0] & bflag[3]);   //JMP(indirect)
+        case 0xA2: op_load = true; x = true; imm = true;  break;
+        case 0xA6: op_load = true; x = true; zp = true;  break;
+        case 0xB6: op_load = true; x = true; zpy = true;  break;
+        case 0xAE: op_load = true; x = true; abs = true;  break;
+        case 0xBE: op_load = true; x = true; aby = true;  break;
 
-    abs_x = ((cflag[1] & bflag[7])|
-            (cflag[0] & bflag[7]))|
-            (!aflag[5] & cflag[2] & bflag[7]);     //LDX
+        case 0xA0: op_load = true; y = true; imm = true;  break;
+        case 0xA4: op_load = true; y = true; zp = true;  break;
+        case 0xB4: op_load = true; y = true; zpx = true;  break;
+        case 0xAC: op_load = true; y = true; abs = true;  break;
+        case 0xBC: op_load = true; y = true; abx = true;  break;
 
-    abs_y = (cflag[1] & bflag[6]) |
-            (aflag[5] & cflag[2] & bflag[7]);      //LDX
+        case 0x85: op_store = true; acc = true; zp = true;   break;
+        case 0x95: op_store = true; acc = true; zpx = true;  break;
+        case 0x8D: op_store = true; acc = true; abs = true;  break;
+        case 0x9D: op_store = true; acc = true; abx = true;  break;
+        case 0x99: op_store = true; acc = true; aby = true;  break;
+        case 0x81: op_store = true; acc = true; zpxi = true; break;
+        case 0x91: op_store = true; acc = true; zpiy = true; break;
 
-    ind = aflag[3] & cflag[0] & bflag[3];
-    ind_x = cflag[1] & bflag[0];
-    ind_y = cflag[1] & bflag[4];
+        case 0x86: op_store = true; x = true; zp = true;  break;
+        case 0x96: op_store = true; x = true; zpy = true;  break;
+        case 0x8E: op_store = true; x = true; abs = true;  break;
 
-    if(imm) addr = _imm(opr_pc, WRAM, PPU_RAM);
-    else if(zero) addr = _zp(opr_pc, WRAM, PPU_RAM);
-    else if(zero_x) addr = _zpx(opr_pc, WRAM, PPU_RAM);
-    else if(zero_y) addr = _zpy(opr_pc, WRAM, PPU_RAM);
-    else if(abs) addr = _abs(opr_pc, WRAM, PPU_RAM);
-    else if(abs_x) addr = _abx(opr_pc, WRAM, PPU_RAM);
-    else if(abs_y) addr = _aby(opr_pc, WRAM, PPU_RAM);
-    else if(ind) addr = _absi(opr_pc, WRAM, PPU_RAM);
-    else if(ind_x) addr = _zpxi(opr_pc, WRAM, PPU_RAM);
-    else if(ind_y) addr = _zpiy(opr_pc, WRAM, PPU_RAM);
-    //else printf("addressing ERROR\n");
+        case 0x84: op_store = true; y = true; zp = true;  break;
+        case 0x94: op_store = true; y = true; zpx = true;  break;
+        case 0x8C: op_store = true; y = true; abs = true;  break;
 
-    uint8_t IRH = ((IR >> 4) & 0b1111);
-    uint8_t IRL = (IR & 0b1111);
+                   /* transfer */
+        case 0xAA: _mov(X,ACC); break; // TAX
+        case 0xA8: _mov(Y,ACC); break; // TAY
+        case 0x8A: _mov(ACC,X); break; // TXA
+        case 0x98: _mov(ACC,Y); break; // TYA
+        case 0xBA: _mov(X,SP);  break; // TSX
+        case 0x9A: SP=X; break; // TXS
 
-    if(IR == 0x00){
-        BFlag=1;
-        PC++;
-        exec_irq(IRQ, WRAM, PPU_RAM, SP_RAM);
+                   /* shift */
+        case 0x0A: op_asl = true; imp = true; break;
+        case 0x06: op_asl = true; zp = true; break;
+        case 0x16: op_asl = true; zpx = true; break;
+        case 0x0E: op_asl = true; abs = true; break;
+        case 0x1E: op_asl = true; abx = true; break;
+
+        case 0x4A: op_lsr = true; imp = true;  break;
+        case 0x46: op_lsr = true; zp = true;  break;
+        case 0x56: op_lsr = true; zpx = true; break;
+        case 0x4E: op_lsr = true; abs = true; break;
+        case 0x5E: op_lsr = true; abx = true; break;
+
+        case 0x2A: op_rol = true; imp = true;  break;
+        case 0x26: op_rol = true; zp = true;  break;
+        case 0x36: op_rol = true; zpx = true; break;
+        case 0x2E: op_rol = true; abs = true; break;
+        case 0x3E: op_rol = true; abx = true; break;
+
+        case 0x6A: op_ror = true; imp = true;  break;
+        case 0x66: op_ror = true; zp = true;  break;
+        case 0x76: op_ror = true; zpx = true; break;
+        case 0x6E: op_ror = true; abs = true; break;
+        case 0x7E: op_ror = true; abx = true; break;
+
+        case 0xE6: op_inc = true; zp = true; break;
+        case 0xF6: op_inc = true; zpx = true; break;
+        case 0xEE: op_inc = true; abs = true; break;
+        case 0xFE: op_inc = true; abx = true; break;
+        case 0xE8: _incr(X); break;
+        case 0xC8: _incr(Y); break;
+
+        case 0xC6: op_dec = true; zp = true;  break;
+        case 0xD6: op_dec = true; zpx = true; break;
+        case 0xCE: op_dec = true; abs = true; break;
+        case 0xDE: op_dec = true; abx = true; break;
+        case 0xCA: _decr(X);  break;
+        case 0x88: _decr(Y);  break;
+
+                   /* branch */
+        case 0x90: _bra(!CFlag); break; // BCC
+        case 0xB0: _bra( CFlag); break; // BCS
+        case 0xD0: _bra(!ZFlag); break; // BNE
+        case 0xF0: _bra( ZFlag); break; // BEQ
+        case 0x10: _bra(!NFlag); break; // BPL
+        case 0x30: _bra( NFlag); break; // BMI
+        case 0x50: _bra(!VFlag); break; // BVC
+        case 0x70: _bra( VFlag); break; // BVS
+
+                   /* jump / call / return */
+        case 0x4C: op_jmp = true; abs  = true; break; // JMP abs
+        case 0x6C: op_jmp = true; absi = true; break; // JMP (abs)
+
+        case 0x20: op_jsr = true; abs = true; break; // JSR
+
+        case 0x60: op_rts = true; break; // RTS
+        case 0x40: op_rti = true; break; // RTI
+
+                   /* flag */
+        case 0x38: CFlag=1;  break; // SEC
+        case 0xF8: DFlag=1;  break; // SED
+        case 0x78: IFlag=1;  break; // SEI
+
+        case 0x18: CFlag=0;  break; // CLC
+        case 0xD8: DFlag=0;  break; // CLD
+        case 0x58: IFlag=0;  break; // CLI 
+        case 0xB8: VFlag=0;  break; // CLV
+
+                   /* stack */
+        //case 0x48: _push8(ACC);  break; // PHA
+        case 0x48: push8(ACC, WRAM);  break; // PHA
+        //case 0x08: _push8(_bindFlags());  break; // PHP
+        case 0x08: push8(_bindFlags(), WRAM);  break; // PHP
+        //case 0x68: ACC=_pop8();NFlag=ACC>>7;ZFlag=ACC==0;break; // PLA
+        case 0x68: ACC=pop8(WRAM);NFlag=ACC>>7;ZFlag=ACC==0;break; // PLA
+        //case 0x28: _unbindFlags(_pop8()); break; // PLP
+        case 0x28: _unbindFlags(pop8(WRAM)); break; // PLP
+
+        //           /* others */
+        //case 0x00: // BRK
+        //           BFlag=1;
+        //           PC++;
+        //           exec_irq(IRQ, WRAM, PPU_RAM, SP_RAM);
+        //           break;
+
+        case 0xEA: break; // NOP
+
+        default:
+               //printf("undefined opcode: %02x\n", (uint)IR);
+               break;
     }
-    else if(IR == 0x20)
-        //PC = addr;
-        PC = _abs(opr_pc, WRAM, PPU_RAM);
-    else if(IR == 0x40){
-        _unbindFlags(_pop8());
-        PC=_pop16();
+
+    if(imm)
+        addr = _imm(opr_pc, WRAM);
+    else if(zp)
+        addr = _zp(opr_pc, WRAM);
+    else if(zpx)
+        addr = _zpx(opr_pc, WRAM);
+    else if(abs)
+        addr = _abs(opr_pc, WRAM);
+    else if(abx)
+        addr = _abx(opr_pc, WRAM);
+    else if(aby)
+        addr = _aby(opr_pc, WRAM);
+    else if(zpxi)
+        addr = _zpxi(opr_pc, WRAM);
+    else if(zpiy)
+        addr = _zpiy(opr_pc, WRAM);
+    else if(absi)
+        addr = _absi(opr_pc, WRAM);
+/*
+    if(op_adc){
+        _adc(addr);
+    } 
+    else if(op_sbc){
+        _sbc(addr);
+    } 
+    else if(op_cmp){
+        if(acc){
+            _cmp(ACC, addr);
+        }else if(x){
+            _cmp(X, addr);
+        }else if(y){
+            _cmp(Y, addr);
+        }
+    } 
+    else if(op_and){
+        _and(addr);
     }
-    else if(IR == 0x60){
-        PC=_pop16()+1;
+    else if(op_ora){
+        _ora(addr);
     }
-    else if(IRL == 0x08){
-        switch(IRH){
-            case 0b0000:_push8(_bindFlags()); break;
-            case 0b0010:_unbindFlags(_pop8()); break; 
-            case 0b0100:_push8(ACC); break;
-            case 0b0110:ACC=_pop8();NFlag=ACC>>7;ZFlag=ACC==0; break;
-            case 0b1000:_decr(Y); break;
-            case 0b1010:_mov(Y,ACC); break;
-            case 0b1100:_incr(Y); break;
-            case 0b1110:_incr(X); break;
-            case 0b0001:CFlag = 0; break;
-            case 0b0011:DFlag = 1; break;
-            case 0b0101:IFlag = 0; break;
-            case 0b0111:IFlag = 1; break;
-            case 0b1001:_mov(ACC,Y);; break;
-            case 0b1011:VFlag = 0; break;
-            case 0b1101:DFlag = 0; break;
-            case 0b1111:DFlag = 1; break;
+    else if(op_eor){
+        _eor(addr);
+    }
+    else if(op_bit){
+        _bit(addr);
+    }
+    else if(op_load){
+        if(acc){
+            _load(ACC, addr);
+        }else if(x){
+            _load(X, addr);
+        }else if(y){
+            _load(Y, addr);
+        }
+    } 
+    else if(op_store){
+        if(acc){
+            _store(ACC, addr);
+        }else if(x){
+            _store(X, addr);
+        }else if(y){
+            _store(Y, addr);
         }
     }
-    else if(IRL == 0x0A && !acc){
-        switch(IRH){
-            case 0b1000:_mov(ACC,X); break; 
-            case 0b1001:SP=X; break;
-            case 0b1010:_mov(X,ACC); break;
-            case 0b1011:_mov(X,SP); break;
-            case 0b1100:_decr(X); break;
-            case 0b1110: break;
-            default:printf("Error1\n");
+    else if(op_asl){
+        if(imp){
+            _asla();
+        }else{
+            _asl(addr);
         }
     }
-    else if((IR & 0b11111) == 0x10){
-        switch((IR >> 5) & 0b111){
-            case 0b000:_bra(!NFlag); break; 
-            case 0b001:_bra( NFlag); break;
-            case 0b010:_bra(!VFlag); break;
-            case 0b011:_bra( VFlag); break;
-            case 0b100:_bra(!CFlag); break;
-            case 0b101:_bra( CFlag); break;
-            case 0b110:_bra(!ZFlag); break;
-            case 0b111:_bra( ZFlag); break;
+    else if(op_lsr){
+        if(imp){
+            _lsra();
+        }else{
+            _lsr(addr);
         }
     }
-    else{
-        switch(cc){
-            case 0b01:
-                switch(aaa){
-                    case 0b000:_ora(addr); break; 
-                    case 0b001:_and(addr); break;
-                    case 0b010:_eor(addr); break;
-                    case 0b011:_adc(addr); break;
-                    case 0b100:_store(ACC, addr); break;
-                    case 0b101:_load(ACC, addr); break;
-                    case 0b110:_cmp(ACC, addr); break;
-                    case 0b111:_sbc(addr); break;
-                }
-                break;
-            case 0b10:
-                switch(aaa){
-                    case 0b000: if(acc) _asla() else _asl(addr); break;
-                    case 0b001: if(acc) _rola() else _rol(addr); break;
-                    case 0b010: if(acc) _lsra() else _lsr(addr); break;
-                    case 0b011: if(acc) _rora() else _ror(addr); break;
-                    case 0b100:_store(X, addr); break;
-                    case 0b101:_load(X, addr); break;
-                    case 0b110:_dec(addr); break;
-                    case 0b111:_dec(addr); break;
-                }
-                break;
-            case 0b00:
-                switch(aaa){
-                    case 0b001:_bit(addr); break;
-                    case 0b010:PC = addr; break;
-                    case 0b011:PC = addr; break;
-                    case 0b100:_store(Y, addr); break; 
-                    case 0b101:_load(Y, addr); break;
-                    case 0b110:_cmp(Y, addr); break;
-                    case 0b111:_cmp(X, addr); break;
-                    default:printf("Error2\n");
-                }
-                break;
-            case 0b11:printf("Error3\n"); break;
+    else if(op_rol){
+        if(imp){
+            _rola();
+        }else{
+            _rol(addr);
         }
     }
-
-}
-
-void CPU::DEC_2_4(bool* dout, uint8_t din, bool en){
-    dout[0]  = en & (din == 0b00);
-    dout[1]  = en & (din == 0b01);
-    dout[2]  = en & (din == 0b10);
-    dout[3]  = en & (din == 0b11);
-}
-
-void CPU::DEC_3_8(bool* dout, uint8_t din, bool en){
-    uint8_t din0 = din & 0b11;
-    bool din1 = (din >> 2) & 1;
-    DEC_2_4(dout, din0, en & ~din1);
-    DEC_2_4(dout+4, din0, en & din1);
-}
+    else if(op_ror){
+        if(imp){
+            _rora();
+        }else{
+            _ror(addr);
+        }
+    }
+    else if(op_inc){
+        _inc(addr);
+    }
+    else if(op_dec){
+        _dec(addr);
+    }
+    else if(op_jmp){
+        PC = addr;
+    }
+    else if(op_jsr){
+        //_push16(PC-1);
+        push16(PC-1, WRAM);
+        PC = addr;
+    }
+    else if(op_rts){
+        //PC=_pop16()+1;
+        PC=pop16(WRAM)+1;
+    }
+    else if(op_rti){
+        //_unbindFlags(_pop8());
+        //PC=_pop16();
+        _unbindFlags(pop8(WRAM));
+        PC=pop16(WRAM);
+    }
+    //else printf("Error\n");
 */
-
+}
 

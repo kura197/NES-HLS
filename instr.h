@@ -1,17 +1,17 @@
-#define _imm() (PC++)
-
-#define _abs()  (PC+=2,read_mem16(opr_pc, WRAM, PPU_RAM))
-#define _abxi() (PC+=2,read_mem16(read_mem16(opr_pc)+X, WRAM, PPU_RAM))
-#define _abx()  (PC+=2,read_mem16(opr_pc, WRAM, PPU_RAM)+X)
-#define _aby()  (PC+=2,read_mem16(opr_pc, WRAM, PPU_RAM)+Y)
-#define _absi() (PC+=2,read_mem16(read_mem16(opr_pc, WRAM, PPU_RAM), WRAM, PPU_RAM))
-
-#define _zp()   (read(PC++, WRAM, PPU_RAM))
-#define _zpxi() (read_mem16((uint8_t)(read(PC++, WRAM, PPU_RAM)+X), WRAM, PPU_RAM))
-#define _zpx()  ((uint8_t)(read(PC++, WRAM, PPU_RAM)+X))
-#define _zpy()  ((uint8_t)(read(PC++, WRAM, PPU_RAM)+Y))
-#define _zpi()  (read_mem16(read(PC++, WRAM, PPU_RAM)))
-#define _zpiy() (read_mem16(read(PC++, WRAM, PPU_RAM), WRAM, PPU_RAM)+Y)
+//#define _imm() (PC++)
+//
+//#define _abs()  (PC+=2,read_mem16(opr_pc, WRAM, PPU_RAM))
+//#define _abxi() (PC+=2,read_mem16(read_mem16(opr_pc, WRAM, PPU_RAM)+X, WRAM, PPU_RAM))
+//#define _abx()  (PC+=2,read_mem16(opr_pc, WRAM, PPU_RAM)+X)
+//#define _aby()  (PC+=2,read_mem16(opr_pc, WRAM, PPU_RAM)+Y)
+//#define _absi() (PC+=2,read_mem16(read_mem16(opr_pc, WRAM, PPU_RAM), WRAM, PPU_RAM))
+//
+//#define _zp()   (read(PC++, WRAM, PPU_RAM))
+//#define _zpxi() (read_mem16((uint8_t)(read(PC++, WRAM, PPU_RAM)+X), WRAM, PPU_RAM))
+//#define _zpx()  ((uint8_t)(read(PC++, WRAM, PPU_RAM)+X))
+//#define _zpy()  ((uint8_t)(read(PC++, WRAM, PPU_RAM)+Y))
+//#define _zpi()  (read_mem16(read(PC++, WRAM, PPU_RAM), WRAM, PPU_RAM))
+//#define _zpiy() (read_mem16(read(PC++, WRAM, PPU_RAM), WRAM, PPU_RAM)+Y)
 
 #define _push8(dat)  write(0x100|(uint8_t)(SP--),dat, WRAM, PPU_RAM, SP_RAM)
 #define _pop8()      read(0x100|(uint8_t)(++SP), WRAM, PPU_RAM)
@@ -148,8 +148,9 @@
 #define _decr(reg) _sfta(reg,_deci)
 #define _dec(adr)  _sft(adr,_deci)
 
+  //int8_t rel=(int8_t)read(_imm(PC, WRAM, PPU_RAM), WRAM, PPU_RAM); 
 #define _bra(cond) { \
-  int8_t rel=(int8_t)read(_imm(), WRAM, PPU_RAM); \
+  int8_t rel=(int8_t)WRAM[PC++]; \
   if (cond){ \
     PC+=rel; \
   } \
