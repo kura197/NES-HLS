@@ -148,10 +148,13 @@
 #define _decr(reg) _sfta(reg,_deci)
 #define _dec(adr)  _sft(adr,_deci)
 
-  //int8_t rel=(int8_t)read(_imm(PC, WRAM, PPU_RAM), WRAM, PPU_RAM); 
-#define _bra(cond) { \
+//#define _bra(cond) { \
+//  int8_t rel=(int8_t)WRAM[PC++]; \
+//  if (cond){ \
+//    PC+=rel; \
+//  } \
+//}
+#define _bra() { \
   int8_t rel=(int8_t)WRAM[PC++]; \
-  if (cond){ \
-    PC+=rel; \
-  } \
+  PC+=rel; \
 }

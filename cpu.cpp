@@ -345,14 +345,22 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
         case 0x88: _decr(Y);  break;
 
                    /* branch */
-        case 0x90: _bra(!CFlag); break; // BCC
-        case 0xB0: _bra( CFlag); break; // BCS
-        case 0xD0: _bra(!ZFlag); break; // BNE
-        case 0xF0: _bra( ZFlag); break; // BEQ
-        case 0x10: _bra(!NFlag); break; // BPL
-        case 0x30: _bra( NFlag); break; // BMI
-        case 0x50: _bra(!VFlag); break; // BVC
-        case 0x70: _bra( VFlag); break; // BVS
+        //case 0x90: _bra(!CFlag); break; // BCC
+        //case 0xB0: _bra( CFlag); break; // BCS
+        //case 0xD0: _bra(!ZFlag); break; // BNE
+        //case 0xF0: _bra( ZFlag); break; // BEQ
+        //case 0x10: _bra(!NFlag); break; // BPL
+        //case 0x30: _bra( NFlag); break; // BMI
+        //case 0x50: _bra(!VFlag); break; // BVC
+        //case 0x70: _bra( VFlag); break; // BVS
+        case 0x90: if(!CFlag) op_bra = true; else PC++; break; // BCC
+        case 0xB0: if( CFlag) op_bra = true; else PC++; break; // BCS
+        case 0xD0: if(!ZFlag) op_bra = true; else PC++; break; // BNE
+        case 0xF0: if( ZFlag) op_bra = true; else PC++; break; // BEQ
+        case 0x10: if(!NFlag) op_bra = true; else PC++; break; // BPL
+        case 0x30: if( NFlag) op_bra = true; else PC++; break; // BMI
+        case 0x50: if(!VFlag) op_bra = true; else PC++; break; // BVC
+        case 0x70: if( VFlag) op_bra = true; else PC++; break; // BVS
 
                    /* jump / call / return */
         case 0x4C: op_jmp = true; abs  = true; break; // JMP abs
@@ -415,7 +423,8 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
         addr = _zpiy(opr_pc, WRAM);
     else if(absi)
         addr = _absi(opr_pc, WRAM);
-/*
+
+
     if(op_adc){
         _adc(addr);
     } 
@@ -495,6 +504,9 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     else if(op_dec){
         _dec(addr);
     }
+    else if(op_bra){
+        _bra();
+    }
     else if(op_jmp){
         PC = addr;
     }
@@ -514,6 +526,5 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
         PC=pop16(WRAM);
     }
     //else printf("Error\n");
-*/
 }
 
