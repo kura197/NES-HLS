@@ -41,6 +41,31 @@ class CPU : RAM{
         struct SCROLL exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
         void exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
 
+
+        uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)  
+            {return PC++;};
+        uint16_t _abs(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)  
+            {PC+=2; return read_mem16(opr_pc, WRAM, PPU_RAM);};
+        uint16_t _abxi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM) 
+            {PC+=2; return read_mem16(read_mem16(opr_pc, WRAM, PPU_RAM)+X, WRAM, PPU_RAM);};
+        uint16_t _abx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)  
+            {PC+=2; return read_mem16(opr_pc, WRAM, PPU_RAM)+X;};
+        uint16_t _aby(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM) 
+            {PC+=2; return read_mem16(opr_pc, WRAM, PPU_RAM)+Y;};
+        uint16_t _absi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM) 
+            {PC+=2; return read_mem16(read_mem16(opr_pc, WRAM, PPU_RAM), WRAM, PPU_RAM);};
+        uint16_t _zp(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)   
+            {return read(PC++, WRAM, PPU_RAM);};
+        uint16_t _zpxi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM) 
+            {return read_mem16((uint8_t)(read(PC++, WRAM, PPU_RAM)+X), WRAM, PPU_RAM);};
+        uint16_t _zpx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)  
+            {return (uint8_t)(read(PC++, WRAM, PPU_RAM)+X);};
+        uint16_t _zpy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)  
+            {return (uint8_t)(read(PC++, WRAM, PPU_RAM)+Y);};
+        uint16_t _zpi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)  
+            {return read_mem16(read(PC++, WRAM, PPU_RAM), WRAM, PPU_RAM);};
+        uint16_t _zpiy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM) 
+            {return read_mem16(read(PC++, WRAM, PPU_RAM), WRAM, PPU_RAM)+Y;};
 };
 
 #endif
