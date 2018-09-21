@@ -53,6 +53,11 @@ uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM){
     return data;
 }
 
+void CPU::norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM){
+    WRAM[addr] = data; 
+}
+
+
 //void CPU::set_nmi(bool signal)
 //{
 //  if (!nmi_line && signal){
@@ -61,9 +66,9 @@ uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM){
 //  }
 //  nmi_line = signal;
 //}
-void CPU::set_nmi(bool signal)
+void CPU::set_nmi()
 {
-  nmi_line = signal;
+  nmi_line = true;
 }
 
 //void CPU::set_irq(bool signal)
@@ -72,9 +77,9 @@ void CPU::set_nmi(bool signal)
 //}
 //
 
-void CPU::set_reset(bool signal)
+void CPU::set_reset()
 {
-  reset_line = signal;
+  reset_line = true;
 }
 
 //void CPU::reset(uint8_t* WRAM, uint8_t* PPU_RAM){
@@ -432,13 +437,11 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
         _sbc(addr);
     } 
     else if(op_cmp){
-        if(acc){
-            _cmp(ACC, addr);
-        }else if(x){
-            _cmp(X, addr);
-        }else if(y){
-            _cmp(Y, addr);
-        }
+        uint8_t data;
+        if(acc) data = ACC;
+        else if(x) data = X;
+        else if(y) data = Y;
+        _cmp(data, addr);
     } 
     else if(op_and){
         _and(addr);
@@ -453,22 +456,19 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
         _bit(addr);
     }
     else if(op_load){
-        if(acc){
-            _load(ACC, addr);
-        }else if(x){
-            _load(X, addr);
-        }else if(y){
-            _load(Y, addr);
-        }
+        uint8_t data;
+        _load(data, addr);
+        if(acc) ACC = data;
+        else if(x) X = data;
+        else if(y) Y = data;
+        
     } 
     else if(op_store){
-        if(acc){
-            _store(ACC, addr);
-        }else if(x){
-            _store(X, addr);
-        }else if(y){
-            _store(Y, addr);
-        }
+        uint8_t data;
+        if(acc) data = ACC;
+        else if(x) data = X;
+        else if(y) data = Y;
+        _store(data, addr);
     }
     else if(op_asl){
         if(imp){
@@ -511,20 +511,15 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
         PC = addr;
     }
     else if(op_jsr){
-        //_push16(PC-1);
         push16(PC-1, WRAM);
         PC = addr;
     }
     else if(op_rts){
-        //PC=_pop16()+1;
         PC=pop16(WRAM)+1;
     }
     else if(op_rti){
-        //_unbindFlags(_pop8());
-        //PC=_pop16();
         _unbindFlags(pop8(WRAM));
         PC=pop16(WRAM);
     }
-    //else printf("Error\n");
 }
 

@@ -13,10 +13,10 @@
 //#define _zpi()  (read_mem16(read(PC++, WRAM, PPU_RAM), WRAM, PPU_RAM))
 //#define _zpiy() (read_mem16(read(PC++, WRAM, PPU_RAM), WRAM, PPU_RAM)+Y)
 
-#define _push8(dat)  write(0x100|(uint8_t)(SP--),dat, WRAM, PPU_RAM, SP_RAM)
-#define _pop8()      read(0x100|(uint8_t)(++SP), WRAM, PPU_RAM)
-#define _push16(dat) (write_mem16(0x100|(uint8_t)(SP-1),dat, WRAM, PPU_RAM, SP_RAM),SP-=2)
-#define _pop16()     (SP+=2,read_mem16(0x100|(uint8_t)(SP-1), WRAM, PPU_RAM))
+//#define _push8(dat)  write(0x100|(uint8_t)(SP--),dat, WRAM, PPU_RAM, SP_RAM)
+//#define _pop8()      read(0x100|(uint8_t)(++SP), WRAM, PPU_RAM)
+//#define _push16(dat) (write_mem16(0x100|(uint8_t)(SP-1),dat, WRAM, PPU_RAM, SP_RAM),SP-=2)
+//#define _pop16()     (SP+=2,read_mem16(0x100|(uint8_t)(SP-1), WRAM, PPU_RAM))
 
 #define _bindFlags() ((NFlag<<7)|(VFlag<<6)|0x20|(BFlag<<4)|(DFlag<<3)|(IFlag<<2)|(ZFlag<<1)|CFlag)
 #define _unbindFlags(dd) { \
@@ -32,7 +32,7 @@
 
 // TODO : decimal support
 #define _adc(adr) { \
-  uint16_t  s=read(adr, WRAM, PPU_RAM); \
+  uint16_t  s=norm_read8(adr, WRAM); \
   uint16_t t=ACC+s+CFlag; \
   CFlag=(uint8_t)(t>>8); \
   ZFlag=(t&0xff)==0; \
@@ -42,7 +42,7 @@
 }
 // TODO : decimal support
 #define _sbc(adr) { \
-  uint16_t  s=read(adr, WRAM, PPU_RAM); \
+  uint16_t  s=norm_read8(adr, WRAM); \
   uint16_t t=ACC-s-(CFlag?0:1); \
   CFlag=t<0x100; \
   ZFlag=(t&0xff)==0; \
@@ -51,30 +51,30 @@
   ACC=(uint8_t)t; \
 }
 #define _cmp(reg,adr) { \
-  uint16_t t=(uint16_t)reg-read(adr, WRAM, PPU_RAM); \
+  uint16_t t=(uint16_t)reg-norm_read8(adr, WRAM); \
   CFlag=t<0x100; \
   ZFlag=(t&0xff)==0; \
   NFlag=(t>>7)&1; \
 }
 
 #define _and(adr) { \
-  ACC&=read(adr, WRAM, PPU_RAM); \
+  ACC&=norm_read8(adr, WRAM); \
   NFlag=ACC>>7; \
   ZFlag=ACC==0; \
 }
 #define _ora(adr) { \
-  ACC|=read(adr, WRAM, PPU_RAM); \
+  ACC|=norm_read8(adr, WRAM); \
   NFlag=ACC>>7; \
   ZFlag=ACC==0; \
 }
 #define _eor(adr) { \
-  ACC^=read(adr, WRAM, PPU_RAM); \
+  ACC^=norm_read8(adr, WRAM); \
   NFlag=ACC>>7; \
   ZFlag=ACC==0; \
 }
 
 #define _bit(adr) { \
-  uint8_t t=read(adr, WRAM, PPU_RAM); \
+  uint8_t t=norm_read8(adr, WRAM); \
   NFlag=t>>7; \
   VFlag=(t>>6)&1; \
   ZFlag=(ACC&t)==0; \
@@ -129,9 +129,9 @@
 #define _sfta(reg,op) { op(reg); }
 #define _sft(adr,op) { \
   uint16_t a=adr; \
-  uint8_t t=read(a, WRAM, PPU_RAM); \
+  uint8_t t=norm_read8(a, WRAM); \
   op(t); \
-  write(a,t, WRAM, PPU_RAM, SP_RAM); \
+  norm_write8(a,t, WRAM); \
 }
 
 #define _asla()    _sfta(ACC,_asli)

@@ -58,8 +58,8 @@ component struct SCROLL exec_cpu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::aw
     struct SCROLL scr;
     //if(res) cpu.exec_irq(RESET, WRAM, PPU_RAM, SP_RAM);
     //if(nmi) cpu.exec_irq(NMI, WRAM, PPU_RAM, SP_RAM);
-    if(res) cpu.set_reset(true);
-    if(nmi) cpu.set_nmi(true);
+    if(res) cpu.set_reset();
+    if(nmi) cpu.set_nmi();
     scr = cpu.exec(WRAM, PPU_RAM, SP_RAM);
     return scr;
 }

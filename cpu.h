@@ -22,6 +22,7 @@ class CPU : RAM{
         uint8_t Y;
         uint8_t SP;
         uint8_t CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
+        //bool CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         //int rest;
         bool reset_line;
         //bool irq_line;
@@ -38,12 +39,13 @@ class CPU : RAM{
         //void write_mem8(uint16_t addr, uint8_t data);
         void write_mem16(uint16_t addr, uint16_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
 
+        void norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM);
         uint8_t norm_read8(uint16_t addr, uint8_t* WRAM);
         uint16_t norm_read16(uint16_t addr, uint8_t* WRAM);
 
-        void set_nmi(bool signal);
+        void set_nmi();
         //void set_irq(bool signal);
-        void set_reset(bool signal);
+        void set_reset();
         //void reset(uint8_t* WRAM, uint8_t* PPU_RAM);
         struct SCROLL exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
         void exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
@@ -53,28 +55,6 @@ class CPU : RAM{
         void set_op_false();
         void execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
 
-        //uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)  
-        //    {return PC++;};
-        //uint16_t _abs(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)  
-        //    {PC+=2; return read_mem16(opr_pc, WRAM, PPU_RAM);};
-        //uint16_t _abxi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM) 
-        //    {PC+=2; return read_mem16(read_mem16(opr_pc, WRAM, PPU_RAM)+X, WRAM, PPU_RAM);};
-        //uint16_t _abx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)  
-        //    {PC+=2; return read_mem16(opr_pc, WRAM, PPU_RAM)+X;};
-        //uint16_t _aby(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM) 
-        //    {PC+=2; return read_mem16(opr_pc, WRAM, PPU_RAM)+Y;};
-        //uint16_t _absi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM) 
-        //    {PC+=2; return read_mem16(read_mem16(opr_pc, WRAM, PPU_RAM), WRAM, PPU_RAM);};
-        //uint16_t _zp(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)   
-        //    {return read(PC++, WRAM, PPU_RAM);};
-        //uint16_t _zpxi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM) 
-        //    {return read_mem16((uint8_t)(read(PC++, WRAM, PPU_RAM)+X), WRAM, PPU_RAM);};
-        //uint16_t _zpx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)  
-        //    {return (uint8_t)(read(PC++, WRAM, PPU_RAM)+X);};
-        //uint16_t _zpy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM)  
-        //    {return (uint8_t)(read(PC++, WRAM, PPU_RAM)+Y);};
-        //uint16_t _zpiy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PPU_RAM) 
-        //    {return read_mem16(read(PC++, WRAM, PPU_RAM), WRAM, PPU_RAM)+Y;};
         uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM)  
             {return PC++;};
         uint16_t _abs(uint16_t opr_pc, uint8_t* WRAM)  

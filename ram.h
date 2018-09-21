@@ -64,8 +64,9 @@ class RAM{
         struct SCROLL scr;
         //$2006
         bool PPUAddr_sel_H;
-        uint8_t PPUAddr_H;
-        uint8_t PPUAddr_L;
+        //uint8_t PPUAddr_H;
+        //uint8_t PPUAddr_L;
+        uint16_t PPUAddr;
 
 
 
