@@ -84,165 +84,165 @@ struct SCROLL CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
         uint16_t opr_pc = PC;
         switch(opc){
               /* ALU */
-            case 0x69: _adc(2,_imm());  break;
-            case 0x65: _adc(3,_zp());   break;
-            case 0x75: _adc(4,_zpx());  break;
-            case 0x6D: _adc(4,_abs());  break;
-            case 0x7D: _adc(4,_abx());  break;
-            case 0x79: _adc(4,_aby());  break;
-            case 0x61: _adc(6,_zpxi()); break;
-            case 0x71: _adc(5,_zpiy()); break;
+            case 0x69: _adc(_imm());  break;
+            case 0x65: _adc(_zp());   break;
+            case 0x75: _adc(_zpx());  break;
+            case 0x6D: _adc(_abs());  break;
+            case 0x7D: _adc(_abx());  break;
+            case 0x79: _adc(_aby());  break;
+            case 0x61: _adc(_zpxi()); break;
+            case 0x71: _adc(_zpiy()); break;
 
-            case 0xE9: _sbc(2,_imm());  break;
-            case 0xE5: _sbc(3,_zp());   break;
-            case 0xF5: _sbc(4,_zpx());  break;
-            case 0xED: _sbc(4,_abs());  break;
-            case 0xFD: _sbc(4,_abx());  break;
-            case 0xF9: _sbc(4,_aby());  break;
-            case 0xE1: _sbc(6,_zpxi()); break;
-            case 0xF1: _sbc(5,_zpiy()); break;
+            case 0xE9: _sbc(_imm());  break;
+            case 0xE5: _sbc(_zp());   break;
+            case 0xF5: _sbc(_zpx());  break;
+            case 0xED: _sbc(_abs());  break;
+            case 0xFD: _sbc(_abx());  break;
+            case 0xF9: _sbc(_aby());  break;
+            case 0xE1: _sbc(_zpxi()); break;
+            case 0xF1: _sbc(_zpiy()); break;
 
-            case 0xC9: _cmp(2,ACC,_imm());  break;
-            case 0xC5: _cmp(3,ACC,_zp());   break;
-            case 0xD5: _cmp(4,ACC,_zpx());  break;
-            case 0xCD: _cmp(4,ACC,_abs());  break;
-            case 0xDD: _cmp(4,ACC,_abx());  break;
-            case 0xD9: _cmp(4,ACC,_aby());  break;
-            case 0xC1: _cmp(6,ACC,_zpxi()); break;
-            case 0xD1: _cmp(5,ACC,_zpiy()); break;
+            case 0xC9: _cmp(ACC,_imm());  break;
+            case 0xC5: _cmp(ACC,_zp());   break;
+            case 0xD5: _cmp(ACC,_zpx());  break;
+            case 0xCD: _cmp(ACC,_abs());  break;
+            case 0xDD: _cmp(ACC,_abx());  break;
+            case 0xD9: _cmp(ACC,_aby());  break;
+            case 0xC1: _cmp(ACC,_zpxi()); break;
+            case 0xD1: _cmp(ACC,_zpiy()); break;
 
-            case 0xE0: _cmp(2,X,_imm()); break;
-            case 0xE4: _cmp(2,X,_zp());  break;
-            case 0xEC: _cmp(3,X,_abs()); break;
+            case 0xE0: _cmp(X,_imm()); break;
+            case 0xE4: _cmp(X,_zp());  break;
+            case 0xEC: _cmp(X,_abs()); break;
 
-            case 0xC0: _cmp(2,Y,_imm()); break;
-            case 0xC4: _cmp(2,Y,_zp());  break;
-            case 0xCC: _cmp(3,Y,_abs()); break;
+            case 0xC0: _cmp(Y,_imm()); break;
+            case 0xC4: _cmp(Y,_zp());  break;
+            case 0xCC: _cmp(Y,_abs()); break;
 
-            case 0x29: _and(2,_imm());  break;
-            case 0x25: _and(3,_zp());   break;
-            case 0x35: _and(4,_zpx());  break;
-            case 0x2D: _and(4,_abs());  break;
-            case 0x3D: _and(4,_abx());  break;
-            case 0x39: _and(4,_aby());  break;
-            case 0x21: _and(6,_zpxi()); break;
-            case 0x31: _and(5,_zpiy()); break;
+            case 0x29: _and(_imm());  break;
+            case 0x25: _and(_zp());   break;
+            case 0x35: _and(_zpx());  break;
+            case 0x2D: _and(_abs());  break;
+            case 0x3D: _and(_abx());  break;
+            case 0x39: _and(_aby());  break;
+            case 0x21: _and(_zpxi()); break;
+            case 0x31: _and(_zpiy()); break;
 
-            case 0x09: _ora(2,_imm());  break;
-            case 0x05: _ora(3,_zp());   break;
-            case 0x15: _ora(4,_zpx());  break;
-            case 0x0D: _ora(4,_abs());  break;
-            case 0x1D: _ora(4,_abx());  break;
-            case 0x19: _ora(4,_aby());  break;
-            case 0x01: _ora(6,_zpxi()); break;
-            case 0x11: _ora(5,_zpiy()); break;
+            case 0x09: _ora(_imm());  break;
+            case 0x05: _ora(_zp());   break;
+            case 0x15: _ora(_zpx());  break;
+            case 0x0D: _ora(_abs());  break;
+            case 0x1D: _ora(_abx());  break;
+            case 0x19: _ora(_aby());  break;
+            case 0x01: _ora(_zpxi()); break;
+            case 0x11: _ora(_zpiy()); break;
 
-            case 0x49: _eor(2,_imm());  break;
-            case 0x45: _eor(3,_zp());   break;
-            case 0x55: _eor(4,_zpx());  break;
-            case 0x4D: _eor(4,_abs());  break;
-            case 0x5D: _eor(4,_abx());  break;
-            case 0x59: _eor(4,_aby());  break;
-            case 0x41: _eor(6,_zpxi()); break;
-            case 0x51: _eor(5,_zpiy()); break;
+            case 0x49: _eor(_imm());  break;
+            case 0x45: _eor(_zp());   break;
+            case 0x55: _eor(_zpx());  break;
+            case 0x4D: _eor(_abs());  break;
+            case 0x5D: _eor(_abx());  break;
+            case 0x59: _eor(_aby());  break;
+            case 0x41: _eor(_zpxi()); break;
+            case 0x51: _eor(_zpiy()); break;
 
-            case 0x24: _bit(3,_zp());   break;
-            case 0x2C: _bit(4,_abs());  break;
+            case 0x24: _bit(_zp());   break;
+            case 0x2C: _bit(_abs());  break;
 
               /* laod / store */
-            case 0xA9: _load(2,ACC,_imm());  break;
-            case 0xA5: _load(3,ACC,_zp());   break;
-            case 0xB5: _load(4,ACC,_zpx());  break;
-            case 0xAD: _load(4,ACC,_abs());  break;
-            case 0xBD: _load(4,ACC,_abx());  break;
-            case 0xB9: _load(4,ACC,_aby());  break;
-            case 0xA1: _load(6,ACC,_zpxi()); break;
-            case 0xB1: _load(5,ACC,_zpiy()); break;
+            case 0xA9: _load(ACC,_imm());  break;
+            case 0xA5: _load(ACC,_zp());   break;
+            case 0xB5: _load(ACC,_zpx());  break;
+            case 0xAD: _load(ACC,_abs());  break;
+            case 0xBD: _load(ACC,_abx());  break;
+            case 0xB9: _load(ACC,_aby());  break;
+            case 0xA1: _load(ACC,_zpxi()); break;
+            case 0xB1: _load(ACC,_zpiy()); break;
 
-            case 0xA2: _load(2,X,_imm());  break;
-            case 0xA6: _load(3,X,_zp());   break;
-            case 0xB6: _load(4,X,_zpy());  break;
-            case 0xAE: _load(4,X,_abs());  break;
-            case 0xBE: _load(4,X,_aby());  break;
+            case 0xA2: _load(X,_imm());  break;
+            case 0xA6: _load(X,_zp());   break;
+            case 0xB6: _load(X,_zpy());  break;
+            case 0xAE: _load(X,_abs());  break;
+            case 0xBE: _load(X,_aby());  break;
 
-            case 0xA0: _load(2,Y,_imm());  break;
-            case 0xA4: _load(3,Y,_zp());   break;
-            case 0xB4: _load(4,Y,_zpx());  break;
-            case 0xAC: _load(4,Y,_abs());  break;
-            case 0xBC: _load(4,Y,_abx());  break;
+            case 0xA0: _load(Y,_imm());  break;
+            case 0xA4: _load(Y,_zp());   break;
+            case 0xB4: _load(Y,_zpx());  break;
+            case 0xAC: _load(Y,_abs());  break;
+            case 0xBC: _load(Y,_abx());  break;
 
-            case 0x85: _store(3,ACC,_zp());   break;
-            case 0x95: _store(4,ACC,_zpx());  break;
-            case 0x8D: _store(4,ACC,_abs());  break;
-            case 0x9D: _store(5,ACC,_abx());  break;
-            case 0x99: _store(5,ACC,_aby());  break;
-            case 0x81: _store(6,ACC,_zpxi()); break;
-            case 0x91: _store(6,ACC,_zpiy()); break;
+            case 0x85: _store(ACC,_zp());   break;
+            case 0x95: _store(ACC,_zpx());  break;
+            case 0x8D: _store(ACC,_abs());  break;
+            case 0x9D: _store(ACC,_abx());  break;
+            case 0x99: _store(ACC,_aby());  break;
+            case 0x81: _store(ACC,_zpxi()); break;
+            case 0x91: _store(ACC,_zpiy()); break;
 
-            case 0x86: _store(3,X,_zp());   break;
-            case 0x96: _store(4,X,_zpy());  break;
-            case 0x8E: _store(4,X,_abs());  break;
+            case 0x86: _store(X,_zp());   break;
+            case 0x96: _store(X,_zpy());  break;
+            case 0x8E: _store(X,_abs());  break;
 
-            case 0x84: _store(3,Y,_zp());   break;
-            case 0x94: _store(4,Y,_zpx());  break;
-            case 0x8C: _store(4,Y,_abs());  break;
+            case 0x84: _store(Y,_zp());   break;
+            case 0x94: _store(Y,_zpx());  break;
+            case 0x8C: _store(Y,_abs());  break;
 
               /* transfer */
-            case 0xAA: _mov(2,X,ACC); break; // TAX
-            case 0xA8: _mov(2,Y,ACC); break; // TAY
-            case 0x8A: _mov(2,ACC,X); break; // TXA
-            case 0x98: _mov(2,ACC,Y); break; // TYA
-            case 0xBA: _mov(2,X,SP); break; // TSX
+            case 0xAA: _mov(X,ACC); break; // TAX
+            case 0xA8: _mov(Y,ACC); break; // TAY
+            case 0x8A: _mov(ACC,X); break; // TXA
+            case 0x98: _mov(ACC,Y); break; // TYA
+            case 0xBA: _mov(X,SP); break; // TSX
             case 0x9A: SP=X; break; // TXS
 
               /* shift */
-            case 0x0A: _asla(2);       break;
-            case 0x06: _asl(5,_zp());  break;
-            case 0x16: _asl(6,_zpx()); break;
-            case 0x0E: _asl(6,_abs()); break;
-            case 0x1E: _asl(7,_abx()); break;
+            case 0x0A: _asla();       break;
+            case 0x06: _asl(_zp());  break;
+            case 0x16: _asl(_zpx()); break;
+            case 0x0E: _asl(_abs()); break;
+            case 0x1E: _asl(_abx()); break;
 
-            case 0x4A: _lsra(2);       break;
-            case 0x46: _lsr(5,_zp());  break;
-            case 0x56: _lsr(6,_zpx()); break;
-            case 0x4E: _lsr(6,_abs()); break;
-            case 0x5E: _lsr(7,_abx()); break;
+            case 0x4A: _lsra();       break;
+            case 0x46: _lsr(_zp());  break;
+            case 0x56: _lsr(_zpx()); break;
+            case 0x4E: _lsr(_abs()); break;
+            case 0x5E: _lsr(_abx()); break;
 
-            case 0x2A: _rola(2);       break;
-            case 0x26: _rol(5,_zp());  break;
-            case 0x36: _rol(6,_zpx()); break;
-            case 0x2E: _rol(6,_abs()); break;
-            case 0x3E: _rol(7,_abx()); break;
+            case 0x2A: _rola();       break;
+            case 0x26: _rol(_zp());  break;
+            case 0x36: _rol(_zpx()); break;
+            case 0x2E: _rol(_abs()); break;
+            case 0x3E: _rol(_abx()); break;
 
-            case 0x6A: _rora(2);       break;
-            case 0x66: _ror(5,_zp());  break;
-            case 0x76: _ror(6,_zpx()); break;
-            case 0x6E: _ror(6,_abs()); break;
-            case 0x7E: _ror(7,_abx()); break;
+            case 0x6A: _rora();       break;
+            case 0x66: _ror(_zp());  break;
+            case 0x76: _ror(_zpx()); break;
+            case 0x6E: _ror(_abs()); break;
+            case 0x7E: _ror(_abx()); break;
 
-            case 0xE6: _inc(5,_zp());  break;
-            case 0xF6: _inc(6,_zpx()); break;
-            case 0xEE: _inc(6,_abs()); break;
-            case 0xFE: _inc(7,_abx()); break;
-            case 0xE8: _incr(2,X); break;
-            case 0xC8: _incr(2,Y); break;
+            case 0xE6: _inc(_zp());  break;
+            case 0xF6: _inc(_zpx()); break;
+            case 0xEE: _inc(_abs()); break;
+            case 0xFE: _inc(_abx()); break;
+            case 0xE8: _incr(X); break;
+            case 0xC8: _incr(Y); break;
 
-            case 0xC6: _dec(5,_zp());  break;
-            case 0xD6: _dec(6,_zpx()); break;
-            case 0xCE: _dec(6,_abs()); break;
-            case 0xDE: _dec(7,_abx()); break;
-            case 0xCA: _decr(2,X); break;
-            case 0x88: _decr(2,Y); break;
+            case 0xC6: _dec(_zp());  break;
+            case 0xD6: _dec(_zpx()); break;
+            case 0xCE: _dec(_abs()); break;
+            case 0xDE: _dec(_abx()); break;
+            case 0xCA: _decr(X); break;
+            case 0x88: _decr(Y); break;
 
               /* branch */
-            case 0x90: _bra(2,!CFlag); break; // BCC
-            case 0xB0: _bra(2, CFlag); break; // BCS
-            case 0xD0: _bra(2,!ZFlag); break; // BNE
-            case 0xF0: _bra(2, ZFlag); break; // BEQ
-            case 0x10: _bra(2,!NFlag); break; // BPL
-            case 0x30: _bra(2, NFlag); break; // BMI
-            case 0x50: _bra(2,!VFlag); break; // BVC
-            case 0x70: _bra(2, VFlag); break; // BVS
+            case 0x90: _bra(!CFlag); break; // BCC
+            case 0xB0: _bra( CFlag); break; // BCS
+            case 0xD0: _bra(!ZFlag); break; // BNE
+            case 0xF0: _bra( ZFlag); break; // BEQ
+            case 0x10: _bra(!NFlag); break; // BPL
+            case 0x30: _bra( NFlag); break; // BMI
+            case 0x50: _bra(!VFlag); break; // BVC
+            case 0x70: _bra( VFlag); break; // BVS
 
               /* jump / call / return */
             case 0x4C: PC=_abs() ; break; // JMP abs
@@ -276,7 +276,7 @@ struct SCROLL CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
               exec_irq(IRQ, WRAM, PPU_RAM, SP_RAM);
               break;
 
-            case 0xEA: ; break; // NOP
+            case 0xEA: break; // NOP
 
             default:
               //printf("undefined opcode: %02x", opc);

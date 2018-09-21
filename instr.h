@@ -80,16 +80,16 @@
   ZFlag=(ACC&t)==0; \
 }
 
-#define _load(cycle,reg,adr) { \
+#define _load(reg,adr) { \
   reg=read(adr, WRAM, PPU_RAM); \
   NFlag=reg>>7; \
   ZFlag=reg==0; \
 }
-#define _store(cycle,reg,adr) { \
+#define _store(reg,adr) { \
   write(adr,reg, WRAM, PPU_RAM, SP_RAM); \
 }
 
-#define _mov(cycle,dest,src) { \
+#define _mov(dest,src) { \
   dest=src; \
   NFlag=src>>7; \
   ZFlag=src==0; \
@@ -126,29 +126,29 @@
   NFlag=arg>>7; \
   ZFlag=arg==0;
 
-#define _sfta(cycle,reg,op) { op(reg); }
-#define _sft(cycle,adr,op) { \
+#define _sfta(reg,op) { op(reg); }
+#define _sft(adr,op) { \
   uint16_t a=adr; \
   uint8_t t=read(a, WRAM, PPU_RAM); \
   op(t); \
   write(a,t, WRAM, PPU_RAM, SP_RAM); \
 }
 
-#define _asla(cycle)    _sfta(cycle,ACC,_asli)
-#define _asl(cycle,adr) _sft(cycle,adr,_asli)
-#define _lsra(cycle)    _sfta(cycle,ACC,_lsri)
-#define _lsr(cycle,adr) _sft(cycle,adr,_lsri)
-#define _rola(cycle)    _sfta(cycle,ACC,_roli)
-#define _rol(cycle,adr) _sft(cycle,adr,_roli)
-#define _rora(cycle)    _sfta(cycle,ACC,_rori)
-#define _ror(cycle,adr) _sft(cycle,adr,_rori)
+#define _asla()    _sfta(ACC,_asli)
+#define _asl(adr) _sft(adr,_asli)
+#define _lsra()    _sfta(ACC,_lsri)
+#define _lsr(adr) _sft(adr,_lsri)
+#define _rola()    _sfta(ACC,_roli)
+#define _rol(adr) _sft(adr,_roli)
+#define _rora()    _sfta(ACC,_rori)
+#define _ror(adr) _sft(adr,_rori)
 
-#define _incr(cycle,reg) _sfta(cycle,reg,_inci)
-#define _inc(cycle,adr)  _sft(cycle,adr,_inci)
-#define _decr(cycle,reg) _sfta(cycle,reg,_deci)
-#define _dec(cycle,adr)  _sft(cycle,adr,_deci)
+#define _incr(reg) _sfta(reg,_inci)
+#define _inc(adr)  _sft(adr,_inci)
+#define _decr(reg) _sfta(reg,_deci)
+#define _dec(adr)  _sft(adr,_deci)
 
-#define _bra(cycle,cond) { \
+#define _bra(cond) { \
   int8_t rel=(int8_t)read(_imm(), WRAM, PPU_RAM); \
   if (cond){ \
     PC+=rel; \
