@@ -18,51 +18,53 @@ void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint8_t* COLOR, uint8_t* VRAM);
 void make_bmp(uint8_t* VRAM, int index);
 
-uint8_t PROM[0x8000];
-uint8_t CROM[0x2000];
+uint8_t _PROM[0x8000];
+uint8_t _CROM[0x2000];
 void load_test_ROM(ifstream *rom);
 
 void test_load(uint8_t* WRAM, uint8_t* PPU_RAM){
-    for(uint32_t addr = 0x8000; addr <= 0xFFFF; addr++){
-        WRAM[addr] = PROM[addr - 0x8000];
+    //for(uint32_t addr = 0x8000; addr <= 0xFFFF; addr++){
+        //WRAM[addr] = PROM[addr - 0x8000];
+    for(uint32_t addr = 0x0000; addr <= 0x7FFF; addr++){
+        WRAM[addr] = _PROM[addr];
     }
 
     for(uint32_t addr = 0x00; addr <= 0x1FFF; addr++){
-        PPU_RAM[addr] = CROM[addr];
+        PPU_RAM[addr] = _CROM[addr];
     }
 }
 
 //hls_avalon_slave_component
-struct SCROLL exec_cpu(
-              //ihc::mm_master<uint8_t, ihc::aspace<5>, ihc::awidth<15>, ihc::dwidth<8*8>, ihc::align<8> >& PROM,
-              ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8*8>, ihc::align<8> >& WRAM,
-              ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
-              ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
-              //hls_avalon_slave_memory_argument(0x8000*sizeof(uint8_t)) uint8_t *WRAM, 
-              //hls_avalon_slave_memory_argument(0x4000*sizeof(uint8_t)) uint8_t *PPU_RAM, 
-              //hls_avalon_slave_memory_argument(0x100*sizeof(uint8_t)) uint8_t *SP_RAM, 
-              bool res, bool nmi){
-    static CPU cpu;
-    //hls_init_on_powerup static uint8_t WRAM[0x10000];
-    struct SCROLL scr;
-    if(res) cpu.set_reset();
-    if(nmi) cpu.set_nmi();
-    scr = cpu.exec(WRAM, PPU_RAM, SP_RAM);
-    return scr;
-}
+//struct SCROLL exec_cpu(
+//              //ihc::mm_master<uint8_t, ihc::aspace<5>, ihc::awidth<15>, ihc::dwidth<8*8>, ihc::align<8> >& PROM,
+//              ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8*8>, ihc::align<8> >& WRAM,
+//              ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
+//              ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
+//              //hls_avalon_slave_memory_argument(0x8000*sizeof(uint8_t)) uint8_t *WRAM, 
+//              //hls_avalon_slave_memory_argument(0x4000*sizeof(uint8_t)) uint8_t *PPU_RAM, 
+//              //hls_avalon_slave_memory_argument(0x100*sizeof(uint8_t)) uint8_t *SP_RAM, 
+//              bool res, bool nmi){
+//    static CPU cpu;
+//    //hls_init_on_powerup static uint8_t WRAM[0x10000];
+//    struct SCROLL scr;
+//    if(res) cpu.set_reset();
+//    if(nmi) cpu.set_nmi();
+//    //scr = cpu.exec(WRAM, PPU_RAM, SP_RAM);
+//    return scr;
+//}
 
 //bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
-bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8*8>, ihc::align<8> >& WRAM,
-              //ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<15>, ihc::dwidth<8*8>, ihc::align<8> >& WRAM,
-              ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
-              ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
-              ihc::mm_master<uint8_t, ihc::aspace<4>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
-              uint8_t BG_offset_x, uint8_t BG_offset_y)
-{
-    static PPU ppu;
-    bool nmi = ppu.render(WRAM, PPU_RAM, SP_RAM, VRAM, BG_offset_x, BG_offset_y);
-    return nmi;
-}
+//bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8*8>, ihc::align<8> >& WRAM,
+//              //ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<15>, ihc::dwidth<8*8>, ihc::align<8> >& WRAM,
+//              ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
+//              ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
+//              ihc::mm_master<uint8_t, ihc::aspace<4>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
+//              uint8_t BG_offset_x, uint8_t BG_offset_y)
+//{
+//    static PPU ppu;
+//    bool nmi = ppu.render(WRAM, PPU_RAM, SP_RAM, VRAM, BG_offset_x, BG_offset_y);
+//    return nmi;
+//}
 
 hls_avalon_slave_component
 component void exec_nes(
@@ -72,24 +74,32 @@ component void exec_nes(
         ){
     static CPU cpu;
     static PPU ppu;
-    hls_init_on_powerup static uint8_t WRAM[0x10000];
+    //hls_init_on_powerup static uint8_t WRAM[0x10000];
+    hls_init_on_powerup static uint8_t WRAM[0x800];
+    hls_init_on_powerup static uint8_t PROM[0x8000];
     hls_init_on_powerup static uint8_t PPU_RAM[0x4000];
     hls_init_on_powerup static uint8_t SP_RAM[0x100];
 
-    //static bool init;
-    //if(!init) test_load(WRAM, PPU_RAM);
-    //init = true;
+    static bool init;
+    if(!init) test_load(PROM, PPU_RAM);
+    init = true;
 
-    struct SCROLL scr;
+    struct SPREG spreg;
     static bool nmi;
 
-    if(res) cpu.set_reset();
-    if(nmi) cpu.set_nmi();
+    //if(res) cpu.set_reset();
+    //if(nmi) cpu.set_nmi();
+    
+    uint8_t irq_num;
+    if(nmi) irq_num = NMI;
+    else if(res) irq_num = RESET;
+    if(res | nmi) cpu.exec_irq(irq_num, WRAM, PPU_RAM, SP_RAM, PROM);
+
     cpu.load_key(key);
     for(int c = 0; c < 40; c++) {
-        scr = cpu.exec(WRAM, PPU_RAM, SP_RAM);
+        spreg = cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, spreg);
     }
-    nmi = ppu.render(WRAM, PPU_RAM, SP_RAM, VRAM, scr.BGoffset_X, scr.BGoffset_Y);
+    nmi = ppu.render(PPU_RAM, SP_RAM, VRAM, spreg);
 }
 
 //component int test(int arg){
@@ -191,7 +201,7 @@ int main(int argc, char* argv[]){
     int index = 0;
     int f = 0;
     uint8_t key = 0;
-    struct SCROLL scr;
+    struct SPREG spreg;
     bool nmi = false;
     //scr = exec_cpu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, true, false);
     //scr = exec_cpu(WRAM, PPU_RAM, SP_RAM, true, false);
@@ -263,12 +273,12 @@ void load_test_ROM(ifstream *rom){
     csize = crom_size * 0x2000;
 
     rom->seekg(16,ios_base::beg);
-    uint8_t *prom_ptr = (prom_size == 1) ? PROM + 0x4000 : PROM;
+    uint8_t *prom_ptr = (prom_size == 1) ? _PROM + 0x4000 : _PROM;
     for(int i=0;i<psize;i++)
         rom->read((char*)(prom_ptr+i), sizeof(uint8_t));
     
     for(int i=0;i<csize;i++)
-        rom->read((char*)(CROM+i), sizeof(uint8_t));
+        rom->read((char*)(_CROM+i), sizeof(uint8_t));
 }
 
 #define _rgb(r, g, b) (red = r, green = g, blue = b)

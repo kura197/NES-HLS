@@ -27,8 +27,8 @@ void CPU::push8(uint8_t data, uint8_t* WRAM){
 }
 
 uint8_t CPU::pop8(uint8_t* WRAM){
-    //return WRAM[0x100|(uint8_t)(++SP)];
-    return norm_read8(0x100|(uint8_t)(++SP), WRAM);
+    return WRAM[0x100|(uint8_t)(++SP)];
+    //return norm_read8(0x100|(uint8_t)(++SP), WRAM);
 }
 
 void CPU::push16(uint16_t data, uint8_t* WRAM){
@@ -47,8 +47,11 @@ uint16_t CPU::pop16(uint8_t* WRAM){
     return data;
 }
 
-uint8_t CPU::norm_read8(uint16_t addr, uint8_t* WRAM){
-    return WRAM[addr];
+uint8_t CPU::norm_read8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
+    uint8_t data;
+    if((addr >> 15) & 1) data = read_prom(addr, PROM);
+    else data = WRAM[addr];
+    return data;
 }
 
 uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM){
@@ -92,18 +95,19 @@ void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
             DMAExcute = 0;
 }
 
-struct SCROLL CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
+struct SPREG CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG s){
 
-    if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM); reset_line = false;
-    if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM); nmi_line = false;
+    //if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM, PROM); reset_line = false;
+    //if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM, PROM); nmi_line = false;
 
+    spreg = s;
     if(DMAExcute) exec_DMA(SP_RAM, WRAM);
-    else execution(WRAM, PPU_RAM, SP_RAM);
-    return scr;
+    else execution(WRAM, PPU_RAM, SP_RAM, PROM);
+    return spreg;
 }
 
 
-void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
+void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM){
     uint16_t vect;
 
     switch(cause){  
@@ -126,9 +130,9 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     VFlag = 0; 
     NFlag = 0;
     //PC = read_mem16(vect, WRAM, PPU_RAM);
-    PC = WRAM[vect];
-    PC |= (uint16_t)WRAM[vect+1] << 8;
-    //PC = read_prom16(vect, PROM);
+    //PC = WRAM[vect];
+    //PC |= (uint16_t)WRAM[vect+1] << 8;
+    PC = read_prom16(vect, PROM);
 }
 
 #define set_mode_false {  \
@@ -169,7 +173,7 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     op_rti = false;   \
 }
 
-void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
+void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM){
     bool imm, zp, zpx, zpy, abs, abx, aby, zpxi, zpiy, absi, imp;
     bool op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
     bool op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror;
@@ -181,8 +185,8 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     uint16_t addr;
 
     //uint8_t IR = read(PC, WRAM, PPU_RAM);
-    hls_register uint8_t IR = WRAM[PC]; 
-    //uint8_t IR = read_prom(PC, PROM);
+    //hls_register uint8_t IR = WRAM[PC]; 
+    uint8_t IR = read_prom(PC, PROM);
     //dump_regs(IR);
     PC++;
     hls_register uint16_t opr_pc = PC;
@@ -400,26 +404,46 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
                break;
     }
 
-    if(imm)
-        addr = _imm(opr_pc, WRAM);
-    else if(zp)
-        addr = _zp(opr_pc, WRAM);
-    else if(zpx)
-        addr = _zpx(opr_pc, WRAM);
-    else if(abs)
-        addr = _abs(opr_pc, WRAM);
-    else if(abx)
-        addr = _abx(opr_pc, WRAM);
-    else if(aby)
-        addr = _aby(opr_pc, WRAM);
-    else if(zpxi)
-        addr = _zpxi(opr_pc, WRAM);
-    else if(zpiy)
-        addr = _zpiy(opr_pc, WRAM);
-    else if(absi)
-        addr = _absi(opr_pc, WRAM);
+    //if(imm)
+    //    addr = _imm(opr_pc, WRAM);
+    //else if(zp)
+    //    addr = _zp(opr_pc, WRAM);
+    //else if(zpx)
+    //    addr = _zpx(opr_pc, WRAM);
+    //else if(abs)
+    //    addr = _abs(opr_pc, WRAM);
+    //else if(abx)
+    //    addr = _abx(opr_pc, WRAM);
+    //else if(aby)
+    //    addr = _aby(opr_pc, WRAM);
+    //else if(zpxi)
+    //    addr = _zpxi(opr_pc, WRAM);
+    //else if(zpiy)
+    //    addr = _zpiy(opr_pc, WRAM);
+    //else if(absi)
+    //    addr = _absi(opr_pc, WRAM);
 
-    hls_register uint8_t rddata = norm_read8(addr, WRAM);
+    if(imm)
+        addr = _imm(opr_pc, WRAM, PROM);
+    else if(zp)
+        addr = _zp(opr_pc, WRAM, PROM);
+    else if(zpx)
+        addr = _zpx(opr_pc, WRAM, PROM);
+    else if(abs)
+        addr = _abs(opr_pc, WRAM, PROM);
+    else if(abx)
+        addr = _abx(opr_pc, WRAM, PROM);
+    else if(aby)
+        addr = _aby(opr_pc, WRAM, PROM);
+    else if(zpxi)
+        addr = _zpxi(opr_pc, WRAM, PROM);
+    else if(zpiy)
+        addr = _zpiy(opr_pc, WRAM, PROM);
+    else if(absi)
+        addr = _absi(opr_pc, WRAM, PROM);
+
+    //hls_register uint8_t rddata = norm_read8(addr, WRAM);
+    hls_register uint8_t rddata = norm_read8(addr, WRAM, PROM);
     //if(imm) rddata = read_prom(addr, PROM);
     //else rddata = norm_read8(addr, WRAM);
 

@@ -83,12 +83,12 @@ void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, ui
     //else if(addr < 0x4000) addr = addr & 0x2007;
     switch(addr){
         case 0x2000: 
-            //write_2000(data);
+            write_2000(data);
             PPUInc = (bool)((data >> 2) & 1);    
             break;
-        //case 0x2001: 
-        //    write_2001(data);
-        //    break;
+        case 0x2001: 
+            write_2001(data);
+            break;
         case 0x2003: 
             write_2003(data);
             break;
@@ -113,7 +113,7 @@ void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, ui
         default:
             break;
     }
-    WRAM[addr] = data;
+    WRAM[addr&0x7FF] = data;
 }
 
 //void RAM::set_VBlank(bool vblank, bool nmi){
@@ -122,27 +122,27 @@ void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, ui
 //        nes->cpu->set_nmi(VBlank);
 //}
 
-//void RAM::write_2000(uint8_t data){
-//    //VBlank_NMI = (bool)((data >> 7) & 1);    
-//    //SPSize =     (bool)((data >> 5) & 1);    
-//    //BGPtnAddr =  (bool)((data >> 4) & 1);    
-//    //SPPtnAddr =  (bool)((data >> 3) & 1);    
-//    PPUInc =     (bool)((data >> 2) & 1);    
-//    //NameAddrH =  (bool)((data >> 1) & 1);    
-//    //NameAddrL =  (bool)((data >> 0) & 1);    
-//}
+void RAM::write_2000(uint8_t data){
+    spreg.VBlank_NMI = (bool)((data >> 7) & 1);    
+    //spreg.SPSize =     (bool)((data >> 5) & 1);    
+    spreg.BGPtnAddr =  (bool)((data >> 4) & 1);    
+    spreg.SPPtnAddr =  (bool)((data >> 3) & 1);    
+    PPUInc =     (bool)((data >> 2) & 1);    
+    spreg.NameAddrH =  (bool)((data >> 1) & 1);    
+    spreg.NameAddrL =  (bool)((data >> 0) & 1);    
+}
 
-//void RAM::write_2001(uint8_t data){
-//    //printf("write $2001. data = %02x\n",data);
-//    BGColor2 =  (bool)((data >> 7) & 1);    
-//    BGColor1 =  (bool)((data >> 6) & 1);    
-//    BGColor0 =  (bool)((data >> 5) & 1);    
-//    EnSP =      (bool)((data >> 4) & 1);    
-//    EnBG =      (bool)((data >> 3) & 1);    
-//    SPMSK =     (bool)((data >> 2) & 1);    
-//    BGMSK =     (bool)((data >> 1) & 1);    
-//    DispType =  (bool)((data >> 0) & 1);    
-//}
+void RAM::write_2001(uint8_t data){
+    //printf("write $2001. data = %02x\n",data);
+    //BGColor2 =  (bool)((data >> 7) & 1);    
+    //BGColor1 =  (bool)((data >> 6) & 1);    
+    //BGColor0 =  (bool)((data >> 5) & 1);    
+    spreg.EnSP =      (bool)((data >> 4) & 1);    
+    spreg.EnBG =      (bool)((data >> 3) & 1);    
+    spreg.SPMSK =     (bool)((data >> 2) & 1);    
+    spreg.BGMSK =     (bool)((data >> 1) & 1);    
+    //DispType =  (bool)((data >> 0) & 1);    
+}
 
 void RAM::write_2003(uint8_t data){
     SPAddr = data;
@@ -155,11 +155,11 @@ void RAM::write_2004(uint8_t data, uint8_t* SP_RAM){
 
 void RAM::write_2005(uint8_t data){
     if(!BGoffset_sel_X){
-        scr.BGoffset_X = data;
+        spreg.BGoffset_X = data;
         BGoffset_sel_X = true;
     }  
     else{
-        scr.BGoffset_Y = data;
+        spreg.BGoffset_Y = data;
         BGoffset_sel_X = false;
     }
 }

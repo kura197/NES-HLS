@@ -43,7 +43,7 @@ class CPU : RAM{
         uint8_t read_prom(uint16_t addr, uint8_t* PROM);
         uint16_t read_prom16(uint16_t addr, uint8_t* PROM);
         void norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM);
-        uint8_t norm_read8(uint16_t addr, uint8_t* WRAM);
+        uint8_t norm_read8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM);
         uint16_t norm_read16(uint16_t addr, uint8_t* WRAM);
 
         void load_key(uint8_t key){Input_Key(key);};
@@ -52,55 +52,55 @@ class CPU : RAM{
         //void set_irq(bool signal);
         void set_reset();
         //void reset(uint8_t* WRAM, uint8_t* PPU_RAM);
-        struct SCROLL exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
-        void exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
-        void execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
+        struct SPREG exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG s);
+        void exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM);
+        void execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM);
 
-        uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM)  
-            {return PC++;};
-        uint16_t _abs(uint16_t opr_pc, uint8_t* WRAM)  
-            {PC+=2; return norm_read16(opr_pc, WRAM);};
-        uint16_t _abxi(uint16_t opr_pc, uint8_t* WRAM) 
-            {PC+=2; return norm_read16(norm_read16(opr_pc, WRAM)+X, WRAM);};
-        uint16_t _abx(uint16_t opr_pc, uint8_t* WRAM)  
-            {PC+=2; return norm_read16(opr_pc, WRAM)+X;};
-        uint16_t _aby(uint16_t opr_pc, uint8_t* WRAM) 
-            {PC+=2; return norm_read16(opr_pc, WRAM)+Y;};
-        uint16_t _absi(uint16_t opr_pc, uint8_t* WRAM) 
-            {PC+=2; return norm_read16(norm_read16(opr_pc, WRAM), WRAM);};
-        uint16_t _zp(uint16_t opr_pc, uint8_t* WRAM)   
-            {return norm_read8(PC++, WRAM);};
-        uint16_t _zpxi(uint16_t opr_pc, uint8_t* WRAM) 
-            {return norm_read16((uint8_t)(norm_read8(PC++, WRAM)+X), WRAM);};
-        uint16_t _zpx(uint16_t opr_pc, uint8_t* WRAM)  
-            {return (uint8_t)(norm_read8(PC++, WRAM)+X);};
-        uint16_t _zpy(uint16_t opr_pc, uint8_t* WRAM)  
-            {return (uint8_t)(norm_read8(PC++, WRAM)+Y);};
-        uint16_t _zpiy(uint16_t opr_pc, uint8_t* WRAM) 
-            {return norm_read16(norm_read8(PC++, WRAM), WRAM)+Y;};
-
-        //uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
+        //uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM)  
         //    {return PC++;};
-        //uint16_t _abs(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {PC+=2; return read_prom16(opr_pc, PROM);};
-        //uint16_t _abxi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {PC+=2; return norm_read16(read_prom16(opr_pc, PROM)+X, WRAM);};
-        //uint16_t _abx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {PC+=2; return read_prom16(opr_pc, PROM)+X;};
-        //uint16_t _aby(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {PC+=2; return read_prom16(opr_pc, PROM)+Y;};
-        //uint16_t _absi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {PC+=2; return norm_read16(read_prom16(opr_pc, PROM), WRAM);};
-        //uint16_t _zp(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)   
-        //    {return read_prom(PC++, PROM);};
-        //uint16_t _zpxi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {return norm_read16((uint8_t)(read_prom(PC++, PROM)+X), WRAM);};
-        //uint16_t _zpx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {return (uint8_t)(read_prom(PC++, PROM)+X);};
-        //uint16_t _zpy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {return (uint8_t)(read_prom(PC++, PROM)+Y);};
-        //uint16_t _zpiy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {return norm_read16(read_prom(PC++, PROM), WRAM)+Y;};
+        //uint16_t _abs(uint16_t opr_pc, uint8_t* WRAM)  
+        //    {PC+=2; return norm_read16(opr_pc, WRAM);};
+        //uint16_t _abxi(uint16_t opr_pc, uint8_t* WRAM) 
+        //    {PC+=2; return norm_read16(norm_read16(opr_pc, WRAM)+X, WRAM);};
+        //uint16_t _abx(uint16_t opr_pc, uint8_t* WRAM)  
+        //    {PC+=2; return norm_read16(opr_pc, WRAM)+X;};
+        //uint16_t _aby(uint16_t opr_pc, uint8_t* WRAM) 
+        //    {PC+=2; return norm_read16(opr_pc, WRAM)+Y;};
+        //uint16_t _absi(uint16_t opr_pc, uint8_t* WRAM) 
+        //    {PC+=2; return norm_read16(norm_read16(opr_pc, WRAM), WRAM);};
+        //uint16_t _zp(uint16_t opr_pc, uint8_t* WRAM)   
+        //    {return norm_read8(PC++, WRAM);};
+        //uint16_t _zpxi(uint16_t opr_pc, uint8_t* WRAM) 
+        //    {return norm_read16((uint8_t)(norm_read8(PC++, WRAM)+X), WRAM);};
+        //uint16_t _zpx(uint16_t opr_pc, uint8_t* WRAM)  
+        //    {return (uint8_t)(norm_read8(PC++, WRAM)+X);};
+        //uint16_t _zpy(uint16_t opr_pc, uint8_t* WRAM)  
+        //    {return (uint8_t)(norm_read8(PC++, WRAM)+Y);};
+        //uint16_t _zpiy(uint16_t opr_pc, uint8_t* WRAM) 
+        //    {return norm_read16(norm_read8(PC++, WRAM), WRAM)+Y;};
+
+        uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
+            {return PC++;};
+        uint16_t _abs(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
+            {PC+=2; return read_prom16(opr_pc, PROM);};
+        uint16_t _abxi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
+            {PC+=2; return norm_read16(read_prom16(opr_pc, PROM)+X, WRAM);};
+        uint16_t _abx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
+            {PC+=2; return read_prom16(opr_pc, PROM)+X;};
+        uint16_t _aby(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
+            {PC+=2; return read_prom16(opr_pc, PROM)+Y;};
+        uint16_t _absi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
+            {PC+=2; return norm_read16(read_prom16(opr_pc, PROM), WRAM);};
+        uint16_t _zp(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)   
+            {return read_prom(PC++, PROM);};
+        uint16_t _zpxi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
+            {return norm_read16((uint8_t)(read_prom(PC++, PROM)+X), WRAM);};
+        uint16_t _zpx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
+            {return (uint8_t)(read_prom(PC++, PROM)+X);};
+        uint16_t _zpy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
+            {return (uint8_t)(read_prom(PC++, PROM)+Y);};
+        uint16_t _zpiy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
+            {return norm_read16(read_prom(PC++, PROM), WRAM)+Y;};
 
         void push8(uint8_t data, uint8_t* WRAM);
         void push16(uint16_t data, uint8_t* WRAM);

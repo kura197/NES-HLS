@@ -14,9 +14,21 @@ using namespace std;
 
 #define _set(data, bit) ((data) ? 1 << bit : 0)
 
-struct SCROLL{
+struct SPREG{
     uint8_t BGoffset_X;
     uint8_t BGoffset_Y;
+    bool VBlank_NMI;
+    bool BGPtnAddr;
+    bool SPPtnAddr;
+    bool NameAddrH;
+    bool NameAddrL;
+    bool EnSP;
+    bool EnBG;
+    bool SPMSK;
+    bool BGMSK;
+    bool VBlank;
+    bool SPhit;
+    bool num_ScanSP;
 };
 
 
@@ -63,7 +75,7 @@ class RAM{
         uint1 BGoffset_sel_X;
         //uint8_t BGoffset_X;
         //uint8_t BGoffset_Y;
-        struct SCROLL scr;
+        struct SPREG spreg;
         //$2006
         uint1 PPUAddr_sel_H;
         //uint8_t PPUAddr_H;
@@ -82,8 +94,8 @@ class RAM{
         uint8_t read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM);
         void write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
         //void set_VBlank(bool vblank, bool nmi);
-        //void write_2000(uint8_t data);
-        //void write_2001(uint8_t data);
+        void write_2000(uint8_t data);
+        void write_2001(uint8_t data);
         void write_2003(uint8_t data);
         void write_2004(uint8_t data, uint8_t* SP_RAM);
         void write_2005(uint8_t data);
