@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 #include <fstream>
+#include <HLS/ac_int.h>
+
 
 using namespace std;
 
@@ -58,17 +60,19 @@ class RAM{
         //$2003
         uint8_t SPAddr;
         //$2005
-        bool BGoffset_sel_X;
+        uint1 BGoffset_sel_X;
         //uint8_t BGoffset_X;
         //uint8_t BGoffset_Y;
         struct SCROLL scr;
         //$2006
-        bool PPUAddr_sel_H;
+        uint1 PPUAddr_sel_H;
         //uint8_t PPUAddr_H;
         //uint8_t PPUAddr_L;
         uint16_t PPUAddr;
 
-
+        uint8_t DMAAddrH;
+        uint8_t DMAAddrL;
+        uint1 DMAExcute;
 
         //RAM(NES *n, uint8_t* prom, uint8_t* crom);
         //RAM();

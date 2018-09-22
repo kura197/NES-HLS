@@ -1,6 +1,4 @@
 #include "cpu.h"
-#include <iostream>
-#include <fstream>
 #include <cstdio>
 #include "instr.h"
 
@@ -10,35 +8,41 @@
 //
 //}
 
-uint16_t CPU::read_mem16(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
-    uint16_t rddata;
-    rddata = read(addr, WRAM, PPU_RAM);
-    rddata = rddata | ((uint16_t)read(addr+1, WRAM, PPU_RAM) << 8);
-    return rddata;
-}
+//uint16_t CPU::read_mem16(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
+//    uint16_t rddata;
+//    rddata = read(addr, WRAM, PPU_RAM);
+//    rddata = rddata | ((uint16_t)read(addr+1, WRAM, PPU_RAM) << 8);
+//    return rddata;
+//}
 
-void CPU::write_mem16(uint16_t addr, uint16_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
-    write(addr, (uint8_t)data, WRAM, PPU_RAM, SP_RAM);
-    write(addr+1, (uint8_t)(data >> 8), WRAM, PPU_RAM, SP_RAM);
-}
+//void CPU::write_mem16(uint16_t addr, uint16_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
+//    write(addr, (uint8_t)data, WRAM, PPU_RAM, SP_RAM);
+//    write(addr+1, (uint8_t)(data >> 8), WRAM, PPU_RAM, SP_RAM);
+//}
 
 void CPU::push8(uint8_t data, uint8_t* WRAM){
-    WRAM[0x100|(uint8_t)(SP--)] = data;
+    //WRAM[0x100|(uint8_t)(SP--)] = data;
+    norm_write8(0x100|(uint8_t)(SP--), data, WRAM);
 }
 
 uint8_t CPU::pop8(uint8_t* WRAM){
-    return WRAM[0x100|(uint8_t)(++SP)];
+    //return WRAM[0x100|(uint8_t)(++SP)];
+    return norm_read8(0x100|(uint8_t)(++SP), WRAM);
 }
 
 void CPU::push16(uint16_t data, uint8_t* WRAM){
-    WRAM[0x100|(uint8_t)(SP--)] = (uint8_t)(data >> 8);
-    WRAM[0x100|(uint8_t)(SP--)] = (uint8_t)data;
+    //WRAM[0x100|(uint8_t)(SP--)] = (uint8_t)(data >> 8);
+    //WRAM[0x100|(uint8_t)(SP--)] = (uint8_t)data;
+    push8((uint8_t)(data >> 8), WRAM);
+    push8((uint8_t)data, WRAM);
 }
 
 uint16_t CPU::pop16(uint8_t* WRAM){
     uint16_t data;
-    data = WRAM[0x100|(uint8_t)(++SP)];
-    data |= (uint16_t)WRAM[0x100|(uint8_t)(++SP)] << 8;
+    //data = WRAM[0x100|(uint8_t)(++SP)];
+    //data |= (uint16_t)WRAM[0x100|(uint8_t)(++SP)] << 8;
+    data = pop8(WRAM);
+    data |= (uint16_t)pop8(WRAM) << 8;
     return data;
 }
 
@@ -100,6 +104,15 @@ void CPU::set_reset()
 //    reset_line = false;
 //    //printf("PC : %04x\n", PC);
 //}
+//
+
+void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
+        SP_RAM[DMAAddrL] = WRAM[(uint16_t)DMAAddrH << 8 | DMAAddrL];
+        //printf("HADDR:%d\tLADDR:%d\tADDR:%d\n", DMAAddrH, DMAAddrL, (uint16_t)DMAAddrH << 8 | DMAAddrL);
+        DMAAddrL++;
+        if(DMAAddrL == 0)
+            DMAExcute = 0;
+}
 
 struct SCROLL CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     //if(!op){
@@ -115,7 +128,9 @@ struct SCROLL CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
 
     if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM); reset_line = false;
     if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM); nmi_line = false;
-    execution(WRAM, PPU_RAM, SP_RAM);
+
+    if(DMAExcute) exec_DMA(SP_RAM, WRAM);
+    else execution(WRAM, PPU_RAM, SP_RAM);
     return scr;
 }
 
@@ -135,7 +150,13 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     //_push8(_bindFlags());
     push16(PC, WRAM);
     push8(_bindFlags(), WRAM);
+    CFlag = 0;
+    ZFlag = 0;
     IFlag = 1;
+    DFlag = 0;
+    BFlag = 0;
+    VFlag = 0; 
+    NFlag = 0;
     //PC = read_mem16(vect, WRAM, PPU_RAM);
     PC = WRAM[vect];
     PC |= (uint16_t)WRAM[vect+1] << 8;

@@ -18,7 +18,8 @@
 //#define _push16(dat) (write_mem16(0x100|(uint8_t)(SP-1),dat, WRAM, PPU_RAM, SP_RAM),SP-=2)
 //#define _pop16()     (SP+=2,read_mem16(0x100|(uint8_t)(SP-1), WRAM, PPU_RAM))
 
-#define _bindFlags() ((NFlag<<7)|(VFlag<<6)|0x20|(BFlag<<4)|(DFlag<<3)|(IFlag<<2)|(ZFlag<<1)|CFlag)
+#define _bindFlags() (((uint8_t)NFlag<<7)|((uint8_t)VFlag<<6)|0x20|((uint8_t)BFlag<<4)|  \
+                     ((uint8_t)DFlag<<3)|((uint8_t)IFlag<<2)|((uint8_t)ZFlag<<1)|CFlag)
 #define _unbindFlags(dd) { \
   uint8_t dat=dd; \
   NFlag=dat>>7; \
@@ -113,7 +114,7 @@
   ZFlag=arg==0;
 #define _rori(arg) \
   uint8_t u=arg; \
-  arg=(arg>>1)|(CFlag<<7); \
+  arg=(arg>>1)|((uint8_t)CFlag<<7); \
   CFlag=u&1; \
   NFlag=arg>>7; \
   ZFlag=arg==0;

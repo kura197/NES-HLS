@@ -5,6 +5,7 @@
 #include <fstream>
 #include "ram.h"
 #include "instr.h"
+#include <HLS/ac_int.h>
 
 
 #define IRQ 0
@@ -21,12 +22,13 @@ class CPU : RAM{
         uint8_t X;
         uint8_t Y;
         uint8_t SP;
-        uint8_t CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
+        //uint8_t CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         //bool CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
+        uint1 CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         //int rest;
-        bool reset_line;
+        uint1 reset_line;
         //bool irq_line;
-        bool nmi_line;
+        uint1 nmi_line;
         //bool log;
         //uint16_t addr;
         //bool op;
@@ -43,6 +45,7 @@ class CPU : RAM{
         uint8_t norm_read8(uint16_t addr, uint8_t* WRAM);
         uint16_t norm_read16(uint16_t addr, uint8_t* WRAM);
 
+        void exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM);
         void set_nmi();
         //void set_irq(bool signal);
         void set_reset();

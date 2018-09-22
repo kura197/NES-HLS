@@ -44,8 +44,8 @@ using namespace std;
 
 uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
     uint8_t data;
-    if(addr < 0x2000)   addr = addr & 0x7FF;
-    else if(addr < 0x4000) addr = addr & 0x2007;
+    //if(addr < 0x2000)   addr = addr & 0x7FF;
+    //else if(addr < 0x4000) addr = addr & 0x2007;
 
     uint8_t tmp;
     switch(addr){
@@ -79,8 +79,8 @@ uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
 }
 
 void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
-    if(addr < 0x2000)   addr = addr & 0x7FF;
-    else if(addr < 0x4000) addr = addr & 0x2007;
+    //if(addr < 0x2000)   addr = addr & 0x7FF;
+    //else if(addr < 0x4000) addr = addr & 0x2007;
     switch(addr){
         case 0x2000: 
             //write_2000(data);
@@ -179,7 +179,8 @@ void RAM::write_2006(uint8_t data){
 
 void RAM::write_2007(uint8_t data, uint8_t* PPU_RAM){
     //uint16_t PPU_Addr = ((uint16_t)PPUAddr_H << 8) | PPUAddr_L;
-    uint32_t addr = PPUAddr & 0x3fff;
+    //uint32_t addr = PPUAddr & 0x3fff;
+    uint16_t addr = PPUAddr;
     switch(addr){
         case 0x3f10:
             addr = 0x3f00;
@@ -205,7 +206,8 @@ void RAM::write_2007(uint8_t data, uint8_t* PPU_RAM){
 uint8_t RAM::read_2007(uint8_t* PPU_RAM){
     uint8_t data;
     //uint16_t PPU_Addr = ((uint16_t)PPUAddr_H << 8) | PPUAddr_L;
-    uint32_t addr = PPUAddr & 0x3fff;
+    //uint32_t addr = PPUAddr & 0x3fff;
+    uint16_t addr = PPUAddr;
     switch(addr){
         case 0x3f10:
             addr = 0x3f00;
@@ -237,10 +239,15 @@ uint8_t RAM::read_2007(uint8_t* PPU_RAM){
 }
 
 void RAM::DMA_start(uint8_t addr_H, uint8_t* WRAM, uint8_t* SP_RAM){
-    uint16_t addr = ((uint16_t)addr_H << 8);
-    for(int i = 0; i < 256; i++)
-        SP_RAM[i] = WRAM[addr + i];
-        //write_SPRAM(i, WRAM[addr+i]);
+//    uint16_t addr = ((uint16_t)addr_H << 8);
+//#pragma ii 2
+//    for(int i = 0; i < 256; i++)
+//        SP_RAM[i] = WRAM[addr + i];
+//        //write_SPRAM(i, WRAM[addr+i]);
+    
+    DMAExcute = 1;
+    DMAAddrH = addr_H;
+    DMAAddrL = 0;
 }
 
 void RAM::reset_pad(uint8_t data){

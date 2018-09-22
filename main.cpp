@@ -50,9 +50,19 @@ void make_bmp(uint8_t* VRAM, int index);
 //    //nes.ram->dump_PROM(0xFF00, 0xFF);
 //}
 
-component struct SCROLL exec_cpu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
+//component struct SCROLL exec_cpu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
+//              ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
+//              ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
+//              bool res, bool nmi){
+
+hls_avalon_slave_component
+component struct SCROLL exec_cpu(
+              ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8*8>, ihc::align<8> >& WRAM,
               ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
               ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
+              //hls_avalon_slave_memory_argument(0x10000*sizeof(uint8_t)) uint8_t *WRAM, 
+              //hls_avalon_slave_memory_argument(0x4000*sizeof(uint8_t)) uint8_t *PPU_RAM, 
+              //hls_avalon_slave_memory_argument(0x100*sizeof(uint8_t)) uint8_t *SP_RAM, 
               bool res, bool nmi){
     static CPU cpu;
     struct SCROLL scr;
@@ -64,7 +74,8 @@ component struct SCROLL exec_cpu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::aw
     return scr;
 }
 
-bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
+//bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
+bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8*8>, ihc::align<8> >& WRAM,
               ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
               ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
               ihc::mm_master<uint8_t, ihc::aspace<4>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
@@ -162,7 +173,8 @@ int main(int argc, char* argv[]){
     uint8_t SP_RAM[0x100];
     load_ROM(&ROM, WRAM, PPU_RAM);
     ROM.close();
-    ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> > mm_WRAM(WRAM, sizeof(uint8_t)*0x10000);
+    //ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> > mm_WRAM(WRAM, sizeof(uint8_t)*0x10000);
+    ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8*8>, ihc::align<8> > mm_WRAM(WRAM, sizeof(uint8_t)*0x10000);
     ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> > mm_PPU_RAM(PPU_RAM, sizeof(uint8_t)*0x4000);
     ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> > mm_SP_RAM(SP_RAM, sizeof(uint8_t)*0x100);
     ihc::mm_master<uint8_t, ihc::aspace<4>, ihc::awidth<16>, ihc::dwidth<8> > mm_COLOR(COLOR, sizeof(uint8_t)*(256*240));
@@ -173,12 +185,14 @@ int main(int argc, char* argv[]){
     struct SCROLL scr;
     bool nmi = false;
     scr = exec_cpu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, true, false);
+    //scr = exec_cpu(WRAM, PPU_RAM, SP_RAM, true, false);
     while(f++ < frame){
         //exec_nes(PROM, CROM, COLOR, false);
         //create bmp file
         for(int l = 0; l < 256; l++){
             for(int c = 0; c < 40; c++) {
                 scr = exec_cpu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, false, nmi);
+                //scr = exec_cpu(WRAM, PPU_RAM, SP_RAM, false, nmi);
                 if(nmi) nmi = false;
             }
             nmi = exec_ppu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, mm_COLOR, scr.BGoffset_X, scr.BGoffset_Y);
