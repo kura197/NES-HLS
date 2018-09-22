@@ -32,8 +32,8 @@
 }
 
 // TODO : decimal support
-#define _adc(adr) { \
-  uint16_t  s=norm_read8(adr, WRAM); \
+#define _adc(data) { \
+  uint16_t  s=data; \
   uint16_t t=ACC+s+CFlag; \
   CFlag=(uint8_t)(t>>8); \
   ZFlag=(t&0xff)==0; \
@@ -42,8 +42,8 @@
   ACC=(uint8_t)t; \
 }
 // TODO : decimal support
-#define _sbc(adr) { \
-  uint16_t  s=norm_read8(adr, WRAM); \
+#define _sbc(data) { \
+  uint16_t  s=data; \
   uint16_t t=ACC-s-(CFlag?0:1); \
   CFlag=t<0x100; \
   ZFlag=(t&0xff)==0; \
@@ -51,31 +51,31 @@
   VFlag=((ACC^s)&0x80)&&((ACC^t)&0x80); \
   ACC=(uint8_t)t; \
 }
-#define _cmp(reg,adr) { \
-  uint16_t t=(uint16_t)reg-norm_read8(adr, WRAM); \
+#define _cmp(reg,data) { \
+  uint16_t t=(uint16_t)reg-data; \
   CFlag=t<0x100; \
   ZFlag=(t&0xff)==0; \
   NFlag=(t>>7)&1; \
 }
 
-#define _and(adr) { \
-  ACC&=norm_read8(adr, WRAM); \
+#define _and(data) { \
+  ACC&=data; \
   NFlag=ACC>>7; \
   ZFlag=ACC==0; \
 }
-#define _ora(adr) { \
-  ACC|=norm_read8(adr, WRAM); \
+#define _ora(data) { \
+  ACC|=data; \
   NFlag=ACC>>7; \
   ZFlag=ACC==0; \
 }
-#define _eor(adr) { \
-  ACC^=norm_read8(adr, WRAM); \
+#define _eor(data) { \
+  ACC^=data; \
   NFlag=ACC>>7; \
   ZFlag=ACC==0; \
 }
 
-#define _bit(adr) { \
-  uint8_t t=norm_read8(adr, WRAM); \
+#define _bit(data) { \
+  uint8_t t=data; \
   NFlag=t>>7; \
   VFlag=(t>>6)&1; \
   ZFlag=(ACC&t)==0; \
@@ -128,26 +128,26 @@
   ZFlag=arg==0;
 
 #define _sfta(reg,op) { op(reg); }
-#define _sft(adr,op) { \
+#define _sft(adr, data, op) { \
   uint16_t a=adr; \
-  uint8_t t=norm_read8(a, WRAM); \
+  uint8_t t=data; \
   op(t); \
   norm_write8(a,t, WRAM); \
 }
 
 #define _asla()    _sfta(ACC,_asli)
-#define _asl(adr) _sft(adr,_asli)
+#define _asl(adr,data) _sft(adr,data,_asli)
 #define _lsra()    _sfta(ACC,_lsri)
-#define _lsr(adr) _sft(adr,_lsri)
+#define _lsr(adr,data) _sft(adr,data,_lsri)
 #define _rola()    _sfta(ACC,_roli)
-#define _rol(adr) _sft(adr,_roli)
+#define _rol(adr,data) _sft(adr,data,_roli)
 #define _rora()    _sfta(ACC,_rori)
-#define _ror(adr) _sft(adr,_rori)
+#define _ror(adr,data) _sft(adr,data,_rori)
 
 #define _incr(reg) _sfta(reg,_inci)
-#define _inc(adr)  _sft(adr,_inci)
+#define _inc(adr,data)  _sft(adr,data,_inci)
 #define _decr(reg) _sfta(reg,_deci)
-#define _dec(adr)  _sft(adr,_deci)
+#define _dec(adr,data)  _sft(adr,data,_deci)
 
 //#define _bra(cond) { \
 //  int8_t rel=(int8_t)WRAM[PC++]; \
@@ -155,7 +155,8 @@
 //    PC+=rel; \
 //  } \
 //}
-#define _bra() { \
-  int8_t rel=(int8_t)WRAM[PC++]; \
+  //int8_t rel=(int8_t)read_prom(PC++, PROM); 
+#define _bra(data) { \
+  int8_t rel=(int8_t)data; \
   PC+=rel; \
 }

@@ -1,11 +1,12 @@
 #include "cpu.h"
 #include <cstdio>
 #include "instr.h"
+#include "HLS/hls.h"
 
 //void CPU::dump_regs(uint8_t insn){
+//    uint8_t flag = _bindFlags();
 //    printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
-//                    PC, insn, ACC, X, Y, _bindFlags(), SP);
-//
+//                    PC, insn, ACC, X, Y, flag, SP);
 //}
 
 //uint16_t CPU::read_mem16(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
@@ -61,50 +62,27 @@ void CPU::norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM){
     WRAM[addr] = data; 
 }
 
+uint8_t CPU::read_prom(uint16_t addr, uint8_t* PROM){
+    return PROM[addr & ~(1 << 15)];
+}
 
-//void CPU::set_nmi(bool signal)
-//{
-//  if (!nmi_line && signal){
-//    //if(log) cout << "nmi interrupt occur" << endl;
-//    exec_irq(NMI);
-//  }
-//  nmi_line = signal;
-//}
+uint16_t CPU::read_prom16(uint16_t addr, uint8_t* PROM){
+    uint16_t data;
+    data = read_prom(addr, PROM);
+    data |= (uint16_t)read_prom(addr+1, PROM) << 8;
+    return data;
+}
+
 void CPU::set_nmi()
 {
   nmi_line = true;
 }
 
-//void CPU::set_irq(bool signal)
-//{
-//  irq_line = signal;
-//}
-//
 
 void CPU::set_reset()
 {
   reset_line = true;
 }
-
-//void CPU::reset(uint8_t* WRAM, uint8_t* PPU_RAM){
-//    ACC = 0;
-//    X = 0;
-//    Y = 0;
-//    SP = 0xFD;
-//    CFlag = 0;
-//    ZFlag = 0;
-//    IFlag = 1;
-//    DFlag = 0;
-//    BFlag = 0;
-//    VFlag = 0; 
-//    NFlag = 0;
-//    PC = read_mem16(0xFFFC, WRAM, PPU_RAM);
-//    nmi_line = false;
-//    irq_line = false;
-//    reset_line = false;
-//    //printf("PC : %04x\n", PC);
-//}
-//
 
 void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
         SP_RAM[DMAAddrL] = WRAM[(uint16_t)DMAAddrH << 8 | DMAAddrL];
@@ -115,16 +93,6 @@ void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
 }
 
 struct SCROLL CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
-    //if(!op){
-    //    if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM); reset_line = false;
-    //    if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM); nmi_line = false;
-    //    exec_addressing(WRAM, PPU_RAM, SP_RAM);
-    //}
-    //else exec_op(WRAM, PPU_RAM, SP_RAM);
-    
-    //if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM); reset_line = false;
-    //if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM); nmi_line = false;
-    //test_exec(WRAM, PPU_RAM, SP_RAM);
 
     if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM); reset_line = false;
     if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM); nmi_line = false;
@@ -160,7 +128,7 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     //PC = read_mem16(vect, WRAM, PPU_RAM);
     PC = WRAM[vect];
     PC |= (uint16_t)WRAM[vect+1] << 8;
-    //op = false;
+    //PC = read_prom16(vect, PROM);
 }
 
 #define set_mode_false {  \
@@ -213,10 +181,11 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     uint16_t addr;
 
     //uint8_t IR = read(PC, WRAM, PPU_RAM);
-    uint8_t IR = WRAM[PC];
+    hls_register uint8_t IR = WRAM[PC]; 
+    //uint8_t IR = read_prom(PC, PROM);
     //dump_regs(IR);
     PC++;
-    uint16_t opr_pc = PC;
+    hls_register uint16_t opr_pc = PC;
 
     switch(IR){
         /* ALU */
@@ -379,14 +348,14 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
         //case 0x30: _bra( NFlag); break; // BMI
         //case 0x50: _bra(!VFlag); break; // BVC
         //case 0x70: _bra( VFlag); break; // BVS
-        case 0x90: if(!CFlag) op_bra = true; else PC++; break; // BCC
-        case 0xB0: if( CFlag) op_bra = true; else PC++; break; // BCS
-        case 0xD0: if(!ZFlag) op_bra = true; else PC++; break; // BNE
-        case 0xF0: if( ZFlag) op_bra = true; else PC++; break; // BEQ
-        case 0x10: if(!NFlag) op_bra = true; else PC++; break; // BPL
-        case 0x30: if( NFlag) op_bra = true; else PC++; break; // BMI
-        case 0x50: if(!VFlag) op_bra = true; else PC++; break; // BVC
-        case 0x70: if( VFlag) op_bra = true; else PC++; break; // BVS
+        case 0x90: if(!CFlag) {op_bra = true; imm = true; } else PC++; break; // BCC
+        case 0xB0: if( CFlag) {op_bra = true; imm = true; } else PC++; break; // BCS
+        case 0xD0: if(!ZFlag) {op_bra = true; imm = true; } else PC++; break; // BNE
+        case 0xF0: if( ZFlag) {op_bra = true; imm = true; } else PC++; break; // BEQ
+        case 0x10: if(!NFlag) {op_bra = true; imm = true; } else PC++; break; // BPL
+        case 0x30: if( NFlag) {op_bra = true; imm = true; } else PC++; break; // BMI
+        case 0x50: if(!VFlag) {op_bra = true; imm = true; } else PC++; break; // BVC
+        case 0x70: if( VFlag) {op_bra = true; imm = true; } else PC++; break; // BVS
 
                    /* jump / call / return */
         case 0x4C: op_jmp = true; abs  = true; break; // JMP abs
@@ -450,31 +419,34 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     else if(absi)
         addr = _absi(opr_pc, WRAM);
 
+    hls_register uint8_t rddata = norm_read8(addr, WRAM);
+    //if(imm) rddata = read_prom(addr, PROM);
+    //else rddata = norm_read8(addr, WRAM);
 
     if(op_adc){
-        _adc(addr);
+        _adc(rddata);
     } 
     else if(op_sbc){
-        _sbc(addr);
+        _sbc(rddata);
     } 
     else if(op_cmp){
         uint8_t data;
         if(acc) data = ACC;
         else if(x) data = X;
         else if(y) data = Y;
-        _cmp(data, addr);
+        _cmp(data, rddata);
     } 
     else if(op_and){
-        _and(addr);
+        _and(rddata);
     }
     else if(op_ora){
-        _ora(addr);
+        _ora(rddata);
     }
     else if(op_eor){
-        _eor(addr);
+        _eor(rddata);
     }
     else if(op_bit){
-        _bit(addr);
+        _bit(rddata);
     }
     else if(op_load){
         uint8_t data;
@@ -495,38 +467,38 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
         if(imp){
             _asla();
         }else{
-            _asl(addr);
+            _asl(addr, rddata);
         }
     }
     else if(op_lsr){
         if(imp){
             _lsra();
         }else{
-            _lsr(addr);
+            _lsr(addr, rddata);
         }
     }
     else if(op_rol){
         if(imp){
             _rola();
         }else{
-            _rol(addr);
+            _rol(addr, rddata);
         }
     }
     else if(op_ror){
         if(imp){
             _rora();
         }else{
-            _ror(addr);
+            _ror(addr, rddata);
         }
     }
     else if(op_inc){
-        _inc(addr);
+        _inc(addr, rddata);
     }
     else if(op_dec){
-        _dec(addr);
+        _dec(addr, rddata);
     }
     else if(op_bra){
-        _bra();
+        _bra(rddata);
     }
     else if(op_jmp){
         PC = addr;
