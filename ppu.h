@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 #include "ram.h"
-#include <HLS/ac_int.h>
-#include <HLS/hls.h>
+#include "HLS/hls.h"
+#include "HLS/ac_int.h"
 
 class PPU{
     private:

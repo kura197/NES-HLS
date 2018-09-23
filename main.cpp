@@ -9,6 +9,7 @@
 #include "cpu.h"
 #include "ppu.h"
 #include "HLS/hls.h"
+#include "HLS/ac_int.h"
 #include "HLS/stdio.h"
 
 using namespace std;
@@ -70,6 +71,7 @@ hls_avalon_slave_component
 component void exec_nes(
             //ihc::mm_master<uint8_t, ihc::aspace<4>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
             hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
+            //hls_avalon_slave_memory_argument(256*240*sizeof(uint6)) uint8_t *VRAM, 
             uint8_t key, bool res
         ){
     static CPU cpu;
@@ -81,9 +83,9 @@ component void exec_nes(
     //hls_register uint8_t Stack[0x40];
     static uint8_t Stack[0x100];
 
-    static bool init;
-    if(!init) test_load(PROM, PPU_RAM);
-    init = true;
+    //static bool init;
+    //if(!init) test_load(PROM, PPU_RAM);
+    //init = true;
 
     static struct SPREG spreg;
     static bool nmi;

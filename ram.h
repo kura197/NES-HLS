@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 #include <fstream>
-#include <HLS/ac_int.h>
+#include "HLS/hls.h"
+#include "HLS/ac_int.h"
 
 
 using namespace std;

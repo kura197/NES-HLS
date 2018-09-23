@@ -5,8 +5,8 @@
 #include <fstream>
 #include "ram.h"
 #include "instr.h"
-#include <HLS/ac_int.h>
-#include <HLS/hls.h>
+#include "HLS/hls.h"
+#include "HLS/ac_int.h"
 
 #define IRQ 0
 #define NMI 1
