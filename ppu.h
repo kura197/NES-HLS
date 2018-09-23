@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 #include "ram.h"
+#include <HLS/ac_int.h>
+#include <HLS/hls.h>
 
 class PPU{
     private:
@@ -11,7 +13,7 @@ class PPU{
         //uint8_t* VRAM;
         //uint8_t* CROM;
         //uint8_t VRAM_gray[256*240];
-        bool BG_Valid[256];
+        uint1 BG_Valid[256];
         //uint8_t *PPU_RAM;
         //uint8_t *SP_RAM;
         //bool en_gray;

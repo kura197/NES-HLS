@@ -78,10 +78,12 @@ component void exec_nes(
     hls_init_on_powerup static uint8_t PPU_RAM[0x4000];
     hls_init_on_powerup static uint8_t WRAM[0x800];
     hls_init_on_powerup static uint8_t SP_RAM[0x100];
+    //hls_register uint8_t Stack[0x40];
+    static uint8_t Stack[0x100];
 
-    //static bool init;
-    //if(!init) test_load(PROM, PPU_RAM);
-    //init = true;
+    static bool init;
+    if(!init) test_load(PROM, PPU_RAM);
+    init = true;
 
     static struct SPREG spreg;
     static bool nmi;
@@ -92,11 +94,11 @@ component void exec_nes(
     uint8_t irq_num;
     if(nmi) irq_num = NMI;
     else if(res) irq_num = RESET;
-    if(res | nmi) cpu.exec_irq(irq_num, WRAM, PPU_RAM, SP_RAM, PROM);
+    if(res | nmi) cpu.exec_irq(irq_num, WRAM, PPU_RAM, SP_RAM, PROM, Stack);
 
     cpu.load_key(key);
     for(int c = 0; c < 40; c++) {
-        cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg);
+        cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack);
     }
     //printf("sphit:%d\n", spreg.SPhit);
     nmi = ppu.render(PPU_RAM, SP_RAM, VRAM, &spreg);

@@ -5,29 +5,17 @@
 bool PPU::render(uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* VRAM, struct SPREG* spreg){
     bool nmi = false;
     line++;
-    //printf("line:%03d SPHIT:%d\n",line, spreg->SPhit);
     if(line == 240){
         spreg->VBlank = true;
         if(spreg->VBlank_NMI)
             nmi = true;
-        //set_bit(WRAM, 0x2002, 7);
-        //if(get_bit(WRAM[0x2000], 7))
-        //    nmi = true;
     }
     else if(line == 255){
         spreg->SPhit = false;
         spreg->NameAddrL = false;
         spreg->NameAddrH = false;
-        //clr_bit(WRAM, 0x2002, 6);
-        //WRAM[0x2000] &= 0xFC;
     }
-    //if(nes->ram->EnBG)  bg_render(line);
-    //if(nes->ram->EnSP)  sp_render(line);
     if(line < 240){
-        //uint16_t ctrlreg1 = WRAM[0x2000];
-        //uint8_t ctrlreg2 = WRAM[0x2001];
-        //bool BGen = (ctrlreg2 >> 3) & 1;
-        //bool SPen = (ctrlreg2 >> 4) & 1;
         bool BGen = spreg->EnBG;
         bool SPen = spreg->EnSP;
         if(BGen)  bg_render(line, spreg, PPU_RAM, VRAM);

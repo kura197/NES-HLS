@@ -25,7 +25,7 @@ class CPU : RAM{
         uint8_t X;
         uint8_t Y;
         uint8_t SP;
-        uint8_t Stack[0x100];
+        //uint8_t Stack[0x100];
         //uint8_t CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         //bool CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         uint1 CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
@@ -37,6 +37,8 @@ class CPU : RAM{
         //uint16_t addr;
         //bool op;
         //uint8_t IR;
+        uint16_t Stack_PC;
+        uint8_t Stack_Flags;
 
     public:
         void dump_regs(uint8_t insn);
@@ -59,9 +61,9 @@ class CPU : RAM{
         void set_reset();
         //void reset(uint8_t* WRAM, uint8_t* PPU_RAM);
         void set_mode_false(struct ADDRESS* adr);
-        void exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg);
-        void exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM);
-        void execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg);
+        void exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack);
+        void exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, uint8_t* Stack);
+        void execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack);
 
         //uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM)  
         //    {return PC++;};
@@ -128,10 +130,10 @@ class CPU : RAM{
         //uint16_t _zpiy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
         //    {return norm_read16(norm_read8(PC++, WRAM, PROM), WRAM, PROM)+Y;};
         
-        void push8(uint8_t data, uint8_t* WRAM);
-        void push16(uint16_t data, uint8_t* WRAM);
-        uint8_t pop8(uint8_t* WRAM);
-        uint16_t pop16(uint8_t* WRAM);
+        void push8(uint8_t data, uint8_t* Stack);
+        void push16(uint16_t data, uint8_t* Stack);
+        uint8_t pop8(uint8_t* Stack);
+        uint16_t pop16(uint8_t* Stack);
 
 };
 

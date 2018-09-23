@@ -13,31 +13,31 @@ void CPU::dump_regs(uint8_t insn){
 }
 
 
-void CPU::push8(uint8_t data, uint8_t* WRAM){
-    Stack[(uint8_t)(SP--)] = data;
+void CPU::push8(uint8_t data, uint8_t* Stack){
+    Stack[(uint8_t)(SP--) & 0x3F] = data;
     //WRAM[0x100|(uint8_t)(SP--)] = data;
     //norm_write8(0x100|(uint8_t)(SP--), data, WRAM);
 }
 
-uint8_t CPU::pop8(uint8_t* WRAM){
-    return Stack[(uint8_t)(++SP)];
+uint8_t CPU::pop8(uint8_t* Stack){
+    return Stack[(uint8_t)(++SP) & 0x3F];
     //return WRAM[0x100|(uint8_t)(++SP)];
     //return norm_read8(0x100|(uint8_t)(++SP), WRAM);
 }
 
-void CPU::push16(uint16_t data, uint8_t* WRAM){
+void CPU::push16(uint16_t data, uint8_t* Stack){
     //WRAM[0x100|(uint8_t)(SP--)] = (uint8_t)(data >> 8);
     //WRAM[0x100|(uint8_t)(SP--)] = (uint8_t)data;
-    push8((uint8_t)(data >> 8), WRAM);
-    push8((uint8_t)data, WRAM);
+    push8((uint8_t)(data >> 8), Stack);
+    push8((uint8_t)data, Stack);
 }
 
-uint16_t CPU::pop16(uint8_t* WRAM){
+uint16_t CPU::pop16(uint8_t* Stack){
     uint16_t data;
-    //data = WRAM[0x100|(uint8_t)(++SP)];
-    //data |= (uint16_t)WRAM[0x100|(uint8_t)(++SP)] << 8;
-    data = pop8(WRAM);
-    data |= (uint16_t)pop8(WRAM) << 8;
+    //data = Stack[0x100|(uint8_t)(++SP)];
+    //data |= (uint16_t)Stack[0x100|(uint8_t)(++SP)] << 8;
+    data = pop8(Stack);
+    data |= (uint16_t)pop8(Stack) << 8;
     return data;
 }
 
@@ -102,7 +102,7 @@ void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
             DMAExcute = 0;
 }
 
-void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg){
+void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack){
 
     //if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM, PROM); reset_line = false;
     //if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM, PROM); nmi_line = false;
@@ -110,12 +110,12 @@ void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, 
     //spreg = s;
     //printf("SPHIT:%d\n", spreg.SPhit);
     if(DMAExcute) exec_DMA(SP_RAM, WRAM);
-    else execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg);
+    else execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack);
     //return spreg;
 }
 
 
-void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM){
+void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, uint8_t* Stack){
     uint16_t vect;
 
     switch(cause){  
@@ -128,8 +128,10 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, 
 
     //_push16(PC);
     //_push8(_bindFlags());
-    push16(PC, WRAM);
-    push8(_bindFlags(), WRAM);
+    //push16(PC, Stack);
+    //push8(_bindFlags(), Stack);
+    Stack_PC = PC;
+    Stack_Flags = _bindFlags();
     CFlag = 0;
     ZFlag = 0;
     IFlag = 1;
@@ -183,7 +185,7 @@ void CPU::set_mode_false(struct ADDRESS* adr){
     op_pop = false;   \
 }
 
-void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg){
+void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack){
     struct ADDRESS adr;
     bool op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
     bool op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror;
@@ -538,6 +540,70 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     else if(op_jmp){
         PC = addr;
     }
+    else if(op_push | op_jsr){
+        if(op_push){
+            if(acc) rddata = ACC;
+            else rddata = _bindFlags();
+        }
+        else{
+            PC--;
+            rddata = PC >> 8;
+        }
+        push8(rddata, Stack);
+
+        if(op_jsr){
+            rddata = PC;
+            push8(rddata, Stack);
+            PC = addr;
+        }
+    }
+    else if(op_pop | op_rts){
+        hls_register uint8_t pop1 = pop8(Stack);
+        if(op_pop){
+            if(acc){
+                ACC = pop1;
+                NFlag=ACC>>7;
+                ZFlag=ACC==0;
+            }
+            else _unbindFlags(pop1);
+        }
+        else{
+            hls_register uint8_t pop2 = pop8(Stack);
+            if(op_rts){
+                PC = 1 + (pop1 | (uint16_t)pop2 << 8);
+            }
+        }
+    }
+    else if(op_rti){
+        //_unbindFlags(pop8(WRAM));
+        //PC=pop16(WRAM);
+        _unbindFlags(Stack_Flags);
+        PC = Stack_PC;
+    }
+    
+    //else if(op_pop | op_rts | op_rti){
+    //    hls_register uint8_t pop1 = pop8(Stack);
+    //    if(op_pop){
+    //        if(acc){
+    //            ACC = pop1;
+    //            NFlag=ACC>>7;
+    //            ZFlag=ACC==0;
+    //        }
+    //        else _unbindFlags(pop1);
+    //    }
+    //    else{
+    //        hls_register uint8_t pop2 = pop8(Stack);
+    //        if(op_rts){
+    //            PC = 1 + (pop1 | (uint16_t)pop2 << 8);
+    //        }
+    //        else if(op_rti){
+    //            hls_register uint8_t pop3 = pop8(Stack);
+    //            _unbindFlags(pop1);
+    //            PC = pop2 | (uint16_t)pop3 << 8;
+    //        }
+    //    }
+    //}
+    
     //else if(op_jsr){
     //    push16(PC-1, WRAM);
     //    PC = addr;
@@ -563,45 +629,6 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     //    }
     //    else _unbindFlags(rddata);
     //}
-    else if(op_push | op_jsr){
-        if(op_push){
-            if(acc) rddata = ACC;
-            else rddata = _bindFlags();
-        }
-        else{
-            PC--;
-            rddata = PC >> 8;
-        }
-        push8(rddata, WRAM);
-
-        if(op_jsr){
-            rddata = PC;
-            push8(rddata, WRAM);
-            PC = addr;
-        }
-    }
-    else if(op_pop | op_rts | op_rti){
-        hls_register uint8_t pop1 = pop8(WRAM);
-        if(op_pop){
-            if(acc){
-                ACC = pop1;
-                NFlag=ACC>>7;
-                ZFlag=ACC==0;
-            }
-            else _unbindFlags(pop1);
-        }
-        else{
-            hls_register uint8_t pop2 = pop8(WRAM);
-            if(op_rts){
-                PC = 1 + (pop1 | (uint16_t)pop2 << 8);
-            }
-            else if(op_rti){
-                hls_register uint8_t pop3 = pop8(WRAM);
-                _unbindFlags(pop1);
-                PC = pop2 | (uint16_t)pop3 << 8;
-            }
-        }
-    }
 
 
 }
