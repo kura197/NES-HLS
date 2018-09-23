@@ -80,9 +80,9 @@ component void exec_nes(
     hls_init_on_powerup static uint8_t PPU_RAM[0x4000];
     hls_init_on_powerup static uint8_t SP_RAM[0x100];
 
-    //static bool init;
-    //if(!init) test_load(PROM, PPU_RAM);
-    //init = true;
+    static bool init;
+    if(!init) test_load(PROM, PPU_RAM);
+    init = true;
 
     static struct SPREG spreg;
     static bool nmi;

@@ -177,22 +177,24 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, 
     op_jsr = false;   \
     op_rts = false;   \
     op_rti = false;   \
+    op_push = false;   \
+    op_pop = false;   \
 }
 
 void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg){
     bool imm, zp, zpx, zpy, abs, abx, aby, zpxi, zpiy, absi, imp;
     bool op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
     bool op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror;
-    bool op_inc, op_dec, op_bra, op_jmp, op_jsr, op_rts, op_rti;
+    bool op_inc, op_dec, op_bra, op_jmp, op_jsr, op_rts, op_rti, op_push, op_pop;
     bool acc = false, x = false, y = false;
     set_mode_false;
     set_op_false;
 
-    uint16_t addr;
+    hls_register uint16_t addr;
 
     //uint8_t IR = read(PC, WRAM, PPU_RAM);
     //hls_register uint8_t IR = WRAM[PC]; 
-    uint8_t IR = read_prom(PC, PROM);
+    hls_register uint8_t IR = read_prom(PC, PROM);
     if(enlog) dump_regs(IR);
     PC++;
     hls_register uint16_t opr_pc = PC;
@@ -387,14 +389,14 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
         case 0xB8: VFlag=0;  break; // CLV
 
                    /* stack */
-        //case 0x48: _push8(ACC);  break; // PHA
-        case 0x48: push8(ACC, WRAM);  break; // PHA
-        //case 0x08: _push8(_bindFlags());  break; // PHP
-        case 0x08: push8(_bindFlags(), WRAM);  break; // PHP
-        //case 0x68: ACC=_pop8();NFlag=ACC>>7;ZFlag=ACC==0;break; // PLA
-        case 0x68: ACC=pop8(WRAM);NFlag=ACC>>7;ZFlag=ACC==0;break; // PLA
-        //case 0x28: _unbindFlags(_pop8()); break; // PLP
-        case 0x28: _unbindFlags(pop8(WRAM)); break; // PLP
+        //case 0x48: push8(ACC, WRAM);  break; // PHA
+        //case 0x08: push8(_bindFlags(), WRAM);  break; // PHP
+        //case 0x68: ACC=pop8(WRAM);NFlag=ACC>>7;ZFlag=ACC==0;break; // PLA
+        //case 0x28: _unbindFlags(pop8(WRAM)); break; // PLP
+        case 0x48: op_push = true; acc = true; break; // PHA
+        case 0x08: op_push = true; break; // PHP
+        case 0x68: op_pop = true; acc = true; break; // PLA
+        case 0x28: op_pop = true; break; // PLP
 
         //           /* others */
         //case 0x00: // BRK
@@ -480,19 +482,17 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
         _bit(rddata);
     }
     else if(op_load){
-        uint8_t data;
-        _load(data, addr);
-        if(acc) ACC = data;
-        else if(x) X = data;
-        else if(y) Y = data;
+        _load(rddata, addr);
+        if(acc) ACC = rddata;
+        else if(x) X = rddata;
+        else if(y) Y = rddata;
         
     } 
     else if(op_store){
-        uint8_t data;
-        if(acc) data = ACC;
-        else if(x) data = X;
-        else if(y) data = Y;
-        _store(data, addr);
+        if(acc) rddata = ACC;
+        else if(x) rddata = X;
+        else if(y) rddata = Y;
+        _store(rddata, addr);
     }
     else if(op_asl){
         if(imp){
@@ -544,6 +544,20 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     else if(op_rti){
         _unbindFlags(pop8(WRAM));
         PC=pop16(WRAM);
+    }
+    else if(op_push){
+        if(acc) rddata = ACC;
+        else rddata = _bindFlags();
+        push8(rddata, WRAM);
+    }
+    else if(op_pop){
+        rddata = pop8(WRAM);
+        if(acc){
+            ACC = rddata;
+            NFlag=ACC>>7;
+            ZFlag=ACC==0;
+        }
+        else _unbindFlags(rddata);
     }
 }
 
