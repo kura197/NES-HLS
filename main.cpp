@@ -84,7 +84,7 @@ component void exec_nes(
     if(!init) test_load(PROM, PPU_RAM);
     init = true;
 
-    struct SPREG spreg;
+    static struct SPREG spreg;
     static bool nmi;
 
     //if(res) cpu.set_reset();
@@ -99,7 +99,8 @@ component void exec_nes(
     for(int c = 0; c < 40; c++) {
         spreg = cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, spreg);
     }
-    nmi = ppu.render(PPU_RAM, SP_RAM, VRAM, spreg);
+    //printf("sphit:%d\n", spreg.SPhit);
+    nmi = ppu.render(PPU_RAM, SP_RAM, VRAM, &spreg);
 }
 
 //component int test(int arg){

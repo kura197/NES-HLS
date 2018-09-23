@@ -46,18 +46,19 @@ uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
     uint8_t data;
     //if(addr < 0x2000)   addr = addr & 0x7FF;
     //else if(addr < 0x4000) addr = addr & 0x2007;
-
-    uint8_t tmp;
+    //if(addr >= 0x8000) printf("read error. addr:%04x\n", addr);
+    //uint8_t tmp;
     switch(addr){
-        //case 0x2002: 
-        //    //data = _set(VBlank,7)|_set(SPhit,6)|_set(num_ScanSP,5);
+        case 0x2002: 
+              data = _set(spreg.VBlank,7)|_set(spreg.SPhit,6)|_set(spreg.num_ScanSP,5);
+              //printf("reg[0x2002] : %02x\n", data);
+              spreg.VBlank = false;
+              BGoffset_sel_X = false;
+              PPUAddr_sel_H = false;
         //    data = WRAM[addr];
         //    tmp = data & ~(1 << 7);
         //    WRAM[addr] = tmp;
-        //    //VBlank = false;
-        //    //BGoffset_sel_X = false;
-        //    //PPUAddr_sel_H = false;
-        //    break;
+            break;
         case 0x2007:
             data = read_2007(PPU_RAM);
             break;
@@ -68,11 +69,12 @@ uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
             data = read_pad_2();
             break;
         default:
+            //if(addr >= 0x800) printf("read error. addr:%04x\n", addr);
             data = WRAM[addr];
-            if(addr == 0x2002){
-                tmp = data & ~(1 << 7);
-                WRAM[addr] = tmp;
-            }
+            //if(addr == 0x2002){
+            //    tmp = data & ~(1 << 7);
+            //    WRAM[addr] = tmp;
+            //}
             break;
     }
     return data;
@@ -81,6 +83,7 @@ uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
 void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
     //if(addr < 0x2000)   addr = addr & 0x7FF;
     //else if(addr < 0x4000) addr = addr & 0x2007;
+    //if(addr >= 0x8000) printf("write error. addr:%04x\n", addr);
     switch(addr){
         case 0x2000: 
             write_2000(data);
@@ -111,9 +114,9 @@ void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, ui
             reset_pad(data);
             break;
         default:
+            WRAM[addr&0x7FF] = data;
             break;
     }
-    WRAM[addr&0x7FF] = data;
 }
 
 //void RAM::set_VBlank(bool vblank, bool nmi){
@@ -174,6 +177,7 @@ void RAM::write_2006(uint8_t data){
         //PPUAddr_L = data;
         PPUAddr |= data;
         PPUAddr_sel_H = false;
+        //printf("PPUAddr:%04x\n",PPUAddr);
     } 
 }
 
@@ -197,6 +201,7 @@ void RAM::write_2007(uint8_t data, uint8_t* PPU_RAM){
         default:
             break;
     }
+    //printf("ppu_ram write addr:%04x data:%02x\n", addr, data);
     PPU_RAM[addr] = data;
     PPUAddr = (PPUInc) ? PPUAddr + 32 : PPUAddr + 1;
     //PPUAddr_H = (uint8_t)(PPU_Addr >> 8);

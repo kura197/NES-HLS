@@ -3,27 +3,19 @@
 #include "instr.h"
 #include "HLS/hls.h"
 
-//void CPU::dump_regs(uint8_t insn){
-//    uint8_t flag = _bindFlags();
-//    printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
-//                    PC, insn, ACC, X, Y, flag, SP);
-//}
+//const bool enlog = true;
+const bool enlog = false;
 
-//uint16_t CPU::read_mem16(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
-//    uint16_t rddata;
-//    rddata = read(addr, WRAM, PPU_RAM);
-//    rddata = rddata | ((uint16_t)read(addr+1, WRAM, PPU_RAM) << 8);
-//    return rddata;
-//}
+void CPU::dump_regs(uint8_t insn){
+    //uint8_t flag = _bindFlags();
+    //printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
+    //                PC, insn, ACC, X, Y, flag, SP);
+}
 
-//void CPU::write_mem16(uint16_t addr, uint16_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
-//    write(addr, (uint8_t)data, WRAM, PPU_RAM, SP_RAM);
-//    write(addr+1, (uint8_t)(data >> 8), WRAM, PPU_RAM, SP_RAM);
-//}
 
 void CPU::push8(uint8_t data, uint8_t* WRAM){
-    //WRAM[0x100|(uint8_t)(SP--)] = data;
-    norm_write8(0x100|(uint8_t)(SP--), data, WRAM);
+    WRAM[0x100|(uint8_t)(SP--)] = data;
+    //norm_write8(0x100|(uint8_t)(SP--), data, WRAM);
 }
 
 uint8_t CPU::pop8(uint8_t* WRAM){
@@ -48,24 +40,32 @@ uint16_t CPU::pop16(uint8_t* WRAM){
 }
 
 uint8_t CPU::norm_read8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
-    uint8_t data;
-    if((addr >> 15) & 1) data = read_prom(addr, PROM);
-    else data = WRAM[addr];
+    uint8_t data = 0;
+    //if((addr >> 15) & 1){
+    if(addr >= 0x8000)
+        data = read_prom(addr, PROM);
+    else data = WRAM[addr & 0x7FF];
+    //else
+    //    printf("nread8:%02x\n", addr);
     return data;
 }
 
-uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM){
+uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
     uint16_t data;
-    data = WRAM[addr];
-    data |= (uint16_t)WRAM[addr+1] << 8;
+    //data = WRAM[addr];
+    //data |= (uint16_t)WRAM[addr+1] << 8;
+    data = norm_read8(addr, WRAM, PROM);
+    data |= (uint16_t)norm_read8(addr+1, WRAM, PROM) << 8;
     return data;
 }
 
 void CPU::norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM){
-    WRAM[addr] = data; 
+    //if(addr >= 0x800) printf("nwrite8 error\n");
+    WRAM[addr&0x7FF] = data; 
 }
 
 uint8_t CPU::read_prom(uint16_t addr, uint8_t* PROM){
+    //if(addr < 0x8000) printf("pread error\n");
     return PROM[addr & ~(1 << 15)];
 }
 
@@ -73,6 +73,7 @@ uint16_t CPU::read_prom16(uint16_t addr, uint8_t* PROM){
     uint16_t data;
     data = read_prom(addr, PROM);
     data |= (uint16_t)read_prom(addr+1, PROM) << 8;
+    //printf("rprom16 addr:%04x data:%04x\n", addr, data);
     return data;
 }
 
@@ -101,6 +102,7 @@ struct SPREG CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t
     //if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM, PROM); nmi_line = false;
 
     spreg = s;
+    //printf("SPHIT:%d\n", spreg.SPhit);
     if(DMAExcute) exec_DMA(SP_RAM, WRAM);
     else execution(WRAM, PPU_RAM, SP_RAM, PROM);
     return spreg;
@@ -187,7 +189,7 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     //uint8_t IR = read(PC, WRAM, PPU_RAM);
     //hls_register uint8_t IR = WRAM[PC]; 
     uint8_t IR = read_prom(PC, PROM);
-    //dump_regs(IR);
+    if(enlog) dump_regs(IR);
     PC++;
     hls_register uint16_t opr_pc = PC;
 

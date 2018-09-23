@@ -2,47 +2,53 @@
 #include "ppu.h"
 
 #define get_bit(data, bit) ((data >> bit) & 1)
-bool PPU::render(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* VRAM, uint8_t BG_offset_x, uint8_t BG_offset_y){
-    //if(line < 256) line++;
-    //else line = 0;
+bool PPU::render(uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* VRAM, struct SPREG* spreg){
     bool nmi = false;
     line++;
+    //printf("line:%03d SPHIT:%d\n",line, spreg->SPhit);
     if(line == 240){
-        set_bit(WRAM, 0x2002, 7);
-        if(get_bit(WRAM[0x2000], 7))
+        spreg->VBlank = true;
+        if(spreg->VBlank_NMI)
             nmi = true;
+        //set_bit(WRAM, 0x2002, 7);
+        //if(get_bit(WRAM[0x2000], 7))
+        //    nmi = true;
     }
     else if(line == 255){
-        clr_bit(WRAM, 0x2002, 6);
-        //clr_bit(WRAM, 0x2000, 1);
-        //clr_bit(WRAM, 0x2000, 0);
-        WRAM[0x2000] &= 0xFC;
+        spreg->SPhit = false;
+        spreg->NameAddrL = false;
+        spreg->NameAddrH = false;
+        //clr_bit(WRAM, 0x2002, 6);
+        //WRAM[0x2000] &= 0xFC;
     }
     //if(nes->ram->EnBG)  bg_render(line);
     //if(nes->ram->EnSP)  sp_render(line);
     if(line < 240){
-        uint16_t ctrlreg1 = WRAM[0x2000];
-        uint8_t ctrlreg2 = WRAM[0x2001];
-        bool BGen = (ctrlreg2 >> 3) & 1;
-        bool SPen = (ctrlreg2 >> 4) & 1;
-        if(BGen)  bg_render(line, ctrlreg1, ctrlreg2, WRAM, PPU_RAM, VRAM, BG_offset_x, BG_offset_y);
-        if(SPen)  sp_render(line, ctrlreg1, ctrlreg2, WRAM, PPU_RAM, SP_RAM, VRAM);
+        //uint16_t ctrlreg1 = WRAM[0x2000];
+        //uint8_t ctrlreg2 = WRAM[0x2001];
+        //bool BGen = (ctrlreg2 >> 3) & 1;
+        //bool SPen = (ctrlreg2 >> 4) & 1;
+        bool BGen = spreg->EnBG;
+        bool SPen = spreg->EnSP;
+        if(BGen)  bg_render(line, spreg, PPU_RAM, VRAM);
+        if(SPen)  sp_render(line, spreg, PPU_RAM, SP_RAM, VRAM);
     }
     return nmi;
 }
 
 #define _pttnbit(data, data_bit, ret_bit) (((data >> data_bit) & 1) << ret_bit)
-void PPU::bg_render(uint8_t line, uint8_t ctrlreg1, uint8_t ctrlreg2, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* VRAM, uint8_t BG_offset_x, uint8_t BG_offset_y){
-
-    uint8_t sc_x = BG_offset_x;
-    uint8_t sc_y = BG_offset_y;
+void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t* VRAM){
+    //uint8_t sc_x = BG_offset_x;
+    //uint8_t sc_y = BG_offset_y;
+    uint8_t sc_x = spreg->BGoffset_X;
+    uint8_t sc_y = spreg->BGoffset_Y;
     uint8_t tile_offset = sc_x / 8;
-    //bool low = nes->ram->NameAddrL;
-    //bool high = nes->ram->NameAddrH;
+    bool low = spreg->NameAddrL;
+    bool high = spreg->NameAddrH;
     //bool low = get_bit(WRAM[0x2000], 0);
     //bool high = get_bit(WRAM[0x2000], 1);
-    bool low = ctrlreg1 & 1;
-    bool high = (ctrlreg1 >> 1) & 1;
+    //bool low = ctrlreg1 & 1;
+    //bool high = (ctrlreg1 >> 1) & 1;
     uint16_t name_base = (!low&!high) ? 0x2000 :
                          (low&!high)  ? 0x2400 :
                          (!low&high)  ? 0x2800 :
@@ -76,9 +82,9 @@ void PPU::bg_render(uint8_t line, uint8_t ctrlreg1, uint8_t ctrlreg2, uint8_t* W
             } 
         }
 
-        //uint16_t pttn_base = (nes->ram->BGPtnAddr) ? 0x1000 : 0x0000;
+        uint16_t pttn_base = (spreg->BGPtnAddr) ? 0x1000 : 0x0000;
         //uint16_t pttn_base = (get_bit(WRAM[0x2000], 4)) ? 0x1000 : 0x0000;
-        uint16_t pttn_base = ((ctrlreg1 >> 4) & 1) ? 0x1000 : 0x0000;
+        //uint16_t pttn_base = ((ctrlreg1 >> 4) & 1) ? 0x1000 : 0x0000;
         uint8_t pttn_L = PPU_RAM[pttn_base + name + (line % 8)];
         uint8_t pttn_H = PPU_RAM[pttn_base + name + (line % 8) + 8];
         bool upper = (line % 32) < 16;
@@ -115,12 +121,12 @@ void PPU::bg_render(uint8_t line, uint8_t ctrlreg1, uint8_t ctrlreg2, uint8_t* W
             }
             else render_en = true;
             
-            if(render_en) store_vram(line, x++, color, false, WRAM, VRAM, ctrlreg2);
+            if(render_en) store_vram(line, x++, color, false, VRAM, spreg);
         }
     }
 }
 
-void PPU::sp_render(uint8_t line, uint8_t ctrlreg1, uint8_t ctrlreg2, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* VRAM){
+void PPU::sp_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* VRAM){
     int num_sp = 0;
     for(int spr = 0; spr < 64; spr++){
         uint8_t spr_x = SP_RAM[4*spr+3];
@@ -136,9 +142,9 @@ void PPU::sp_render(uint8_t line, uint8_t ctrlreg1, uint8_t ctrlreg2, uint8_t* W
         bool lr_rev = (spr_att >> 6) & 0x1;
         bool ud_rev = (spr_att >> 7) & 0x1;
 
-        //uint32_t pttn_base = (nes->ram->SPPtnAddr) ? 0x1000 : 0x0000;
+        uint16_t pttn_base = (spreg->SPPtnAddr) ? 0x1000 : 0x0000;
         //uint32_t pttn_base = (get_bit(WRAM[0x2000], 3)) ? 0x1000 : 0x0000;
-        uint32_t pttn_base = ((ctrlreg1 >> 3) & 1) ? 0x1000 : 0x0000;
+        //uint32_t pttn_base = ((ctrlreg1 >> 3) & 1) ? 0x1000 : 0x0000;
         uint8_t pttn_offset = (ud_rev) ? 7 - (line - spr_y) : line - spr_y;
         uint8_t pttn_L = PPU_RAM[pttn_base + spr_ptn_index + (pttn_offset % 8)];
         uint8_t pttn_H = PPU_RAM[pttn_base + spr_ptn_index + (pttn_offset % 8) + 8];
@@ -153,23 +159,24 @@ void PPU::sp_render(uint8_t line, uint8_t ctrlreg1, uint8_t ctrlreg2, uint8_t* W
             else offset = _pttnbit(pttn_H,(7-i),1) | _pttnbit(pttn_L,(7-i),0);
             if(offset == 0) continue;
             //if(spr == 0) SP_hit();
-            if(spr == 0) set_bit(WRAM, 0x2002, 6);
+            //if(spr == 0) set_bit(WRAM, 0x2002, 6);
+            if(spr == 0) spreg->SPhit = true;
             color = PPU_RAM[color_addr_base + offset];
-            if(!(bg_priority & BG_Valid[spr_x+i])) store_vram(line, spr_x+i, color, true, WRAM, VRAM, ctrlreg2);
+            if(!(bg_priority & BG_Valid[spr_x+i])) store_vram(line, spr_x+i, color, true, VRAM, spreg);
         }
     }
-    //if(num_sp >= 9) nes->ram->num_ScanSP = true;
-    //else nes->ram->num_ScanSP = false;
-    if(num_sp >= 9) set_bit(WRAM, 0x2002, 5);
-    else clr_bit(WRAM, 0x2002, 5);
+    if(num_sp >= 9) spreg->num_ScanSP = true;
+    else spreg->num_ScanSP = false;
+    //if(num_sp >= 9) set_bit(WRAM, 0x2002, 5);
+    //else clr_bit(WRAM, 0x2002, 5);
 }
 
 #define _rgb(r, g, b) (red = r, green = g, blue = b)
-void PPU::store_vram(uint8_t line, uint8_t x, uint8_t color, bool sprite, uint8_t* WRAM, uint8_t* VRAM, uint8_t ctrlreg2){
+void PPU::store_vram(uint8_t line, uint8_t x, uint8_t color, bool sprite, uint8_t* VRAM, struct SPREG* spreg){
     //BGR
     //if(x < 8 && ((!sprite & nes->ram->BGMSK) || (sprite & nes->ram->SPMSK)))
-    bool SPMSK = (ctrlreg2 >> 2) & 1;
-    bool BGMSK = (ctrlreg2 >> 1) & 1;
+    bool SPMSK = spreg->SPMSK;
+    bool BGMSK = spreg->BGMSK;
     if(x < 8 && ((!sprite & BGMSK) || (sprite & SPMSK)))
         VRAM[256*line + x] = 0x3F;
     else 
