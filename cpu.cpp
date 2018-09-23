@@ -7,19 +7,21 @@
 const bool enlog = false;
 
 void CPU::dump_regs(uint8_t insn){
-    //uint8_t flag = _bindFlags();
-    //printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
-    //                PC, insn, ACC, X, Y, flag, SP);
+   // uint8_t flag = _bindFlags();
+   // printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
+   //                 PC, insn, ACC, X, Y, flag, SP);
 }
 
 
 void CPU::push8(uint8_t data, uint8_t* WRAM){
-    WRAM[0x100|(uint8_t)(SP--)] = data;
+    Stack[(uint8_t)(SP--)] = data;
+    //WRAM[0x100|(uint8_t)(SP--)] = data;
     //norm_write8(0x100|(uint8_t)(SP--), data, WRAM);
 }
 
 uint8_t CPU::pop8(uint8_t* WRAM){
-    return WRAM[0x100|(uint8_t)(++SP)];
+    return Stack[(uint8_t)(++SP)];
+    //return WRAM[0x100|(uint8_t)(++SP)];
     //return norm_read8(0x100|(uint8_t)(++SP), WRAM);
 }
 
@@ -41,8 +43,8 @@ uint16_t CPU::pop16(uint8_t* WRAM){
 
 uint8_t CPU::read_mem8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
     uint8_t data = 0;
-    //if((addr >> 15) & 1){
-    if(addr >= 0x8000)
+    if((addr >> 15) & 1)
+    //if(addr >= 0x8000)
         data = read_prom(addr, PROM);
     else data = WRAM[addr & 0x7FF];
     //else
@@ -141,18 +143,18 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, 
     PC = read_prom16(vect, PROM);
 }
 
-#define set_mode_false {  \
-    imm = false;   \
-    zp = false;    \
-    zpx = false;   \
-    zpy = false;   \
-    abs = false;   \
-    abx = false;   \
-    aby = false;   \
-    zpxi = false;  \
-    zpiy = false;  \
-    absi = false;  \
-    imp = false;   \
+void CPU::set_mode_false(struct ADDRESS* adr){  
+    adr->imm = false;   
+    adr->zp = false;    
+    adr->zpx = false;   
+    adr->zpy = false;   
+    adr->abs = false;   
+    adr->abx = false;   
+    adr->aby = false;   
+    adr->zpxi = false;  
+    adr->zpiy = false;  
+    adr->absi = false;  
+    adr->imp = false;   
 }
 
 #define set_op_false { \
@@ -182,12 +184,12 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, 
 }
 
 void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg){
-    bool imm, zp, zpx, zpy, abs, abx, aby, zpxi, zpiy, absi, imp;
+    struct ADDRESS adr;
     bool op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
     bool op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror;
     bool op_inc, op_dec, op_bra, op_jmp, op_jsr, op_rts, op_rti, op_push, op_pop;
     bool acc = false, x = false, y = false;
-    set_mode_false;
+    set_mode_false(&adr);
     set_op_false;
 
     hls_register uint16_t addr;
@@ -201,108 +203,108 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
 
     switch(IR){
         /* ALU */
-        case 0x69: op_adc = true; imm = true; break;
-        case 0x65: op_adc = true; zp = true; break;
-        case 0x75: op_adc = true; zpx = true; break;
-        case 0x6D: op_adc = true; abs = true; break;
-        case 0x7D: op_adc = true; abx = true; break;
-        case 0x79: op_adc = true; aby = true; break;
-        case 0x61: op_adc = true; zpxi = true; break;
-        case 0x71: op_adc = true; zpiy = true; break;
+        case 0x69: op_adc = true; adr.imm = true; break;
+        case 0x65: op_adc = true; adr.zp = true; break;
+        case 0x75: op_adc = true; adr.zpx = true; break;
+        case 0x6D: op_adc = true; adr.abs = true; break;
+        case 0x7D: op_adc = true; adr.abx = true; break;
+        case 0x79: op_adc = true; adr.aby = true; break;
+        case 0x61: op_adc = true; adr.zpxi = true; break;
+        case 0x71: op_adc = true; adr.zpiy = true; break;
 
-        case 0xE9: op_sbc = true; imm = true; break;
-        case 0xE5: op_sbc = true; zp = true;  break;
-        case 0xF5: op_sbc = true; zpx = true; break;
-        case 0xED: op_sbc = true; abs = true; break;
-        case 0xFD: op_sbc = true; abx = true; break;
-        case 0xF9: op_sbc = true; aby = true; break;
-        case 0xE1: op_sbc = true; zpxi = true; break;
-        case 0xF1: op_sbc = true; zpiy = true; break;
+        case 0xE9: op_sbc = true; adr.imm = true; break;
+        case 0xE5: op_sbc = true; adr.zp = true;  break;
+        case 0xF5: op_sbc = true; adr.zpx = true; break;
+        case 0xED: op_sbc = true; adr.abs = true; break;
+        case 0xFD: op_sbc = true; adr.abx = true; break;
+        case 0xF9: op_sbc = true; adr.aby = true; break;
+        case 0xE1: op_sbc = true; adr.zpxi = true; break;
+        case 0xF1: op_sbc = true; adr.zpiy = true; break;
 
-        case 0xC9: op_cmp = true; acc = true; imm = true;  break;
-        case 0xC5: op_cmp = true; acc = true; zp = true;   break;
-        case 0xD5: op_cmp = true; acc = true; zpx = true;  break;
-        case 0xCD: op_cmp = true; acc = true; abs = true;  break;
-        case 0xDD: op_cmp = true; acc = true; abx = true;  break;
-        case 0xD9: op_cmp = true; acc = true; aby = true;  break;
-        case 0xC1: op_cmp = true; acc = true; zpxi = true; break;
-        case 0xD1: op_cmp = true; acc = true; zpiy = true; break;
+        case 0xC9: op_cmp = true; acc = true; adr.imm = true;  break;
+        case 0xC5: op_cmp = true; acc = true; adr.zp = true;   break;
+        case 0xD5: op_cmp = true; acc = true; adr.zpx = true;  break;
+        case 0xCD: op_cmp = true; acc = true; adr.abs = true;  break;
+        case 0xDD: op_cmp = true; acc = true; adr.abx = true;  break;
+        case 0xD9: op_cmp = true; acc = true; adr.aby = true;  break;
+        case 0xC1: op_cmp = true; acc = true; adr.zpxi = true; break;
+        case 0xD1: op_cmp = true; acc = true; adr.zpiy = true; break;
 
-        case 0xE0: op_cmp = true; x = true; imm = true; break;
-        case 0xE4: op_cmp = true; x = true; zp = true; break;
-        case 0xEC: op_cmp = true; x = true; abs = true; break;
+        case 0xE0: op_cmp = true; x = true; adr.imm = true; break;
+        case 0xE4: op_cmp = true; x = true; adr.zp = true; break;
+        case 0xEC: op_cmp = true; x = true; adr.abs = true; break;
+                                            
+        case 0xC0: op_cmp = true; y = true; adr.imm = true; break;
+        case 0xC4: op_cmp = true; y = true; adr.zp = true;  break;
+        case 0xCC: op_cmp = true; y = true; adr.abs = true; break;
+                                            
+        case 0x29: op_and = true; adr.imm = true;  break;
+        case 0x25: op_and = true; adr.zp = true;   break;
+        case 0x35: op_and = true; adr.zpx = true;  break;
+        case 0x2D: op_and = true; adr.abs = true;  break;
+        case 0x3D: op_and = true; adr.abx = true;  break;
+        case 0x39: op_and = true; adr.aby = true;  break;
+        case 0x21: op_and = true; adr.zpxi = true; break;
+        case 0x31: op_and = true; adr.zpiy = true; break;
 
-        case 0xC0: op_cmp = true; y = true; imm = true; break;
-        case 0xC4: op_cmp = true; y = true; zp = true;  break;
-        case 0xCC: op_cmp = true; y = true; abs = true; break;
+        case 0x09: op_ora = true; adr.imm = true;  break;
+        case 0x05: op_ora = true; adr.zp = true;   break;
+        case 0x15: op_ora = true; adr.zpx = true;  break;
+        case 0x0D: op_ora = true; adr.abs = true;  break;
+        case 0x1D: op_ora = true; adr.abx = true;  break;
+        case 0x19: op_ora = true; adr.aby = true;  break;
+        case 0x01: op_ora = true; adr.zpxi = true; break;
+        case 0x11: op_ora = true; adr.zpiy = true; break;
 
-        case 0x29: op_and = true; imm = true;  break;
-        case 0x25: op_and = true; zp = true;   break;
-        case 0x35: op_and = true; zpx = true;  break;
-        case 0x2D: op_and = true; abs = true;  break;
-        case 0x3D: op_and = true; abx = true;  break;
-        case 0x39: op_and = true; aby = true;  break;
-        case 0x21: op_and = true; zpxi = true; break;
-        case 0x31: op_and = true; zpiy = true; break;
+        case 0x49: op_eor = true; adr.imm = true;  break;
+        case 0x45: op_eor = true; adr.zp = true;   break;
+        case 0x55: op_eor = true; adr.zpx = true;  break;
+        case 0x4D: op_eor = true; adr.abs = true;  break;
+        case 0x5D: op_eor = true; adr.abx = true;  break;
+        case 0x59: op_eor = true; adr.aby = true;  break;
+        case 0x41: op_eor = true; adr.zpxi = true; break;
+        case 0x51: op_eor = true; adr.zpiy = true; break;
 
-        case 0x09: op_ora = true; imm = true;  break;
-        case 0x05: op_ora = true; zp = true;   break;
-        case 0x15: op_ora = true; zpx = true;  break;
-        case 0x0D: op_ora = true; abs = true;  break;
-        case 0x1D: op_ora = true; abx = true;  break;
-        case 0x19: op_ora = true; aby = true;  break;
-        case 0x01: op_ora = true; zpxi = true; break;
-        case 0x11: op_ora = true; zpiy = true; break;
-
-        case 0x49: op_eor = true; imm = true;  break;
-        case 0x45: op_eor = true; zp = true;   break;
-        case 0x55: op_eor = true; zpx = true;  break;
-        case 0x4D: op_eor = true; abs = true;  break;
-        case 0x5D: op_eor = true; abx = true;  break;
-        case 0x59: op_eor = true; aby = true;  break;
-        case 0x41: op_eor = true; zpxi = true; break;
-        case 0x51: op_eor = true; zpiy = true; break;
-
-        case 0x24: op_bit = true; zp = true;  break;
-        case 0x2C: op_bit = true; abs = true;  break;
+        case 0x24: op_bit = true; adr.zp = true;  break;
+        case 0x2C: op_bit = true; adr.abs = true;  break;
 
                    /* laod / store */
-        case 0xA9: op_load = true; acc = true; imm = true;  break;
-        case 0xA5: op_load = true; acc = true; zp = true;   break;
-        case 0xB5: op_load = true; acc = true; zpx = true;  break;
-        case 0xAD: op_load = true; acc = true; abs = true;  break;
-        case 0xBD: op_load = true; acc = true; abx = true;  break;
-        case 0xB9: op_load = true; acc = true; aby = true;  break;
-        case 0xA1: op_load = true; acc = true; zpxi = true; break;
-        case 0xB1: op_load = true; acc = true; zpiy = true; break;
+        case 0xA9: op_load = true; acc = true; adr.imm = true;  break;
+        case 0xA5: op_load = true; acc = true; adr.zp = true;   break;
+        case 0xB5: op_load = true; acc = true; adr.zpx = true;  break;
+        case 0xAD: op_load = true; acc = true; adr.abs = true;  break;
+        case 0xBD: op_load = true; acc = true; adr.abx = true;  break;
+        case 0xB9: op_load = true; acc = true; adr.aby = true;  break;
+        case 0xA1: op_load = true; acc = true; adr.zpxi = true; break;
+        case 0xB1: op_load = true; acc = true; adr.zpiy = true; break;
 
-        case 0xA2: op_load = true; x = true; imm = true;  break;
-        case 0xA6: op_load = true; x = true; zp = true;  break;
-        case 0xB6: op_load = true; x = true; zpy = true;  break;
-        case 0xAE: op_load = true; x = true; abs = true;  break;
-        case 0xBE: op_load = true; x = true; aby = true;  break;
+        case 0xA2: op_load = true; x = true; adr.imm = true;  break;
+        case 0xA6: op_load = true; x = true; adr.zp = true;  break;
+        case 0xB6: op_load = true; x = true; adr.zpy = true;  break;
+        case 0xAE: op_load = true; x = true; adr.abs = true;  break;
+        case 0xBE: op_load = true; x = true; adr.aby = true;  break;
 
-        case 0xA0: op_load = true; y = true; imm = true;  break;
-        case 0xA4: op_load = true; y = true; zp = true;  break;
-        case 0xB4: op_load = true; y = true; zpx = true;  break;
-        case 0xAC: op_load = true; y = true; abs = true;  break;
-        case 0xBC: op_load = true; y = true; abx = true;  break;
+        case 0xA0: op_load = true; y = true; adr.imm = true;  break;
+        case 0xA4: op_load = true; y = true; adr.zp = true;  break;
+        case 0xB4: op_load = true; y = true; adr.zpx = true;  break;
+        case 0xAC: op_load = true; y = true; adr.abs = true;  break;
+        case 0xBC: op_load = true; y = true; adr.abx = true;  break;
 
-        case 0x85: op_store = true; acc = true; zp = true;   break;
-        case 0x95: op_store = true; acc = true; zpx = true;  break;
-        case 0x8D: op_store = true; acc = true; abs = true;  break;
-        case 0x9D: op_store = true; acc = true; abx = true;  break;
-        case 0x99: op_store = true; acc = true; aby = true;  break;
-        case 0x81: op_store = true; acc = true; zpxi = true; break;
-        case 0x91: op_store = true; acc = true; zpiy = true; break;
+        case 0x85: op_store = true; acc = true; adr.zp = true;   break;
+        case 0x95: op_store = true; acc = true; adr.zpx = true;  break;
+        case 0x8D: op_store = true; acc = true; adr.abs = true;  break;
+        case 0x9D: op_store = true; acc = true; adr.abx = true;  break;
+        case 0x99: op_store = true; acc = true; adr.aby = true;  break;
+        case 0x81: op_store = true; acc = true; adr.zpxi = true; break;
+        case 0x91: op_store = true; acc = true; adr.zpiy = true; break;
 
-        case 0x86: op_store = true; x = true; zp = true;  break;
-        case 0x96: op_store = true; x = true; zpy = true;  break;
-        case 0x8E: op_store = true; x = true; abs = true;  break;
+        case 0x86: op_store = true; x = true; adr.zp = true;  break;
+        case 0x96: op_store = true; x = true; adr.zpy = true;  break;
+        case 0x8E: op_store = true; x = true; adr.abs = true;  break;
 
-        case 0x84: op_store = true; y = true; zp = true;  break;
-        case 0x94: op_store = true; y = true; zpx = true;  break;
-        case 0x8C: op_store = true; y = true; abs = true;  break;
+        case 0x84: op_store = true; y = true; adr.zp = true;  break;
+        case 0x94: op_store = true; y = true; adr.zpx = true;  break;
+        case 0x8C: op_store = true; y = true; adr.abs = true;  break;
 
                    /* transfer */
         case 0xAA: _mov(X,ACC); break; // TAX
@@ -313,41 +315,41 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
         case 0x9A: SP=X; break; // TXS
 
                    /* shift */
-        case 0x0A: op_asl = true; imp = true; break;
-        case 0x06: op_asl = true; zp = true; break;
-        case 0x16: op_asl = true; zpx = true; break;
-        case 0x0E: op_asl = true; abs = true; break;
-        case 0x1E: op_asl = true; abx = true; break;
+        case 0x0A: op_asl = true; adr.imp = true; break;
+        case 0x06: op_asl = true; adr.zp = true; break;
+        case 0x16: op_asl = true; adr.zpx = true; break;
+        case 0x0E: op_asl = true; adr.abs = true; break;
+        case 0x1E: op_asl = true; adr.abx = true; break;
 
-        case 0x4A: op_lsr = true; imp = true;  break;
-        case 0x46: op_lsr = true; zp = true;  break;
-        case 0x56: op_lsr = true; zpx = true; break;
-        case 0x4E: op_lsr = true; abs = true; break;
-        case 0x5E: op_lsr = true; abx = true; break;
+        case 0x4A: op_lsr = true; adr.imp = true;  break;
+        case 0x46: op_lsr = true; adr.zp = true;  break;
+        case 0x56: op_lsr = true; adr.zpx = true; break;
+        case 0x4E: op_lsr = true; adr.abs = true; break;
+        case 0x5E: op_lsr = true; adr.abx = true; break;
 
-        case 0x2A: op_rol = true; imp = true;  break;
-        case 0x26: op_rol = true; zp = true;  break;
-        case 0x36: op_rol = true; zpx = true; break;
-        case 0x2E: op_rol = true; abs = true; break;
-        case 0x3E: op_rol = true; abx = true; break;
+        case 0x2A: op_rol = true; adr.imp = true;  break;
+        case 0x26: op_rol = true; adr.zp = true;  break;
+        case 0x36: op_rol = true; adr.zpx = true; break;
+        case 0x2E: op_rol = true; adr.abs = true; break;
+        case 0x3E: op_rol = true; adr.abx = true; break;
 
-        case 0x6A: op_ror = true; imp = true;  break;
-        case 0x66: op_ror = true; zp = true;  break;
-        case 0x76: op_ror = true; zpx = true; break;
-        case 0x6E: op_ror = true; abs = true; break;
-        case 0x7E: op_ror = true; abx = true; break;
+        case 0x6A: op_ror = true; adr.imp = true;  break;
+        case 0x66: op_ror = true; adr.zp = true;  break;
+        case 0x76: op_ror = true; adr.zpx = true; break;
+        case 0x6E: op_ror = true; adr.abs = true; break;
+        case 0x7E: op_ror = true; adr.abx = true; break;
 
-        case 0xE6: op_inc = true; zp = true; break;
-        case 0xF6: op_inc = true; zpx = true; break;
-        case 0xEE: op_inc = true; abs = true; break;
-        case 0xFE: op_inc = true; abx = true; break;
+        case 0xE6: op_inc = true; adr.zp = true; break;
+        case 0xF6: op_inc = true; adr.zpx = true; break;
+        case 0xEE: op_inc = true; adr.abs = true; break;
+        case 0xFE: op_inc = true; adr.abx = true; break;
         case 0xE8: _incr(X); break;
         case 0xC8: _incr(Y); break;
 
-        case 0xC6: op_dec = true; zp = true;  break;
-        case 0xD6: op_dec = true; zpx = true; break;
-        case 0xCE: op_dec = true; abs = true; break;
-        case 0xDE: op_dec = true; abx = true; break;
+        case 0xC6: op_dec = true; adr.zp = true;  break;
+        case 0xD6: op_dec = true; adr.zpx = true; break;
+        case 0xCE: op_dec = true; adr.abs = true; break;
+        case 0xDE: op_dec = true; adr.abx = true; break;
         case 0xCA: _decr(X);  break;
         case 0x88: _decr(Y);  break;
 
@@ -360,20 +362,20 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
         //case 0x30: _bra( NFlag); break; // BMI
         //case 0x50: _bra(!VFlag); break; // BVC
         //case 0x70: _bra( VFlag); break; // BVS
-        case 0x90: if(!CFlag) {op_bra = true; imm = true; } else PC++; break; // BCC
-        case 0xB0: if( CFlag) {op_bra = true; imm = true; } else PC++; break; // BCS
-        case 0xD0: if(!ZFlag) {op_bra = true; imm = true; } else PC++; break; // BNE
-        case 0xF0: if( ZFlag) {op_bra = true; imm = true; } else PC++; break; // BEQ
-        case 0x10: if(!NFlag) {op_bra = true; imm = true; } else PC++; break; // BPL
-        case 0x30: if( NFlag) {op_bra = true; imm = true; } else PC++; break; // BMI
-        case 0x50: if(!VFlag) {op_bra = true; imm = true; } else PC++; break; // BVC
-        case 0x70: if( VFlag) {op_bra = true; imm = true; } else PC++; break; // BVS
+        case 0x90: if(!CFlag) {op_bra = true; adr.imm = true; } else PC++; break; // BCC
+        case 0xB0: if( CFlag) {op_bra = true; adr.imm = true; } else PC++; break; // BCS
+        case 0xD0: if(!ZFlag) {op_bra = true; adr.imm = true; } else PC++; break; // BNE
+        case 0xF0: if( ZFlag) {op_bra = true; adr.imm = true; } else PC++; break; // BEQ
+        case 0x10: if(!NFlag) {op_bra = true; adr.imm = true; } else PC++; break; // BPL
+        case 0x30: if( NFlag) {op_bra = true; adr.imm = true; } else PC++; break; // BMI
+        case 0x50: if(!VFlag) {op_bra = true; adr.imm = true; } else PC++; break; // BVC
+        case 0x70: if( VFlag) {op_bra = true; adr.imm = true; } else PC++; break; // BVS
 
                    /* jump / call / return */
-        case 0x4C: op_jmp = true; abs  = true; break; // JMP abs
-        case 0x6C: op_jmp = true; absi = true; break; // JMP (abs)
+        case 0x4C: op_jmp = true; adr.abs  = true; break; // JMP abs
+        case 0x6C: op_jmp = true; adr.absi = true; break; // JMP (abs)
 
-        case 0x20: op_jsr = true; abs = true; break; // JSR
+        case 0x20: op_jsr = true; adr.abs = true; break; // JSR
 
         case 0x60: op_rts = true; break; // RTS
         case 0x40: op_rti = true; break; // RTI
@@ -431,24 +433,26 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     //else if(absi)
     //    addr = _absi(opr_pc, WRAM);
 
-    if(imm)
-        addr = _imm(opr_pc, WRAM, PROM);
-    else if(zp)
-        addr = _zp(opr_pc, WRAM, PROM);
-    else if(zpx)
-        addr = _zpx(opr_pc, WRAM, PROM);
-    else if(abs)
-        addr = _abs(opr_pc, WRAM, PROM);
-    else if(abx)
-        addr = _abx(opr_pc, WRAM, PROM);
-    else if(aby)
-        addr = _aby(opr_pc, WRAM, PROM);
-    else if(zpxi)
-        addr = _zpxi(opr_pc, WRAM, PROM);
-    else if(zpiy)
-        addr = _zpiy(opr_pc, WRAM, PROM);
-    else if(absi)
-        addr = _absi(opr_pc, WRAM, PROM);
+    //if(adr.imm)
+    //    addr = _imm(opr_pc, WRAM, PROM);
+    //else if(adr.zp)
+    //    addr = _zp(opr_pc, WRAM, PROM);
+    //else if(adr.zpx)
+    //    addr = _zpx(opr_pc, WRAM, PROM);
+    //else if(adr.abs)
+    //    addr = _abs(opr_pc, WRAM, PROM);
+    //else if(adr.abx)
+    //    addr = _abx(opr_pc, WRAM, PROM);
+    //else if(adr.aby)
+    //    addr = _aby(opr_pc, WRAM, PROM);
+    //else if(adr.zpxi)
+    //    addr = _zpxi(opr_pc, WRAM, PROM);
+    //else if(adr.zpiy)
+    //    addr = _zpiy(opr_pc, WRAM, PROM);
+    //else if(adr.absi)
+    //    addr = _absi(opr_pc, WRAM, PROM);
+
+    addr = addressing(opr_pc, adr, WRAM, PROM);
 
     //hls_register uint8_t rddata = norm_read8(addr, WRAM);
     //hls_register uint8_t rddata = norm_read8(addr, WRAM, PROM);
@@ -495,28 +499,28 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
         _store(rddata, addr);
     }
     else if(op_asl){
-        if(imp){
+        if(adr.imp){
             _asla();
         }else{
             _asl(addr, rddata);
         }
     }
     else if(op_lsr){
-        if(imp){
+        if(adr.imp){
             _lsra();
         }else{
             _lsr(addr, rddata);
         }
     }
     else if(op_rol){
-        if(imp){
+        if(adr.imp){
             _rola();
         }else{
             _rol(addr, rddata);
         }
     }
     else if(op_ror){
-        if(imp){
+        if(adr.imp){
             _rora();
         }else{
             _ror(addr, rddata);
@@ -534,30 +538,100 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     else if(op_jmp){
         PC = addr;
     }
-    else if(op_jsr){
-        push16(PC-1, WRAM);
-        PC = addr;
-    }
-    else if(op_rts){
-        PC=pop16(WRAM)+1;
-    }
-    else if(op_rti){
-        _unbindFlags(pop8(WRAM));
-        PC=pop16(WRAM);
-    }
-    else if(op_push){
-        if(acc) rddata = ACC;
-        else rddata = _bindFlags();
-        push8(rddata, WRAM);
-    }
-    else if(op_pop){
-        rddata = pop8(WRAM);
-        if(acc){
-            ACC = rddata;
-            NFlag=ACC>>7;
-            ZFlag=ACC==0;
+    //else if(op_jsr){
+    //    push16(PC-1, WRAM);
+    //    PC = addr;
+    //}
+    //else if(op_push){
+    //    if(acc) rddata = ACC;
+    //    else rddata = _bindFlags();
+    //    push8(rddata, WRAM);
+    //}
+    //else if(op_rts){
+    //    PC=pop16(WRAM)+1;
+    //}
+    //else if(op_rti){
+    //    _unbindFlags(pop8(WRAM));
+    //    PC=pop16(WRAM);
+    //}
+    //else if(op_pop){
+    //    rddata = pop8(WRAM);
+    //    if(acc){
+    //        ACC = rddata;
+    //        NFlag=ACC>>7;
+    //        ZFlag=ACC==0;
+    //    }
+    //    else _unbindFlags(rddata);
+    //}
+    else if(op_push | op_jsr){
+        if(op_push){
+            if(acc) rddata = ACC;
+            else rddata = _bindFlags();
         }
-        else _unbindFlags(rddata);
+        else{
+            PC--;
+            rddata = PC >> 8;
+        }
+        push8(rddata, WRAM);
+
+        if(op_jsr){
+            rddata = PC;
+            push8(rddata, WRAM);
+            PC = addr;
+        }
     }
+    else if(op_pop | op_rts | op_rti){
+        hls_register uint8_t pop1 = pop8(WRAM);
+        if(op_pop){
+            if(acc){
+                ACC = pop1;
+                NFlag=ACC>>7;
+                ZFlag=ACC==0;
+            }
+            else _unbindFlags(pop1);
+        }
+        else{
+            hls_register uint8_t pop2 = pop8(WRAM);
+            if(op_rts){
+                PC = 1 + (pop1 | (uint16_t)pop2 << 8);
+            }
+            else if(op_rti){
+                hls_register uint8_t pop3 = pop8(WRAM);
+                _unbindFlags(pop1);
+                PC = pop2 | (uint16_t)pop3 << 8;
+            }
+        }
+    }
+
+
+}
+
+uint16_t CPU::addressing(uint16_t opr_pc, struct ADDRESS adr, uint8_t* WRAM, uint8_t* PROM){
+    uint16_t addr;
+    uint16_t tmp16;
+    uint8_t tmp8;
+
+    if(adr.imm) addr = PC++;
+    else if(adr.abs | adr.abx | adr.aby | adr.absi){
+        tmp16 = read_prom16(opr_pc, PROM);
+        PC+=2;
+        if(adr.abs | adr.absi) addr = tmp16;
+        else if(adr.abx) addr = tmp16 + X;
+        else if(adr.aby) addr = tmp16 + Y;
+    }
+    else if(adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi){
+        tmp8 = read_prom(PC++, PROM);
+        if(adr.zp | adr.zpiy) addr = tmp8;
+        else if(adr.zpx | adr.zpxi) addr = tmp8 + X;
+        else if(adr.zpy) addr = tmp8 + Y;
+    } 
+
+    if(adr.absi | adr.zpxi | adr.zpiy){
+        if(adr.zpxi) addr &= 0xff;
+        addr = norm_read16(addr, WRAM, PROM);
+        if(adr.zpiy) addr += Y;
+    }
+
+    return addr;
 }
 

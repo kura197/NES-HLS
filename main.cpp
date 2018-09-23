@@ -74,15 +74,14 @@ component void exec_nes(
         ){
     static CPU cpu;
     static PPU ppu;
-    //hls_init_on_powerup static uint8_t WRAM[0x10000];
-    hls_init_on_powerup static uint8_t WRAM[0x800];
     hls_init_on_powerup static uint8_t PROM[0x8000];
     hls_init_on_powerup static uint8_t PPU_RAM[0x4000];
+    hls_init_on_powerup static uint8_t WRAM[0x800];
     hls_init_on_powerup static uint8_t SP_RAM[0x100];
 
-    static bool init;
-    if(!init) test_load(PROM, PPU_RAM);
-    init = true;
+    //static bool init;
+    //if(!init) test_load(PROM, PPU_RAM);
+    //init = true;
 
     static struct SPREG spreg;
     static bool nmi;

@@ -6,7 +6,7 @@
 #include "ram.h"
 #include "instr.h"
 #include <HLS/ac_int.h>
-
+#include <HLS/hls.h>
 
 #define IRQ 0
 #define NMI 1
@@ -14,6 +14,9 @@
 
 using namespace std;
 
+struct ADDRESS{
+    bool imm, zp, zpx, zpy, abs, abx, aby, zpxi, zpiy, absi, imp;
+};
 
 class CPU : RAM{
     private:
@@ -22,6 +25,7 @@ class CPU : RAM{
         uint8_t X;
         uint8_t Y;
         uint8_t SP;
+        uint8_t Stack[0x100];
         //uint8_t CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         //bool CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         uint1 CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
@@ -46,6 +50,7 @@ class CPU : RAM{
         uint8_t norm_read8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM);
         uint16_t norm_read16(uint16_t addr, uint8_t* WRAM, uint8_t* PROM);
         uint8_t read_mem8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM);
+        uint16_t addressing(uint16_t opr_pc, struct ADDRESS adr, uint8_t* WRAM, uint8_t* PROM);
 
         void load_key(uint8_t key){Input_Key(key);};
         void exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM);
@@ -53,6 +58,7 @@ class CPU : RAM{
         //void set_irq(bool signal);
         void set_reset();
         //void reset(uint8_t* WRAM, uint8_t* PPU_RAM);
+        void set_mode_false(struct ADDRESS* adr);
         void exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg);
         void exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM);
         void execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg);
