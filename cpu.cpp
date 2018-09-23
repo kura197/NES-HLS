@@ -39,7 +39,7 @@ uint16_t CPU::pop16(uint8_t* WRAM){
     return data;
 }
 
-uint8_t CPU::norm_read8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
+uint8_t CPU::read_mem8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
     uint8_t data = 0;
     //if((addr >> 15) & 1){
     if(addr >= 0x8000)
@@ -48,6 +48,10 @@ uint8_t CPU::norm_read8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
     //else
     //    printf("nread8:%02x\n", addr);
     return data;
+}
+
+uint8_t CPU::norm_read8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
+    return WRAM[addr & 0x7FF];
 }
 
 uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
@@ -96,16 +100,16 @@ void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
             DMAExcute = 0;
 }
 
-struct SPREG CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG s){
+void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg){
 
     //if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM, PROM); reset_line = false;
     //if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM, PROM); nmi_line = false;
 
-    spreg = s;
+    //spreg = s;
     //printf("SPHIT:%d\n", spreg.SPhit);
     if(DMAExcute) exec_DMA(SP_RAM, WRAM);
-    else execution(WRAM, PPU_RAM, SP_RAM, PROM);
-    return spreg;
+    else execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg);
+    //return spreg;
 }
 
 
@@ -175,7 +179,7 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, 
     op_rti = false;   \
 }
 
-void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM){
+void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg){
     bool imm, zp, zpx, zpy, abs, abx, aby, zpxi, zpiy, absi, imp;
     bool op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
     bool op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror;
@@ -445,7 +449,8 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
         addr = _absi(opr_pc, WRAM, PROM);
 
     //hls_register uint8_t rddata = norm_read8(addr, WRAM);
-    hls_register uint8_t rddata = norm_read8(addr, WRAM, PROM);
+    //hls_register uint8_t rddata = norm_read8(addr, WRAM, PROM);
+    hls_register uint8_t rddata = read_mem8(addr, WRAM, PROM);
     //if(imm) rddata = read_prom(addr, PROM);
     //else rddata = norm_read8(addr, WRAM);
 

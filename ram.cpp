@@ -42,7 +42,7 @@ using namespace std;
 //    printf("\n");
 //}
 
-uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
+uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* spreg){
     uint8_t data;
     //if(addr < 0x2000)   addr = addr & 0x7FF;
     //else if(addr < 0x4000) addr = addr & 0x2007;
@@ -50,9 +50,9 @@ uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
     //uint8_t tmp;
     switch(addr){
         case 0x2002: 
-              data = _set(spreg.VBlank,7)|_set(spreg.SPhit,6)|_set(spreg.num_ScanSP,5);
+              data = _set(spreg->VBlank,7)|_set(spreg->SPhit,6)|_set(spreg->num_ScanSP,5);
               //printf("reg[0x2002] : %02x\n", data);
-              spreg.VBlank = false;
+              spreg->VBlank = false;
               BGoffset_sel_X = false;
               PPUAddr_sel_H = false;
         //    data = WRAM[addr];
@@ -80,17 +80,17 @@ uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM){
     return data;
 }
 
-void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM){
+void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, struct SPREG* spreg){
     //if(addr < 0x2000)   addr = addr & 0x7FF;
     //else if(addr < 0x4000) addr = addr & 0x2007;
     //if(addr >= 0x8000) printf("write error. addr:%04x\n", addr);
     switch(addr){
         case 0x2000: 
-            write_2000(data);
-            PPUInc = (bool)((data >> 2) & 1);    
+            write_2000(data, spreg);
+            //PPUInc = (bool)((data >> 2) & 1);    
             break;
         case 0x2001: 
-            write_2001(data);
+            write_2001(data, spreg);
             break;
         case 0x2003: 
             write_2003(data);
@@ -99,7 +99,7 @@ void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, ui
             write_2004(data, SP_RAM);
             break;
         case 0x2005: 
-            write_2005(data);
+            write_2005(data, spreg);
             break;
         case 0x2006: 
             write_2006(data);
@@ -125,25 +125,25 @@ void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, ui
 //        nes->cpu->set_nmi(VBlank);
 //}
 
-void RAM::write_2000(uint8_t data){
-    spreg.VBlank_NMI = (bool)((data >> 7) & 1);    
+void RAM::write_2000(uint8_t data, struct SPREG* spreg){
+    spreg->VBlank_NMI = (bool)((data >> 7) & 1);    
     //spreg.SPSize =     (bool)((data >> 5) & 1);    
-    spreg.BGPtnAddr =  (bool)((data >> 4) & 1);    
-    spreg.SPPtnAddr =  (bool)((data >> 3) & 1);    
+    spreg->BGPtnAddr =  (bool)((data >> 4) & 1);    
+    spreg->SPPtnAddr =  (bool)((data >> 3) & 1);    
     PPUInc =     (bool)((data >> 2) & 1);    
-    spreg.NameAddrH =  (bool)((data >> 1) & 1);    
-    spreg.NameAddrL =  (bool)((data >> 0) & 1);    
+    spreg->NameAddrH =  (bool)((data >> 1) & 1);    
+    spreg->NameAddrL =  (bool)((data >> 0) & 1);    
 }
 
-void RAM::write_2001(uint8_t data){
+void RAM::write_2001(uint8_t data, struct SPREG* spreg){
     //printf("write $2001. data = %02x\n",data);
     //BGColor2 =  (bool)((data >> 7) & 1);    
     //BGColor1 =  (bool)((data >> 6) & 1);    
     //BGColor0 =  (bool)((data >> 5) & 1);    
-    spreg.EnSP =      (bool)((data >> 4) & 1);    
-    spreg.EnBG =      (bool)((data >> 3) & 1);    
-    spreg.SPMSK =     (bool)((data >> 2) & 1);    
-    spreg.BGMSK =     (bool)((data >> 1) & 1);    
+    spreg->EnSP =      (bool)((data >> 4) & 1);    
+    spreg->EnBG =      (bool)((data >> 3) & 1);    
+    spreg->SPMSK =     (bool)((data >> 2) & 1);    
+    spreg->BGMSK =     (bool)((data >> 1) & 1);    
     //DispType =  (bool)((data >> 0) & 1);    
 }
 
@@ -156,13 +156,13 @@ void RAM::write_2004(uint8_t data, uint8_t* SP_RAM){
     //write_SPRAM(SPAddr++, data);
 }
 
-void RAM::write_2005(uint8_t data){
+void RAM::write_2005(uint8_t data, struct SPREG* spreg){
     if(!BGoffset_sel_X){
-        spreg.BGoffset_X = data;
+        spreg->BGoffset_X = data;
         BGoffset_sel_X = true;
     }  
     else{
-        spreg.BGoffset_Y = data;
+        spreg->BGoffset_Y = data;
         BGoffset_sel_X = false;
     }
 }
