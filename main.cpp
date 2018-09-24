@@ -35,37 +35,6 @@ void test_load(uint8_t* WRAM, uint8_t* PPU_RAM){
     }
 }
 
-//hls_avalon_slave_component
-//struct SCROLL exec_cpu(
-//              //ihc::mm_master<uint8_t, ihc::aspace<5>, ihc::awidth<15>, ihc::dwidth<8*8>, ihc::align<8> >& PROM,
-//              ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8*8>, ihc::align<8> >& WRAM,
-//              ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
-//              ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
-//              //hls_avalon_slave_memory_argument(0x8000*sizeof(uint8_t)) uint8_t *WRAM, 
-//              //hls_avalon_slave_memory_argument(0x4000*sizeof(uint8_t)) uint8_t *PPU_RAM, 
-//              //hls_avalon_slave_memory_argument(0x100*sizeof(uint8_t)) uint8_t *SP_RAM, 
-//              bool res, bool nmi){
-//    static CPU cpu;
-//    //hls_init_on_powerup static uint8_t WRAM[0x10000];
-//    struct SCROLL scr;
-//    if(res) cpu.set_reset();
-//    if(nmi) cpu.set_nmi();
-//    //scr = cpu.exec(WRAM, PPU_RAM, SP_RAM);
-//    return scr;
-//}
-
-//bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& WRAM,
-//bool exec_ppu(ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8*8>, ihc::align<8> >& WRAM,
-//              //ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<15>, ihc::dwidth<8*8>, ihc::align<8> >& WRAM,
-//              ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> >& PPU_RAM,
-//              ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> >& SP_RAM,
-//              ihc::mm_master<uint8_t, ihc::aspace<4>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
-//              uint8_t BG_offset_x, uint8_t BG_offset_y)
-//{
-//    static PPU ppu;
-//    bool nmi = ppu.render(WRAM, PPU_RAM, SP_RAM, VRAM, BG_offset_x, BG_offset_y);
-//    return nmi;
-//}
 
 //hls_avalon_slave_component
 component 
@@ -76,18 +45,21 @@ void exec_nes(
             //hls_avalon_slave_memory_argument(256*240*sizeof(uint6)) uint6 *VRAM, 
             uint8_t key, bool res
         ){
-    hls_init_on_powerup static uint8_t PROM[0x8000];
-    hls_init_on_powerup static uint8_t PPU_RAM[0x4000];
-    hls_init_on_powerup static uint8_t WRAM[0x800];
-    hls_init_on_powerup static uint8_t SP_RAM[0x100];
-    //hls_register uint8_t Stack[0x40];
-    static uint8_t Stack[0x100];
     static CPU cpu;
     static PPU ppu;
 
-    static bool init;
-    if(!init) test_load(PROM, PPU_RAM);
-    init = true;
+    hls_init_on_powerup static uint8_t PROM[0x8000];
+    hls_init_on_powerup static uint8_t CROM[0x2000];
+    static uint8_t PPU_RAM[0x2000];
+    static uint8_t WRAM[0x800];
+    static uint8_t SP_RAM[0x100];
+    //hls_register uint8_t Stack[0x40];
+    static uint8_t Stack[0x100];
+
+    //static bool init;
+    //if(!init) test_load(PROM, CROM);
+    //init = true;
+
 
     static struct SPREG spreg;
     static bool nmi;
@@ -98,14 +70,14 @@ void exec_nes(
     uint8_t irq_num;
     if(nmi) irq_num = NMI;
     else if(res) irq_num = RESET;
-    if(res | nmi) cpu.exec_irq(irq_num, WRAM, PPU_RAM, SP_RAM, PROM, Stack);
+    if(res | nmi) cpu.exec_irq(irq_num, PROM);
 
     cpu.load_key(key);
     for(int c = 0; c < 40; c++) {
-        cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack);
+        cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
     }
     //printf("sphit:%d\n", spreg.SPhit);
-    nmi = ppu.render(PPU_RAM, SP_RAM, VRAM, &spreg);
+    nmi = ppu.render(PPU_RAM, SP_RAM, VRAM, &spreg, CROM);
 }
 
 //component int test(int arg){

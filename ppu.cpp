@@ -2,7 +2,7 @@
 #include "ppu.h"
 
 #define get_bit(data, bit) ((data >> bit) & 1)
-bool PPU::render(uint8_t* PPU_RAM, uint8_t* SP_RAM, uint6* VRAM, struct SPREG* spreg){
+bool PPU::render(uint8_t* PPU_RAM, uint8_t* SP_RAM, uint6* VRAM, struct SPREG* spreg, uint8_t* CROM){
     bool nmi = false;
     line++;
     if(line == 240){
@@ -18,14 +18,14 @@ bool PPU::render(uint8_t* PPU_RAM, uint8_t* SP_RAM, uint6* VRAM, struct SPREG* s
     if(line < 240){
         bool BGen = spreg->EnBG;
         bool SPen = spreg->EnSP;
-        if(BGen)  bg_render(line, spreg, PPU_RAM, VRAM);
-        if(SPen)  sp_render(line, spreg, PPU_RAM, SP_RAM, VRAM);
+        if(BGen)  bg_render(line, spreg, PPU_RAM, VRAM, CROM);
+        if(SPen)  sp_render(line, spreg, PPU_RAM, SP_RAM, VRAM, CROM);
     }
     return nmi;
 }
 
 #define _pttnbit(data, data_bit, ret_bit) (((data >> data_bit) & 1) << ret_bit)
-void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint6* VRAM){
+void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint6* VRAM, uint8_t* CROM){
     uint8_t sc_x = spreg->BGoffset_X;
     uint8_t sc_y = spreg->BGoffset_Y;
     uint8_t tile_offset = sc_x / 8;
@@ -48,25 +48,33 @@ void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint6* 
         uint8_t tile = col + tile_offset;
         if(tile < 32){
             name_index = (line/8)*32 + tile;
-            name = 16 * PPU_RAM[name_base + name_index];
+            //name = 16 * PPU_RAM[name_base + name_index];
+            name = 16 * read_PPURAM(name_base + name_index, PPU_RAM);
             attr_index = (line/32)*8 + tile/4;
-            attr = PPU_RAM[attr_base + attr_index];
+            //attr = PPU_RAM[attr_base + attr_index];
+            attr = read_PPURAM(attr_base + attr_index, PPU_RAM);
         }else{
             name_index = (line/8)*32 + col + tile_offset - 32;
             attr_index = (line/32)*8 + tile/4 - 8;
             if(!low&!high){
-                name = 16 * PPU_RAM[0x2400 + name_index];
-                attr = PPU_RAM[0x27C0 + attr_index];
+                //name = 16 * PPU_RAM[0x2400 + name_index];
+                //attr = PPU_RAM[0x27C0 + attr_index];
+                name = 16 * read_PPURAM(0x2400 + name_index, PPU_RAM);
+                attr = read_PPURAM(0x27C0 + attr_index, PPU_RAM);
             }  
             else if(low&!high){
-                name = 16 * PPU_RAM[0x2000 + name_index];
-                attr = PPU_RAM[0x23C0 + attr_index];
+                //name = 16 * PPU_RAM[0x2000 + name_index];
+                //attr = PPU_RAM[0x23C0 + attr_index];
+                name = 16 * read_PPURAM(0x2000 + name_index, PPU_RAM);
+                attr = read_PPURAM(0x23C0 + attr_index, PPU_RAM);
             } 
         }
 
         uint16_t pttn_base = (spreg->BGPtnAddr) ? 0x1000 : 0x0000;
-        uint8_t pttn_L = PPU_RAM[pttn_base + name + (line % 8)];
-        uint8_t pttn_H = PPU_RAM[pttn_base + name + (line % 8) + 8];
+        //uint8_t pttn_L = PPU_RAM[pttn_base + name + (line % 8)];
+        //uint8_t pttn_H = PPU_RAM[pttn_base + name + (line % 8) + 8];
+        uint8_t pttn_L = CROM[pttn_base + name + (line % 8)];
+        uint8_t pttn_H = CROM[pttn_base + name + (line % 8) + 8];
         bool upper = (line % 32) < 16;
         bool left = (tile % 4) < 2;
         uint8_t locate;
@@ -84,9 +92,9 @@ void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint6* 
         for(int i = 0; i < 8; i++){
             uint8_t offset = _pttnbit(pttn_H,(7-i),1) | _pttnbit(pttn_L,(7-i),0);
             bool valid = true;
-            if(offset != 0) color = PPU_RAM[color_addr_base + offset];
+            if(offset != 0) color = read_PPURAM(color_addr_base + offset, PPU_RAM);
             else { 
-                color = PPU_RAM[0x3F00];
+                color = read_PPURAM(0x3F00, PPU_RAM);
                 valid = false;
             }
             bool render_en = false;
@@ -105,7 +113,7 @@ void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint6* 
     }
 }
 
-void PPU::sp_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint6* VRAM){
+void PPU::sp_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint6* VRAM, uint8_t* CROM){
     int num_sp = 0;
     for(int spr = 0; spr < 64; spr++){
         uint8_t spr_y = SP_RAM[4*spr];
@@ -123,8 +131,10 @@ void PPU::sp_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t
 
         uint16_t pttn_base = (spreg->SPPtnAddr) ? 0x1000 : 0x0000;
         uint8_t pttn_offset = (ud_rev) ? 7 - (line - spr_y) : line - spr_y;
-        uint8_t pttn_L = PPU_RAM[pttn_base + spr_ptn_index + (pttn_offset % 8)];
-        uint8_t pttn_H = PPU_RAM[pttn_base + spr_ptn_index + (pttn_offset % 8) + 8];
+        //uint8_t pttn_L = PPU_RAM[pttn_base + spr_ptn_index + (pttn_offset % 8)];
+        //uint8_t pttn_H = PPU_RAM[pttn_base + spr_ptn_index + (pttn_offset % 8) + 8];
+        uint8_t pttn_L = CROM[pttn_base + spr_ptn_index + (pttn_offset % 8)];
+        uint8_t pttn_H = CROM[pttn_base + spr_ptn_index + (pttn_offset % 8) + 8];
 
         uint16_t color_addr_base = (0x3F10 + palette*4);
         uint8_t color;
@@ -134,7 +144,7 @@ void PPU::sp_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t
             else offset = _pttnbit(pttn_H,(7-i),1) | _pttnbit(pttn_L,(7-i),0);
             if(offset == 0) continue;
             if(spr == 0) spreg->SPhit = true;
-            color = PPU_RAM[color_addr_base + offset];
+            color = read_PPURAM(color_addr_base + offset, PPU_RAM);
             if(!(bg_priority & BG_Valid[spr_x+i])) store_vram(line, spr_x+i, color, true, VRAM, spreg);
         }
     }
@@ -166,4 +176,8 @@ void PPU::clr_bit(uint8_t* WRAM, uint16_t addr, uint8_t bit){
     //tmp &= ~(1 << bit);
     //WRAM[addr] = tmp;
     WRAM[addr] &= ~(1 << bit);
+}
+
+uint8_t PPU::read_PPURAM(uint16_t addr, uint8_t* PPU_RAM){
+    return PPU_RAM[addr & 0x1FFF];
 }

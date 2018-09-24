@@ -92,8 +92,8 @@ class RAM{
         //void dump_WRAM(uint16_t start_addr, uint16_t size);
         //void dump_PROM(uint16_t start_addr, uint16_t size);
         //void dump_PPURAM(uint16_t start_addr, uint16_t size);
-        uint8_t read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* spreg);
-        void write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, struct SPREG* spreg);
+        uint8_t read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* spreg, uint8_t* CROM);
+        void write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, struct SPREG* spreg, uint8_t* CROM);
         //void set_VBlank(bool vblank, bool nmi);
         void write_2000(uint8_t data, struct SPREG* spreg);
         void write_2001(uint8_t data, struct SPREG* spreg);
@@ -101,8 +101,8 @@ class RAM{
         void write_2004(uint8_t data, uint8_t* SP_RAM);
         void write_2005(uint8_t data, struct SPREG* spreg);
         void write_2006(uint8_t data);
-        void write_2007(uint8_t data, uint8_t* PPU_RAM);
-        uint8_t read_2007(uint8_t* PPU_RAM);
+        void write_2007(uint8_t data, uint8_t* PPU_RAM, uint8_t* CROM);
+        uint8_t read_2007(uint8_t* PPU_RAM, uint8_t* CROM);
         void DMA_start(uint8_t addr_H, uint8_t* WRAM, uint8_t* SP_RAM);
         void reset_pad(uint8_t data);
         uint8_t read_pad_1();

@@ -40,9 +40,9 @@ class CPU : RAM{
         uint16_t Stack_PC;
         uint8_t Stack_Flags;
 
-        uint16_t res_vec;
-        uint16_t irq_vec;
-        uint16_t nmi_vec;
+        //uint16_t res_vec;
+        //uint16_t irq_vec;
+        //uint16_t nmi_vec;
 
     public:
         //CPU(uint8_t* PROM);
@@ -57,7 +57,7 @@ class CPU : RAM{
         uint8_t norm_read8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM);
         uint16_t norm_read16(uint16_t addr, uint8_t* WRAM, uint8_t* PROM);
         uint8_t read_mem8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM);
-        uint16_t addressing(uint16_t opr_pc, struct ADDRESS adr, uint8_t* WRAM, uint8_t* PROM);
+        uint16_t addressing(struct ADDRESS adr, uint8_t* WRAM, uint8_t* PROM);
 
         void load_key(uint8_t key){Input_Key(key);};
         void exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM);
@@ -66,9 +66,9 @@ class CPU : RAM{
         void set_reset();
         //void reset(uint8_t* WRAM, uint8_t* PPU_RAM);
         void set_mode_false(struct ADDRESS* adr);
-        void exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack);
-        void exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, uint8_t* Stack);
-        void execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack);
+        void exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack, uint8_t* CROM);
+        void exec_irq(int cause, uint8_t* PROM);
+        void execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack, uint8_t* CROM);
 
         //uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM)  
         //    {return PC++;};

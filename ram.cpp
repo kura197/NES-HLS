@@ -42,7 +42,7 @@ using namespace std;
 //    printf("\n");
 //}
 
-uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* spreg){
+uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* spreg, uint8_t* CROM){
     uint8_t data;
     //if(addr < 0x2000)   addr = addr & 0x7FF;
     //else if(addr < 0x4000) addr = addr & 0x2007;
@@ -60,7 +60,7 @@ uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* 
         //    WRAM[addr] = tmp;
             break;
         case 0x2007:
-            data = read_2007(PPU_RAM);
+            data = read_2007(PPU_RAM, CROM);
             break;
         case 0x4016:
             data = read_pad_1();
@@ -80,7 +80,7 @@ uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* 
     return data;
 }
 
-void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, struct SPREG* spreg){
+void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, struct SPREG* spreg, uint8_t* CROM){
     //if(addr < 0x2000)   addr = addr & 0x7FF;
     //else if(addr < 0x4000) addr = addr & 0x2007;
     //if(addr >= 0x8000) printf("write error. addr:%04x\n", addr);
@@ -105,7 +105,7 @@ void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, ui
             write_2006(data);
             break;
         case 0x2007: 
-            write_2007(data, PPU_RAM);
+            write_2007(data, PPU_RAM, CROM);
             break;
         case 0x4014: 
             DMA_start(data, WRAM, SP_RAM);
@@ -181,7 +181,7 @@ void RAM::write_2006(uint8_t data){
     } 
 }
 
-void RAM::write_2007(uint8_t data, uint8_t* PPU_RAM){
+void RAM::write_2007(uint8_t data, uint8_t* PPU_RAM, uint8_t* CROM){
     //uint16_t PPU_Addr = ((uint16_t)PPUAddr_H << 8) | PPUAddr_L;
     //uint32_t addr = PPUAddr & 0x3fff;
     uint16_t addr = PPUAddr;
@@ -202,13 +202,14 @@ void RAM::write_2007(uint8_t data, uint8_t* PPU_RAM){
             break;
     }
     //printf("ppu_ram write addr:%04x data:%02x\n", addr, data);
-    PPU_RAM[addr] = data;
+    if((addr >> 13) & 1)    PPU_RAM[addr & 0x1FFF] = data;
+    else CROM[addr] = data;
     PPUAddr = (PPUInc) ? PPUAddr + 32 : PPUAddr + 1;
     //PPUAddr_H = (uint8_t)(PPU_Addr >> 8);
     //PPUAddr_L = (uint8_t)PPU_Addr;
 }
 
-uint8_t RAM::read_2007(uint8_t* PPU_RAM){
+uint8_t RAM::read_2007(uint8_t* PPU_RAM, uint8_t* CROM){
     uint8_t data;
     //uint16_t PPU_Addr = ((uint16_t)PPUAddr_H << 8) | PPUAddr_L;
     //uint32_t addr = PPUAddr & 0x3fff;
@@ -230,7 +231,10 @@ uint8_t RAM::read_2007(uint8_t* PPU_RAM){
             break;
     }
 
-    uint8_t tmp_data = PPU_RAM[addr];
+    //uint8_t tmp_data = PPU_RAM[addr];
+    uint8_t tmp_data;
+    if((addr >> 13) & 1) tmp_data = PPU_RAM[addr & 0x1FFF];
+    else tmp_data = CROM[addr];
     if(addr < 0x3F00){
         data = spram_buf;
         spram_buf = tmp_data;

@@ -13,9 +13,9 @@ void CPU::dump_regs(uint8_t insn){
 }
 
 //CPU::CPU(uint8_t* PROM){
-//    uint16_t res_vec;
-//    uint16_t irq_vec;
-//    uint16_t nmi_vec;
+//    nmi_vec = read_prom16(0x7FFA, PROM);
+//    res_vec = read_prom16(0x7FFC, PROM);
+//    irq_vec = read_prom16(0x7FFE, PROM);
 //}
 
 void CPU::push8(uint8_t data, uint8_t* Stack){
@@ -107,7 +107,7 @@ void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
             DMAExcute = 0;
 }
 
-void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack){
+void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack, uint8_t* CROM){
 
     //if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM, PROM); reset_line = false;
     //if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM, PROM); nmi_line = false;
@@ -115,21 +115,19 @@ void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, 
     //spreg = s;
     //printf("SPHIT:%d\n", spreg.SPhit);
     if(DMAExcute) exec_DMA(SP_RAM, WRAM);
-    else execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack);
+    else execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack, CROM);
     //return spreg;
 }
 
 
-void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, uint8_t* Stack){
+void CPU::exec_irq(int cause, uint8_t* PROM){
     uint16_t vect;
-
     switch(cause){  
         case RESET: vect = 0xFFFC; break;
         case NMI:   vect = 0xFFFA; break;
         case IRQ:   vect = 0xFFFE; break;
         default:    vect = 0xFFFE; break;
     }
-    //if(log) cout << "interrupt occured!! jmp to " << vect << endl;
 
     //_push16(PC);
     //_push8(_bindFlags());
@@ -148,6 +146,13 @@ void CPU::exec_irq(int cause, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, 
     //PC = WRAM[vect];
     //PC |= (uint16_t)WRAM[vect+1] << 8;
     PC = read_prom16(vect, PROM);
+    //switch(cause){  
+    //    case RESET: PC = res_vec; break;
+    //    case NMI:   PC = nmi_vec; break;
+    //    case IRQ:   PC = irq_vec; break;
+    //    default:    PC = res_vec; break;
+    //}
+
 }
 
 void CPU::set_mode_false(struct ADDRESS* adr){  
@@ -190,7 +195,7 @@ void CPU::set_mode_false(struct ADDRESS* adr){
     op_pop = false;   \
 }
 
-void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack){
+void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack, uint8_t* CROM){
     struct ADDRESS adr;
     bool op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
     bool op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror;
@@ -206,7 +211,6 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     hls_register uint8_t IR = read_prom(PC, PROM);
     if(enlog) dump_regs(IR);
     PC++;
-    hls_register uint16_t opr_pc = PC;
 
     switch(IR){
         /* ALU */
@@ -459,7 +463,7 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     //else if(adr.absi)
     //    addr = _absi(opr_pc, WRAM, PROM);
 
-    addr = addressing(opr_pc, adr, WRAM, PROM);
+    addr = addressing(adr, WRAM, PROM);
 
     //hls_register uint8_t rddata = norm_read8(addr, WRAM);
     //hls_register uint8_t rddata = norm_read8(addr, WRAM, PROM);
@@ -638,21 +642,22 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
 
 }
 
-uint16_t CPU::addressing(uint16_t opr_pc, struct ADDRESS adr, uint8_t* WRAM, uint8_t* PROM){
+uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint8_t* PROM){
     uint16_t addr;
-    uint16_t tmp16;
-    uint8_t tmp8;
+    uint16_t tmp16 = read_prom16(PC, PROM);
+    uint8_t tmp8 = (uint8_t)tmp16;
 
     if(adr.imm) addr = PC++;
     else if(adr.abs | adr.abx | adr.aby | adr.absi){
-        tmp16 = read_prom16(opr_pc, PROM);
+        //tmp16 = read_prom16(PC, PROM);
         PC+=2;
         if(adr.abs | adr.absi) addr = tmp16;
         else if(adr.abx) addr = tmp16 + X;
         else if(adr.aby) addr = tmp16 + Y;
     }
     else if(adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi){
-        tmp8 = read_prom(PC++, PROM);
+        //tmp8 = read_prom(PC, PROM);
+        PC++;
         if(adr.zp | adr.zpiy) addr = tmp8;
         else if(adr.zpx | adr.zpxi) addr = tmp8 + X;
         else if(adr.zpy) addr = tmp8 + Y;

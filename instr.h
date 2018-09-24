@@ -82,12 +82,12 @@
 }
 
 #define _load(reg,adr) { \
-  reg=((adr >> 15) & 1) ? read_prom(adr, PROM) : read(adr, WRAM, PPU_RAM, spreg); \
+  reg=((adr >> 15) & 1) ? read_prom(adr, PROM) : read(adr, WRAM, PPU_RAM, spreg, CROM); \
   NFlag=reg>>7; \
   ZFlag=reg==0; \
 }
 #define _store(reg,adr) { \
-  write(adr,reg, WRAM, PPU_RAM, SP_RAM, spreg); \
+  write(adr,reg, WRAM, PPU_RAM, SP_RAM, spreg, CROM); \
 }
 
 #define _mov(dest,src) { \
