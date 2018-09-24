@@ -16,7 +16,7 @@ using namespace std;
 
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
-void set_vram(uint8_t* COLOR, uint8_t* VRAM);
+void set_vram(uint6* COLOR, uint8_t* VRAM);
 void make_bmp(uint8_t* VRAM, int index);
 
 uint8_t _PROM[0x8000];
@@ -67,25 +67,27 @@ void test_load(uint8_t* WRAM, uint8_t* PPU_RAM){
 //    return nmi;
 //}
 
-hls_avalon_slave_component
-component void exec_nes(
-            //ihc::mm_master<uint8_t, ihc::aspace<4>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
-            hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
-            //hls_avalon_slave_memory_argument(256*240*sizeof(uint6)) uint8_t *VRAM, 
+//hls_avalon_slave_component
+component 
+//hls_always_run_component
+void exec_nes(
+            ihc::mm_master<uint6, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
+            //hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
+            //hls_avalon_slave_memory_argument(256*240*sizeof(uint6)) uint6 *VRAM, 
             uint8_t key, bool res
         ){
-    static CPU cpu;
-    static PPU ppu;
     hls_init_on_powerup static uint8_t PROM[0x8000];
     hls_init_on_powerup static uint8_t PPU_RAM[0x4000];
     hls_init_on_powerup static uint8_t WRAM[0x800];
     hls_init_on_powerup static uint8_t SP_RAM[0x100];
     //hls_register uint8_t Stack[0x40];
     static uint8_t Stack[0x100];
+    static CPU cpu;
+    static PPU ppu;
 
-    //static bool init;
-    //if(!init) test_load(PROM, PPU_RAM);
-    //init = true;
+    static bool init;
+    if(!init) test_load(PROM, PPU_RAM);
+    init = true;
 
     static struct SPREG spreg;
     static bool nmi;
@@ -186,7 +188,7 @@ int main(int argc, char* argv[]){
 
     //NES nes;
     //nes.load_ROM(&ROM);
-    uint8_t COLOR[256*240];
+    uint6 COLOR[256*240];
     uint8_t VRAM[3*256*240];
     uint8_t WRAM[0x10000];
     uint8_t PROM[0x8000];
@@ -196,23 +198,23 @@ int main(int argc, char* argv[]){
     load_test_ROM(&ROM);
     ROM.close();
     //ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> > mm_WRAM(WRAM, sizeof(uint8_t)*0x10000);
-    ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8*8>, ihc::align<8> > mm_WRAM(WRAM, sizeof(uint8_t)*0x10000);
-    ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> > mm_PPU_RAM(PPU_RAM, sizeof(uint8_t)*0x4000);
-    ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> > mm_SP_RAM(SP_RAM, sizeof(uint8_t)*0x100);
-    ihc::mm_master<uint8_t, ihc::aspace<4>, ihc::awidth<16>, ihc::dwidth<8> > mm_COLOR(COLOR, sizeof(uint8_t)*(256*240));
-    ihc::mm_master<uint8_t, ihc::aspace<5>, ihc::awidth<15>, ihc::dwidth<8*8>, ihc::align<8> > mm_PROM(PROM, sizeof(uint8_t)*0x8000);
+    //ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8*8>, ihc::align<8> > mm_WRAM(WRAM, sizeof(uint8_t)*0x10000);
+    //ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> > mm_PPU_RAM(PPU_RAM, sizeof(uint8_t)*0x4000);
+    //ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> > mm_SP_RAM(SP_RAM, sizeof(uint8_t)*0x100);
+    ihc::mm_master<uint6, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> > mm_COLOR(COLOR, sizeof(uint6)*(256*240));
+    //ihc::mm_master<uint8_t, ihc::aspace<5>, ihc::awidth<15>, ihc::dwidth<8*8>, ihc::align<8> > mm_PROM(PROM, sizeof(uint8_t)*0x8000);
 
     int index = 0;
     int f = 0;
     uint8_t key = 0;
     struct SPREG spreg;
     bool nmi = false;
-    //scr = exec_cpu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, true, false);
-    //scr = exec_cpu(WRAM, PPU_RAM, SP_RAM, true, false);
-    exec_nes(COLOR, 0x0, true);
+    //exec_nes(COLOR, 0x0, true);
+    exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){
         for(int l = 0; l < 256; l++){
-            exec_nes(COLOR, 0x0, false);
+            //exec_nes(COLOR, 0x0, false);
+            exec_nes(mm_COLOR, 0x0, false);
         }
         //for(int l = 0; l < 256; l++){
         //    for(int c = 0; c < 40; c++) {
@@ -286,7 +288,7 @@ void load_test_ROM(ifstream *rom){
 }
 
 #define _rgb(r, g, b) (red = r, green = g, blue = b)
-void set_vram(uint8_t* COLOR, uint8_t* VRAM){
+void set_vram(uint6* COLOR, uint8_t* VRAM){
     for(int i = 0; i < 240*256; i++){
         //BGR
         uint8_t blue, green, red; 

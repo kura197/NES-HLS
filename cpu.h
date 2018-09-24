@@ -40,7 +40,12 @@ class CPU : RAM{
         uint16_t Stack_PC;
         uint8_t Stack_Flags;
 
+        uint16_t res_vec;
+        uint16_t irq_vec;
+        uint16_t nmi_vec;
+
     public:
+        //CPU(uint8_t* PROM);
         void dump_regs(uint8_t insn);
         //uint8_t read_mem8(uint16_t addr);
         uint16_t read_mem16(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM);

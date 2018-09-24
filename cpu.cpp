@@ -12,6 +12,11 @@ void CPU::dump_regs(uint8_t insn){
    //                 PC, insn, ACC, X, Y, flag, SP);
 }
 
+//CPU::CPU(uint8_t* PROM){
+//    uint16_t res_vec;
+//    uint16_t irq_vec;
+//    uint16_t nmi_vec;
+//}
 
 void CPU::push8(uint8_t data, uint8_t* Stack){
     Stack[(uint8_t)(SP--) & 0x3F] = data;
