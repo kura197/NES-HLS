@@ -14,6 +14,8 @@
 
 using namespace std;
 
+const bool test = true;
+//const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint6* COLOR, uint8_t* VRAM);
@@ -40,9 +42,9 @@ void test_load(uint8_t* WRAM, uint8_t* PPU_RAM){
 component 
 //hls_always_run_component
 void exec_nes(
-            //ihc::mm_master<uint6, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
+            ihc::mm_master<uint6, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
             //hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
-            hls_avalon_slave_memory_argument(256*240*sizeof(uint6)) uint6 *VRAM, 
+            //hls_avalon_slave_memory_argument(256*240*sizeof(uint6)) uint6 *VRAM, 
             uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_vec,
             uint8_t key, bool res
         ){
@@ -58,12 +60,14 @@ void exec_nes(
     //hls_register uint8_t Stack[0x40];
     static uint8_t Stack[0x100];
 
-    static bool init;
-    if(!init) test_load(PROM, CROM);
-    init = true;
-    nmi_vec = (uint16_t)PROM[0x7FFB] << 8 | PROM[0x7FFA];
-    res_vec = (uint16_t)PROM[0x7FFD] << 8 | PROM[0x7FFC];
-    irq_vec = (uint16_t)PROM[0x7FFF] << 8 | PROM[0x7FFE];
+    if(test){
+        static bool init;
+        if(!init) test_load(PROM, CROM);
+        init = true;
+        nmi_vec = (uint16_t)PROM[0x7FFB] << 8 | PROM[0x7FFA];
+        res_vec = (uint16_t)PROM[0x7FFD] << 8 | PROM[0x7FFC];
+        irq_vec = (uint16_t)PROM[0x7FFF] << 8 | PROM[0x7FFE];
+    }
 
 
     static struct SPREG spreg;
@@ -186,11 +190,11 @@ int main(int argc, char* argv[]){
     uint8_t key = 0;
     struct SPREG spreg;
     bool nmi = false;
-    exec_nes(COLOR, 0, 0, 0, 0x0, true);
+    exec_nes(mm_COLOR, 0, 0, 0, 0x0, true);
     //exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){
         for(int l = 0; l < 256; l++){
-            exec_nes(COLOR, 0, 0, 0, 0x0, false);
+            exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
             //exec_nes(mm_COLOR, 0x0, false);
         }
         //for(int l = 0; l < 256; l++){

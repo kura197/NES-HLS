@@ -44,11 +44,8 @@ uint16_t CPU::pop16(uint8_t* Stack){
 uint8_t CPU::read_mem8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
     uint8_t data = 0;
     if((addr >> 15) & 1)
-    //if(addr >= 0x8000)
         data = read_prom(addr, PROM);
     else data = WRAM[addr & 0x7FF];
-    //else
-    //    printf("nread8:%02x\n", addr);
     return data;
 }
 
@@ -58,8 +55,6 @@ uint8_t CPU::norm_read8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
 
 uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
     uint16_t data;
-    //data = WRAM[addr];
-    //data |= (uint16_t)WRAM[addr+1] << 8;
     data = norm_read8(addr, WRAM, PROM);
     data |= (uint16_t)norm_read8(addr+1, WRAM, PROM) << 8;
     return data;
@@ -360,15 +355,6 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
         case 0xCA: _decr(X);  break;
         case 0x88: _decr(Y);  break;
 
-                   /* branch */
-        //case 0x90: _bra(!CFlag); break; // BCC
-        //case 0xB0: _bra( CFlag); break; // BCS
-        //case 0xD0: _bra(!ZFlag); break; // BNE
-        //case 0xF0: _bra( ZFlag); break; // BEQ
-        //case 0x10: _bra(!NFlag); break; // BPL
-        //case 0x30: _bra( NFlag); break; // BMI
-        //case 0x50: _bra(!VFlag); break; // BVC
-        //case 0x70: _bra( VFlag); break; // BVS
         case 0x90: if(!CFlag) {op_bra = true; adr.imm = true; } else PC++; break; // BCC
         case 0xB0: if( CFlag) {op_bra = true; adr.imm = true; } else PC++; break; // BCS
         case 0xD0: if(!ZFlag) {op_bra = true; adr.imm = true; } else PC++; break; // BNE
@@ -398,21 +384,11 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
         case 0xB8: VFlag=0;  break; // CLV
 
                    /* stack */
-        //case 0x48: push8(ACC, WRAM);  break; // PHA
-        //case 0x08: push8(_bindFlags(), WRAM);  break; // PHP
-        //case 0x68: ACC=pop8(WRAM);NFlag=ACC>>7;ZFlag=ACC==0;break; // PLA
-        //case 0x28: _unbindFlags(pop8(WRAM)); break; // PLP
         case 0x48: op_push = true; acc = true; break; // PHA
         case 0x08: op_push = true; break; // PHP
         case 0x68: op_pop = true; acc = true; break; // PLA
         case 0x28: op_pop = true; break; // PLP
 
-        //           /* others */
-        //case 0x00: // BRK
-        //           BFlag=1;
-        //           PC++;
-        //           exec_irq(IRQ, WRAM, PPU_RAM, SP_RAM);
-        //           break;
 
         case 0xEA: break; // NOP
 
@@ -421,51 +397,10 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
                break;
     }
 
-    //if(imm)
-    //    addr = _imm(opr_pc, WRAM);
-    //else if(zp)
-    //    addr = _zp(opr_pc, WRAM);
-    //else if(zpx)
-    //    addr = _zpx(opr_pc, WRAM);
-    //else if(abs)
-    //    addr = _abs(opr_pc, WRAM);
-    //else if(abx)
-    //    addr = _abx(opr_pc, WRAM);
-    //else if(aby)
-    //    addr = _aby(opr_pc, WRAM);
-    //else if(zpxi)
-    //    addr = _zpxi(opr_pc, WRAM);
-    //else if(zpiy)
-    //    addr = _zpiy(opr_pc, WRAM);
-    //else if(absi)
-    //    addr = _absi(opr_pc, WRAM);
-
-    //if(adr.imm)
-    //    addr = _imm(opr_pc, WRAM, PROM);
-    //else if(adr.zp)
-    //    addr = _zp(opr_pc, WRAM, PROM);
-    //else if(adr.zpx)
-    //    addr = _zpx(opr_pc, WRAM, PROM);
-    //else if(adr.abs)
-    //    addr = _abs(opr_pc, WRAM, PROM);
-    //else if(adr.abx)
-    //    addr = _abx(opr_pc, WRAM, PROM);
-    //else if(adr.aby)
-    //    addr = _aby(opr_pc, WRAM, PROM);
-    //else if(adr.zpxi)
-    //    addr = _zpxi(opr_pc, WRAM, PROM);
-    //else if(adr.zpiy)
-    //    addr = _zpiy(opr_pc, WRAM, PROM);
-    //else if(adr.absi)
-    //    addr = _absi(opr_pc, WRAM, PROM);
 
     addr = addressing(adr, WRAM, PROM);
 
-    //hls_register uint8_t rddata = norm_read8(addr, WRAM);
-    //hls_register uint8_t rddata = norm_read8(addr, WRAM, PROM);
     hls_register uint8_t rddata = read_mem8(addr, WRAM, PROM);
-    //if(imm) rddata = read_prom(addr, PROM);
-    //else rddata = norm_read8(addr, WRAM);
 
     if(op_adc){
         _adc(rddata);
@@ -545,48 +480,24 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     else if(op_jmp){
         PC = addr;
     }
-    else if(op_push | op_jsr){
-        if(op_push){
-            if(acc) rddata = ACC;
-            else rddata = _bindFlags();
-        }
-        else{
-            PC--;
-            rddata = PC >> 8;
-        }
-        push8(rddata, Stack);
+    //else if(op_push | op_jsr){
+    //    if(op_push){
+    //        if(acc) rddata = ACC;
+    //        else rddata = _bindFlags();
+    //    }
+    //    else{
+    //        PC--;
+    //        rddata = PC >> 8;
+    //    }
+    //    push8(rddata, Stack);
 
-        if(op_jsr){
-            rddata = PC;
-            push8(rddata, Stack);
-            PC = addr;
-        }
-    }
-    else if(op_pop | op_rts){
-        hls_register uint8_t pop1 = pop8(Stack);
-        if(op_pop){
-            if(acc){
-                ACC = pop1;
-                NFlag=ACC>>7;
-                ZFlag=ACC==0;
-            }
-            else _unbindFlags(pop1);
-        }
-        else{
-            hls_register uint8_t pop2 = pop8(Stack);
-            if(op_rts){
-                PC = 1 + (pop1 | (uint16_t)pop2 << 8);
-            }
-        }
-    }
-    else if(op_rti){
-        //_unbindFlags(pop8(WRAM));
-        //PC=pop16(WRAM);
-        _unbindFlags(Stack_Flags);
-        PC = Stack_PC;
-    }
-    
-    //else if(op_pop | op_rts | op_rti){
+    //    if(op_jsr){
+    //        rddata = PC;
+    //        push8(rddata, Stack);
+    //        PC = addr;
+    //    }
+    //}
+    //else if(op_pop | op_rts){
     //    hls_register uint8_t pop1 = pop8(Stack);
     //    if(op_pop){
     //        if(acc){
@@ -601,40 +512,38 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     //        if(op_rts){
     //            PC = 1 + (pop1 | (uint16_t)pop2 << 8);
     //        }
-    //        else if(op_rti){
-    //            hls_register uint8_t pop3 = pop8(Stack);
-    //            _unbindFlags(pop1);
-    //            PC = pop2 | (uint16_t)pop3 << 8;
-    //        }
     //    }
-    //}
-    
-    //else if(op_jsr){
-    //    push16(PC-1, WRAM);
-    //    PC = addr;
-    //}
-    //else if(op_push){
-    //    if(acc) rddata = ACC;
-    //    else rddata = _bindFlags();
-    //    push8(rddata, WRAM);
-    //}
-    //else if(op_rts){
-    //    PC=pop16(WRAM)+1;
     //}
     //else if(op_rti){
-    //    _unbindFlags(pop8(WRAM));
-    //    PC=pop16(WRAM);
+    //    _unbindFlags(Stack_Flags);
+    //    PC = Stack_PC;
     //}
-    //else if(op_pop){
-    //    rddata = pop8(WRAM);
-    //    if(acc){
-    //        ACC = rddata;
-    //        NFlag=ACC>>7;
-    //        ZFlag=ACC==0;
-    //    }
-    //    else _unbindFlags(rddata);
-    //}
-
+    else if(op_jsr){
+        push16(PC-1, Stack);
+        PC = addr;
+    }
+    else if(op_push){
+        if(acc) rddata = ACC;
+        else rddata = _bindFlags();
+        push8(rddata, Stack);
+    }
+    else if(op_rts){
+        PC=pop16(Stack)+1;
+    }
+    else if(op_rti){
+        _unbindFlags(Stack_Flags);
+        PC = Stack_PC;
+    }
+    else if(op_pop){
+        rddata = pop8(Stack);
+        if(acc){
+            ACC = rddata;
+            NFlag=ACC>>7;
+            ZFlag=ACC==0;
+        }
+        else _unbindFlags(rddata);
+    }
+    
 
 }
 
@@ -645,14 +554,14 @@ uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint8_t* PROM){
 
     if(adr.imm) addr = PC++;
     else if(adr.abs | adr.abx | adr.aby | adr.absi){
-        //tmp16 = read_prom16(PC, PROM);
+        //uint16_t tmp16 = read_prom16(PC, PROM);
         PC+=2;
         if(adr.abs | adr.absi) addr = tmp16;
         else if(adr.abx) addr = tmp16 + X;
         else if(adr.aby) addr = tmp16 + Y;
     }
     else if(adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi){
-        //tmp8 = read_prom(PC, PROM);
+        //uint8_t tmp8 = read_prom(PC, PROM);
         PC++;
         if(adr.zp | adr.zpiy) addr = tmp8;
         else if(adr.zpx | adr.zpxi) addr = tmp8 + X;

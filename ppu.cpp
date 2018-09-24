@@ -107,6 +107,7 @@ void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint6* 
             else render_en = true;
             
             uint8_t x = col*8 + i;
+            //BG_Valid_set(x, i, valid);
             BG_Valid[x] = valid;
             if(render_en) store_vram(line, x, color, false, VRAM, spreg);
         }
@@ -146,6 +147,7 @@ void PPU::sp_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t
             if(spr == 0) spreg->SPhit = true;
             color = read_PPURAM(color_addr_base + offset, PPU_RAM);
             if(!(bg_priority & BG_Valid[spr_x+i])) store_vram(line, spr_x+i, color, true, VRAM, spreg);
+            //if(!(bg_priority & BG_Valid_check(spr_x+i))) store_vram(line, spr_x+i, color, true, VRAM, spreg);
         }
     }
     if(num_sp >= 9) spreg->num_ScanSP = true;
@@ -176,6 +178,21 @@ void PPU::clr_bit(uint8_t* WRAM, uint16_t addr, uint8_t bit){
     //tmp &= ~(1 << bit);
     //WRAM[addr] = tmp;
     WRAM[addr] &= ~(1 << bit);
+}
+
+void PPU::BG_Valid_set(uint8_t x, uint8_t bit, bool valid){
+    uint8_t tmp = BG_Valid[x >> 3];
+    if(valid) tmp |= (1 << bit);
+    else tmp &= ~(1 << bit);
+    BG_Valid[(x >> 3)] = tmp;
+}
+
+bool PPU::BG_Valid_check(uint8_t x){
+    bool valid;
+    uint8_t tmp = BG_Valid[(x >> 3)];
+    uint8_t shift = x & 0x7;
+    valid = (tmp >> shift) & 1;
+    return valid;
 }
 
 uint8_t PPU::read_PPURAM(uint16_t addr, uint8_t* PPU_RAM){
