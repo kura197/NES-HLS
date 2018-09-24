@@ -120,14 +120,14 @@ void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, 
 }
 
 
-void CPU::exec_irq(int cause, uint8_t* PROM){
-    uint16_t vect;
-    switch(cause){  
-        case RESET: vect = 0xFFFC; break;
-        case NMI:   vect = 0xFFFA; break;
-        case IRQ:   vect = 0xFFFE; break;
-        default:    vect = 0xFFFE; break;
-    }
+void CPU::exec_irq(int cause, uint8_t* PROM, uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_vec){
+    //uint16_t vect;
+    //switch(cause){  
+    //    case RESET: vect = 0xFFFC; break;
+    //    case NMI:   vect = 0xFFFA; break;
+    //    case IRQ:   vect = 0xFFFE; break;
+    //    default:    vect = 0xFFFE; break;
+    //}
 
     //_push16(PC);
     //_push8(_bindFlags());
@@ -145,13 +145,14 @@ void CPU::exec_irq(int cause, uint8_t* PROM){
     //PC = read_mem16(vect, WRAM, PPU_RAM);
     //PC = WRAM[vect];
     //PC |= (uint16_t)WRAM[vect+1] << 8;
-    PC = read_prom16(vect, PROM);
-    //switch(cause){  
-    //    case RESET: PC = res_vec; break;
-    //    case NMI:   PC = nmi_vec; break;
-    //    case IRQ:   PC = irq_vec; break;
-    //    default:    PC = res_vec; break;
-    //}
+    
+    //PC = read_prom16(vect, PROM);
+    switch(cause){  
+        case NMI:   PC = nmi_vec; break;
+        case RESET: PC = res_vec; break;
+        case IRQ:   PC = irq_vec; break;
+        default:    PC = res_vec; break;
+    }
 
 }
 
