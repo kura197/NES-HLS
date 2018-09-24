@@ -12,20 +12,15 @@ void CPU::dump_regs(uint8_t insn){
    //                 PC, insn, ACC, X, Y, flag, SP);
 }
 
-//CPU::CPU(uint8_t* PROM){
-//    nmi_vec = read_prom16(0x7FFA, PROM);
-//    res_vec = read_prom16(0x7FFC, PROM);
-//    irq_vec = read_prom16(0x7FFE, PROM);
-//}
-
 void CPU::push8(uint8_t data, uint8_t* Stack){
-    Stack[(uint8_t)(SP--) & 0x3F] = data;
+    //Stack[(uint8_t)(SP--) & 0x3F] = data;
+    Stack[(uint8_t)(SP--) & 0xFF] = data;
     //WRAM[0x100|(uint8_t)(SP--)] = data;
     //norm_write8(0x100|(uint8_t)(SP--), data, WRAM);
 }
 
 uint8_t CPU::pop8(uint8_t* Stack){
-    return Stack[(uint8_t)(++SP) & 0x3F];
+    return Stack[(uint8_t)(++SP) & 0xFF];
     //return WRAM[0x100|(uint8_t)(++SP)];
     //return norm_read8(0x100|(uint8_t)(++SP), WRAM);
 }
@@ -498,7 +493,7 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
         _bit(rddata);
     }
     else if(op_load){
-        _load(rddata, addr);
+        _load(rddata, addr, rddata);
         if(acc) ACC = rddata;
         else if(x) X = rddata;
         else if(y) Y = rddata;

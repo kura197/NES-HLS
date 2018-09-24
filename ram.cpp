@@ -70,7 +70,7 @@ uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* 
             break;
         default:
             //if(addr >= 0x800) printf("read error. addr:%04x\n", addr);
-            data = WRAM[addr];
+            data = WRAM[addr&0x7FF];
             //if(addr == 0x2002){
             //    tmp = data & ~(1 << 7);
             //    WRAM[addr] = tmp;
