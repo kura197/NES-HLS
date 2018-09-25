@@ -55,6 +55,10 @@ struct DEBUG{
     uint16_t PC;
     uint8_t IR;
     uint32_t cache;
+    uint8_t SP;
+    uint8_t ACC;
+    uint8_t X;
+    uint8_t Y;
 };
 
 //hls_avalon_slave_component
@@ -103,10 +107,17 @@ struct DEBUG exec_nes(
     uint8_t irq_num;
     if(nmi) irq_num = NMI;
     else if(res) irq_num = RESET;
-    if(res | nmi) cpu.exec_irq(irq_num, nmi_vec, res_vec, irq_vec);
+    if(res | nmi){
+        if(cpu.state == false)
+            cpu.exec_irq(irq_num, nmi_vec, res_vec, irq_vec);
+        else {
+            cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
+            cpu.exec_irq(irq_num, nmi_vec, res_vec, irq_vec);
+        }
+    }
 
     cpu.load_key(key);
-    for(int c = 0; c < 40; c++) {
+    for(int c = 0; c < 80; c++) {
         cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
     }
     //printf("sphit:%d\n", spreg.SPhit);
@@ -116,6 +127,10 @@ struct DEBUG exec_nes(
     dbg.PC = cpu.get_PC();
     dbg.IR = cpu.get_IR();
     dbg.cache = cpu.get_cache();
+    dbg.SP = cpu.get_SP();
+    dbg.ACC = cpu.get_ACC();
+    dbg.X = cpu.get_X();
+    dbg.Y = cpu.get_Y();
     return dbg;
 }
 
