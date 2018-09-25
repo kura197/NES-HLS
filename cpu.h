@@ -20,6 +20,7 @@ struct ADDRESS{
 
 class CPU : RAM{
     private:
+        uint16_t PC;
         uint8_t ACC;
         uint8_t X;
         uint8_t Y;
@@ -49,7 +50,6 @@ class CPU : RAM{
         uint8_t Valid[4];
 
     public:
-        uint16_t PC;
 
         //CPU(uint8_t* PROM);
         void dump_regs(uint8_t insn);
@@ -131,6 +131,8 @@ class CPU : RAM{
         uint32_t read_prom_ex32(uint16_t addr, uint32_t* PROM);
         void cache_update(uint16_t addr, uint32_t* PROM);
         void cache_false();
+
+        uint16_t get_PC();
 
 };
 

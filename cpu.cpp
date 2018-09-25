@@ -7,9 +7,9 @@
 const bool enlog = false;
 
 void CPU::dump_regs(uint8_t insn){
-//    uint8_t flag = _bindFlags();
-//    printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
-//                    PC, insn, ACC, X, Y, flag, SP);
+    uint8_t flag = _bindFlags();
+    printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
+                    PC, insn, ACC, X, Y, flag, SP);
 }
 
 void CPU::push8(uint8_t data, uint8_t* Stack){
@@ -200,13 +200,14 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     hls_register uint16_t addr;
 
     cache_update(PC, PROM);
-    if(Valid[2] == false) return;
+    //if(Valid[2] == false) return;
 
     hls_register uint8_t IR = cache[0];
-    Valid[0] = false;
+    //Valid[0] = false;
+
     //hls_register uint8_t IR = read_prom(PC, PROM);
     if(enlog) dump_regs(IR);
-    PC++;
+    //PC++;
 
     switch(IR){
         /* ALU */
@@ -402,6 +403,14 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
                break;
     }
 
+    //if(Valid[2] == false && (adr.abs | adr.abx | adr.aby | adr.absi)){
+    //    //printf("OK\n");
+    //    return;
+    //}
+
+    //if(Valid[2] == false) return;
+    PC++;
+    Valid[0] = false;
 
     addr = addressing(adr, WRAM, PROM);
 
@@ -617,22 +626,20 @@ uint32_t CPU::read_prom_ex32(uint16_t addr, uint32_t* PROM){
 
 void CPU::cache_update(uint16_t addr, uint32_t* PROM){
     uint8_t v = 4;
-    for(int i = 0; i < 4; i++){
-        if(Valid[i]){
-            v = i;
-            break;
-        }
-    } 
-    //if(Valid[3]) v = 3;
-    //if(Valid[2]) v = 2;
-    //if(Valid[1]) v = 1;
-    //if(Valid[0]) v = 0;
+    //for(int i = 0; i < 4; i++){
+    //    if(Valid[i]){
+    //        v = i;
+    //        break;
+    //    }
+    //} 
+    if(Valid[3]) v = 3;
+    if(Valid[2]) v = 2;
+    if(Valid[1]) v = 1;
+    if(Valid[0]) v = 0;
 
     uint16_t read_addr;
     if(v == 4) read_addr = addr;
-    else{
-        read_addr = cache_addr;
-    } 
+    else read_addr = cache_addr;
     uint32_t data = read_prom_ex32(read_addr, PROM);
 
     uint8_t loc = read_addr & 0x3;
@@ -661,4 +668,8 @@ void CPU::cache_update(uint16_t addr, uint32_t* PROM){
 void CPU::cache_false(){
     for(int i = 0; i < 4; i++)
         Valid[i] = false;
+}
+
+uint16_t CPU::get_PC(){
+    return PC;
 }
