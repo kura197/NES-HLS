@@ -54,11 +54,14 @@ void test_load32(uint32_t* WRAM, uint8_t* PPU_RAM){
 struct DEBUG{
     uint16_t PC;
     uint8_t IR;
-    uint32_t cache;
     uint8_t SP;
+    uint32_t cache;
     uint8_t ACC;
     uint8_t X;
     uint8_t Y;
+    uint8_t addr;
+    struct SPREG spreg;
+    bool nmi;
 };
 
 //hls_avalon_slave_component
@@ -108,16 +111,11 @@ struct DEBUG exec_nes(
     if(nmi) irq_num = NMI;
     else if(res) irq_num = RESET;
     if(res | nmi){
-        if(cpu.state == false)
             cpu.exec_irq(irq_num, nmi_vec, res_vec, irq_vec);
-        else {
-            cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
-            cpu.exec_irq(irq_num, nmi_vec, res_vec, irq_vec);
-        }
     }
 
     cpu.load_key(key);
-    for(int c = 0; c < 80; c++) {
+    for(int c = 0; c < 40; c++) {
         cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
     }
     //printf("sphit:%d\n", spreg.SPhit);
@@ -131,6 +129,9 @@ struct DEBUG exec_nes(
     dbg.ACC = cpu.get_ACC();
     dbg.X = cpu.get_X();
     dbg.Y = cpu.get_Y();
+    dbg.addr = cpu.get_addr();
+    dbg.nmi = nmi;
+    dbg.spreg = spreg;
     return dbg;
 }
 
@@ -237,6 +238,9 @@ int main(int argc, char* argv[]){
     bool nmi = false;
     uint16_t PC;
     struct DEBUG dbg;
+    uint16_t nmi_vec = (uint16_t)PROM[0xFFFB] << 8 | PROM[0xFFFA];
+    uint16_t res_vec = (uint16_t)PROM[0xFFFD] << 8 | PROM[0xFFFC];
+    uint16_t irq_vec = (uint16_t)PROM[0xFFFF] << 8 | PROM[0xFFFE];
     exec_nes(mm_COLOR, 0, 0, 0, 0x0, true);
     //exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){

@@ -34,9 +34,9 @@ class CPU : RAM{
         //bool irq_line;
         uint1 nmi_line;
         //bool log;
-        //uint16_t addr;
+        uint16_t addr;
         //bool op;
-        uint8_t IR;
+        hls_register uint8_t IR;
         uint16_t Stack_PC;
         uint8_t Stack_Flags;
 
@@ -49,15 +49,14 @@ class CPU : RAM{
         //uint1 Valid[4];
         uint8_t Valid[4];
 
-        struct ADDRESS adr;
-        uint1 op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
-        uint1 op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror, op_bra_false;
-        uint1 op_inc, op_dec, op_bra, op_jmp, op_jsr, op_rts, op_rti, op_push, op_pop;
-        uint1 acc, x, y;
-        hls_register uint16_t addr;
+        //struct ADDRESS adr;
+        //uint1 op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
+        //uint1 op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror, op_bra_false;
+        //uint1 op_inc, op_dec, op_bra, op_jmp, op_jsr, op_rts, op_rti, op_push, op_pop;
+        //uint1 acc, x, y;
+        //hls_register uint16_t addr;
 
     public:
-        bool state;
 
         //CPU(uint8_t* PROM);
         void dump_regs(uint8_t insn);
@@ -147,6 +146,7 @@ class CPU : RAM{
         uint8_t get_ACC();
         uint8_t get_X();
         uint8_t get_Y();
+        uint16_t get_addr();
 
 };
 
