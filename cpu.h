@@ -36,7 +36,7 @@ class CPU : RAM{
         //bool log;
         //uint16_t addr;
         //bool op;
-        //uint8_t IR;
+        uint8_t IR;
         uint16_t Stack_PC;
         uint8_t Stack_Flags;
 
@@ -133,6 +133,8 @@ class CPU : RAM{
         void cache_false();
 
         uint16_t get_PC();
+        uint16_t get_IR();
+        uint32_t get_cache();
 
 };
 

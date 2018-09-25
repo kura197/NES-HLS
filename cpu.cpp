@@ -3,8 +3,8 @@
 #include "instr.h"
 #include "HLS/hls.h"
 
-//const bool enlog = true;
-const bool enlog = false;
+const bool enlog = true;
+//const bool enlog = false;
 
 void CPU::dump_regs(uint8_t insn){
     uint8_t flag = _bindFlags();
@@ -186,12 +186,13 @@ void CPU::set_mode_false(struct ADDRESS* adr){
     op_rti = false;   \
     op_push = false;   \
     op_pop = false;   \
+    op_bra_false = false; \
 }
 
 void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* PROM, struct SPREG* spreg, uint8_t* Stack, uint8_t* CROM){
     struct ADDRESS adr;
     bool op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
-    bool op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror;
+    bool op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror, op_bra_false;
     bool op_inc, op_dec, op_bra, op_jmp, op_jsr, op_rts, op_rti, op_push, op_pop;
     bool acc = false, x = false, y = false;
     set_mode_false(&adr);
@@ -200,9 +201,9 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     hls_register uint16_t addr;
 
     cache_update(PC, PROM);
-    //if(Valid[2] == false) return;
+    if(Valid[2] == false) return;
 
-    hls_register uint8_t IR = cache[0];
+    IR = cache[0];
     //Valid[0] = false;
 
     //hls_register uint8_t IR = read_prom(PC, PROM);
@@ -361,14 +362,14 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         case 0xCA: _decr(X);  break;
         case 0x88: _decr(Y);  break;
 
-        case 0x90: if(!CFlag) {op_bra = true; adr.imm = true; } else {Valid[1] = false; PC++;} break; // BCC
-        case 0xB0: if( CFlag) {op_bra = true; adr.imm = true; } else {Valid[1] = false; PC++;} break; // BCS
-        case 0xD0: if(!ZFlag) {op_bra = true; adr.imm = true; } else {Valid[1] = false; PC++;} break; // BNE
-        case 0xF0: if( ZFlag) {op_bra = true; adr.imm = true; } else {Valid[1] = false; PC++;} break; // BEQ
-        case 0x10: if(!NFlag) {op_bra = true; adr.imm = true; } else {Valid[1] = false; PC++;} break; // BPL
-        case 0x30: if( NFlag) {op_bra = true; adr.imm = true; } else {Valid[1] = false; PC++;} break; // BMI
-        case 0x50: if(!VFlag) {op_bra = true; adr.imm = true; } else {Valid[1] = false; PC++;} break; // BVC
-        case 0x70: if( VFlag) {op_bra = true; adr.imm = true; } else {Valid[1] = false; PC++;} break; // BVS
+        case 0x90: if(!CFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BCC
+        case 0xB0: if( CFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BCS
+        case 0xD0: if(!ZFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BNE
+        case 0xF0: if( ZFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BEQ
+        case 0x10: if(!NFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BPL
+        case 0x30: if( NFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BMI
+        case 0x50: if(!VFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BVC
+        case 0x70: if( VFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BVS
 
                    /* jump / call / return */
         case 0x4C: op_jmp = true; adr.abs  = true; break; // JMP abs
@@ -490,6 +491,10 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     }
     else if(op_bra){
         _bra(rddata);
+    }
+    else if(op_bra_false){
+        Valid[1] = false; 
+        PC++;
     }
     else if(op_jmp){
         PC = addr;
@@ -673,3 +678,17 @@ void CPU::cache_false(){
 uint16_t CPU::get_PC(){
     return PC;
 }
+
+uint16_t CPU::get_IR(){
+    return IR;
+}
+
+uint32_t CPU::get_cache(){
+    uint32_t data = 0;
+    data |= (uint32_t)cache[0] << 0;
+    data |= (uint32_t)cache[1] << 8;
+    data |= (uint32_t)cache[2] << 16;
+    data |= (uint32_t)cache[3] << 24;
+    return data;
+}
+

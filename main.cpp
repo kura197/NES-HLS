@@ -14,8 +14,8 @@
 
 using namespace std;
 
-const bool test = true;
-//const bool test = false;
+//const bool test = true;
+const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint6* COLOR, uint8_t* VRAM);
@@ -51,11 +51,16 @@ void test_load32(uint32_t* WRAM, uint8_t* PPU_RAM){
     }
 }
 
+struct DEBUG{
+    uint16_t PC;
+    uint8_t IR;
+    uint32_t cache;
+};
 
 //hls_avalon_slave_component
 //hls_always_run_component
 component 
-uint16_t exec_nes(
+struct DEBUG exec_nes(
             ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
             //hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
             //hls_avalon_slave_memory_argument(256*240*sizeof(uint6)) uint6 *VRAM, 
@@ -107,7 +112,11 @@ uint16_t exec_nes(
     //printf("sphit:%d\n", spreg.SPhit);
     nmi = ppu.render(PPU_RAM, SP_RAM, VRAM, &spreg, CROM);
 
-    return cpu.get_PC();
+    struct DEBUG dbg;
+    dbg.PC = cpu.get_PC();
+    dbg.IR = cpu.get_IR();
+    dbg.cache = cpu.get_cache();
+    return dbg;
 }
 
 //component int test(int arg){
@@ -212,14 +221,17 @@ int main(int argc, char* argv[]){
     struct SPREG spreg;
     bool nmi = false;
     uint16_t PC;
+    struct DEBUG dbg;
     exec_nes(mm_COLOR, 0, 0, 0, 0x0, true);
     //exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){
         for(int l = 0; l < 256; l++){
-            exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
-            //printf("PC:%04x\n",PC);
+            dbg = exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
+            //printf("PC:%04x IR:%02x cache:%08x\n",dbg.PC, dbg.IR, dbg.cache);
             //exec_nes(mm_COLOR, 0x0, false);
         }
+        if(f == 1000)
+            exec_nes(mm_COLOR, 0, 0, 0, 0x0, true);
         //for(int l = 0; l < 256; l++){
         //    for(int c = 0; c < 40; c++) {
         //        scr = exec_cpu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, false, nmi);
