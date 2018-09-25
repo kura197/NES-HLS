@@ -20,7 +20,6 @@ struct ADDRESS{
 
 class CPU : RAM{
     private:
-        uint16_t PC;
         uint8_t ACC;
         uint8_t X;
         uint8_t Y;
@@ -44,7 +43,14 @@ class CPU : RAM{
         //uint16_t irq_vec;
         //uint16_t nmi_vec;
 
+        hls_register uint8_t cache[4];
+        hls_register uint16_t cache_addr;
+        //uint1 Valid[4];
+        uint8_t Valid[4];
+
     public:
+        uint16_t PC;
+
         //CPU(uint8_t* PROM);
         void dump_regs(uint8_t insn);
         //uint8_t read_mem8(uint16_t addr);
@@ -54,9 +60,9 @@ class CPU : RAM{
         uint8_t read_prom(uint16_t addr, uint8_t* PROM);
         uint16_t read_prom16(uint16_t addr, uint8_t* PROM);
         void norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM);
-        uint8_t norm_read8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM);
-        uint16_t norm_read16(uint16_t addr, uint8_t* WRAM, uint8_t* PROM);
-        uint8_t read_mem8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM);
+        uint8_t norm_read8(uint16_t addr, uint8_t* WRAM);
+        uint16_t norm_read16(uint16_t addr, uint8_t* WRAM);
+        uint8_t read_mem8(uint16_t addr, uint8_t* WRAM, uint32_t* PROM);
 
         void load_key(uint8_t key){Input_Key(key);};
         void exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM);
@@ -65,11 +71,11 @@ class CPU : RAM{
         void set_reset();
         //void reset(uint8_t* WRAM, uint8_t* PPU_RAM);
         void set_mode_false(struct ADDRESS* adr);
-        void exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack, uint8_t* CROM);
-        void exec_irq(int cause, uint8_t* PROM, uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_vec);
-        void execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint8_t* Stack, uint8_t* CROM);
+        void exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* PROM, struct SPREG* spreg, uint8_t* Stack, uint8_t* CROM);
+        void exec_irq(int cause, uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_vec);
+        void execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* PROM, struct SPREG* spreg, uint8_t* Stack, uint8_t* CROM);
 
-        uint16_t addressing(struct ADDRESS adr, uint8_t* WRAM, uint8_t* PROM);
+        uint16_t addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM);
 
         //uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM)  
         //    {return PC++;};
@@ -94,52 +100,37 @@ class CPU : RAM{
         //uint16_t _zpiy(uint16_t opr_pc, uint8_t* WRAM) 
         //    {return norm_read16(norm_read8(PC++, WRAM), WRAM)+Y;};
 
-        uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-            {return PC++;};
-        uint16_t _abs(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-            {PC+=2; return read_prom16(opr_pc, PROM);};
-        uint16_t _abx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-            {PC+=2; return read_prom16(opr_pc, PROM)+X;};
-        uint16_t _aby(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-            {PC+=2; return read_prom16(opr_pc, PROM)+Y;};
-        uint16_t _absi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-            {PC+=2; return norm_read16(read_prom16(opr_pc, PROM), WRAM, PROM);};
-        uint16_t _zp(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)   
-            {return read_prom(PC++, PROM);};
-        uint16_t _zpxi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-            {return norm_read16((uint8_t)(read_prom(PC++, PROM)+X), WRAM, PROM);};
-        uint16_t _zpx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-            {return (uint8_t)(read_prom(PC++, PROM)+X);};
-        uint16_t _zpy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-            {return (uint8_t)(read_prom(PC++, PROM)+Y);};
-        uint16_t _zpiy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-            {return norm_read16(read_prom(PC++, PROM), WRAM, PROM)+Y;};
-
         //uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
         //    {return PC++;};
         //uint16_t _abs(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {PC+=2; return norm_read16(opr_pc, WRAM, PROM);};
+        //    {PC+=2; return read_prom16(opr_pc, PROM);};
         //uint16_t _abx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {PC+=2; return norm_read16(opr_pc, WRAM, PROM)+X;};
+        //    {PC+=2; return read_prom16(opr_pc, PROM)+X;};
         //uint16_t _aby(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {PC+=2; return norm_read16(opr_pc, WRAM, PROM)+Y;};
+        //    {PC+=2; return read_prom16(opr_pc, PROM)+Y;};
         //uint16_t _absi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {PC+=2; return norm_read16(norm_read16(opr_pc, WRAM, PROM), WRAM, PROM);};
+        //    {PC+=2; return norm_read16(read_prom16(opr_pc, PROM), WRAM, PROM);};
         //uint16_t _zp(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)   
-        //    {return norm_read8(PC++, WRAM, PROM);};
+        //    {return read_prom(PC++, PROM);};
         //uint16_t _zpxi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {return norm_read16((uint8_t)(norm_read8(PC++, WRAM, PROM)+X), WRAM, PROM);};
+        //    {return norm_read16((uint8_t)(read_prom(PC++, PROM)+X), WRAM, PROM);};
         //uint16_t _zpx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {return (uint8_t)(norm_read8(PC++, WRAM, PROM)+X);};
+        //    {return (uint8_t)(read_prom(PC++, PROM)+X);};
         //uint16_t _zpy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {return (uint8_t)(norm_read8(PC++, WRAM, PROM)+Y);};
+        //    {return (uint8_t)(read_prom(PC++, PROM)+Y);};
         //uint16_t _zpiy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {return norm_read16(norm_read8(PC++, WRAM, PROM), WRAM, PROM)+Y;};
-        
+        //    {return norm_read16(read_prom(PC++, PROM), WRAM, PROM)+Y;};
+
         void push8(uint8_t data, uint8_t* Stack);
         void push16(uint16_t data, uint8_t* Stack);
         uint8_t pop8(uint8_t* Stack);
         uint16_t pop16(uint8_t* Stack);
+
+        uint8_t read_prom_ex8(uint16_t addr, uint32_t* PROM);
+        uint16_t read_prom_ex16(uint16_t addr, uint32_t* PROM);
+        uint32_t read_prom_ex32(uint16_t addr, uint32_t* PROM);
+        void cache_update(uint16_t addr, uint32_t* PROM);
+        void cache_false();
 
 };
 
