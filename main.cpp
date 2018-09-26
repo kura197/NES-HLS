@@ -14,8 +14,8 @@
 
 using namespace std;
 
-const bool test = true;
-//const bool test = false;
+//const bool test = true;
+const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint6* COLOR, uint8_t* VRAM);
@@ -123,20 +123,6 @@ void exec_nes(
     //printf("sphit:%d\n", spreg.SPhit);
     nmi = ppu.render(PPU_RAM, SP_RAM, VRAM, &spreg, CROM);
 
-    //struct DEBUG dbg;
-    //dbg.PC = cpu.get_PC();
-    //dbg.IR = cpu.get_IR();
-    //dbg.cache = cpu.get_cache();
-    //dbg.SP = cpu.get_SP();
-    //dbg.ACC = cpu.get_ACC();
-    //dbg.X = cpu.get_X();
-    //dbg.Y = cpu.get_Y();
-    //dbg.addr = cpu.get_addr();
-    //dbg.nmi = nmi;
-    //dbg.spreg = spreg;
-    //dbg.flag = cpu.get_flag();
-    //dbg.rddata = cpu.get_rddata();
-    //return dbg;
 }
 
 //component int test(int arg){

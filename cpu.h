@@ -34,9 +34,7 @@ class CPU : RAM{
         //bool irq_line;
         uint1 nmi_line;
         //bool log;
-        uint16_t addr;
         //bool op;
-        hls_register uint8_t IR;
         uint16_t Stack_PC;
         uint8_t Stack_Flags;
 
@@ -56,7 +54,6 @@ class CPU : RAM{
         //uint1 acc, x, y;
         //hls_register uint16_t addr;
         
-        uint8_t rddata;
 
     public:
 
@@ -149,8 +146,6 @@ class CPU : RAM{
         uint8_t get_X();
         uint8_t get_Y();
         uint16_t get_addr();
-        uint16_t get_flag();
-        uint8_t get_rddata();
 
 };
 

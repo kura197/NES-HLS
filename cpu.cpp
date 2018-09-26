@@ -211,7 +211,7 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     cache_update(PC, PROM);
     //if(Valid[2] == false) return;
 
-    IR = cache[0];
+    uint8_t IR = cache[0];
     //Valid[0] = false;
 
     //hls_register uint8_t IR = read_prom(PC, PROM);
@@ -424,11 +424,11 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     PC++;
     Valid[0] = false;
 
-    //hls_register uint16_t addr;
+    uint16_t addr;
     addr = addressing(adr, WRAM, PROM);
 
     //hls_register uint8_t rddata = read_mem8(addr, WRAM, PROM);
-    rddata = read_mem8(addr, WRAM, PROM);
+    uint8_t rddata = read_mem8(addr, WRAM, PROM);
 
     if(op_adc){
         _adc(rddata);
@@ -633,9 +633,68 @@ void CPU::cache_update(uint16_t addr, uint32_t* PROM){
     //else if(v < 4 && Valid[v]) shift = 1;
     //else shift = 0;
 
-    //switch(shift){
-    //    case 0:
-    //        cache[0] = cache[]
+    //if(shift == 0){
+    //    switch(loc){
+    //        case 0:
+    //            cache[0] = (uint8_t)(data >> 0);
+    //            cache[1] = (uint8_t)(data >> 8);
+    //            cache[2] = (uint8_t)(data >> 16);
+    //            cache[3] = (uint8_t)(data >> 24);
+    //            Valid[0] = Valid[1] = Valid[2] = Valid[3] = true;
+    //            cache_addr+=4;
+    //            break;
+    //        case 1:
+    //            cache[0] = (uint8_t)(data >> 0);
+    //            cache[1] = (uint8_t)(data >> 8);
+    //            cache[2] = (uint8_t)(data >> 16);
+    //            Valid[0] = Valid[1] = Valid[2] = true;
+    //            Valid[3] = false;
+    //            cache_addr+=3;
+    //            break;
+    //        case 2:
+    //            cache[0] = (uint8_t)(data >> 0);
+    //            cache[1] = (uint8_t)(data >> 8);
+    //            Valid[0] = Valid[1] = true;
+    //            Valid[2] = Valid[3] = false;
+    //            cache_addr+=2;
+    //            break;
+    //        case 3:
+    //            cache[0] = (uint8_t)(data >> 0);
+    //            Valid[0] = true;
+    //            Valid[1] = Valid[2] = Valid[3] = false;
+    //            cache_addr+=1;
+    //            break;
+    //    }
+    //}
+    //else if(shift == 1){
+    //    switch(loc){
+    //        case 0:
+    //            cache[0] = cache[3];
+    //            cache[1] = (uint8_t)(data >> 0);
+    //            cache[2] = (uint8_t)(data >> 8);
+    //            cache[3] = (uint8_t)(data >> 16);
+    //            Valid[0] = Valid[1] = Valid[2] = Valid[3] = true;
+    //            cache_addr+=3;
+    //            break;
+    //        case 1:
+    //            cache[0] = cache[3];
+    //            cache[1] = (uint8_t)(data >> 0);
+    //            cache[2] = (uint8_t)(data >> 8);
+    //            Valid[0] = Valid[1] = Valid[2] = true;
+    //            Valid[3] = false;
+    //            cache_addr+=2;
+    //            break;
+    //        case 2:
+    //            cache[0] = cache[3];
+    //            cache[1] = (uint8_t)(data >> 0);
+    //            Valid[0] = Valid[1] = true;
+    //            Valid[2] = Valid[3] = false;
+    //            cache_addr+=1;
+    //            break;
+    //        case 3:
+    //            break;
+    //    }
+
     //}
 
     for(int i = 0; i < 4; i++){
@@ -665,10 +724,6 @@ uint16_t CPU::get_PC(){
     return PC;
 }
 
-uint16_t CPU::get_IR(){
-    return IR;
-}
-
 uint8_t CPU::get_SP(){
     return SP;
 }
@@ -692,18 +747,5 @@ uint32_t CPU::get_cache(){
     data |= (uint32_t)cache[2] << 16;
     data |= (uint32_t)cache[3] << 24;
     return data;
-}
-
-uint16_t CPU::get_addr(){
-    return addr;
-}
-
-uint8_t CPU::get_rddata(){
-    return rddata;
-}
-
-uint16_t CPU::get_flag(){
-    uint8_t flag = _bindFlags();
-    return flag;
 }
 
