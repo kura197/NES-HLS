@@ -6,41 +6,6 @@
 using namespace std;
 
 
-//void RAM::dump_WRAM(uint16_t start_addr, uint16_t size){
-//    int i, k;
-//    for(i = start_addr, k = 0;i < start_addr + size; i++, k++){
-//        if(k % 16 == 0){
-//            printf("\n");
-//            printf("%04x : ", i);
-//        }
-//        printf("%02x ",WRAM[i]);
-//    }
-//    printf("\n");
-//}
-//
-//void RAM::dump_PROM(uint16_t start_addr, uint16_t size){
-//    int i, k;
-//    for(i = start_addr, k = 0;i < start_addr + size; i++, k++){
-//        if(k % 16 == 0){
-//            printf("\n");
-//            printf("%04x : ", i);
-//        }
-//        printf("%02x ",PROM[i-0x8000]);
-//    }
-//    printf("\n");
-//}
-//
-//void RAM::dump_PPURAM(uint16_t start_addr, uint16_t size){
-//    int i, k;
-//    for(i = start_addr, k = 0;i < start_addr + size; i++, k++){
-//        if(k % 16 == 0){
-//            printf("\n");
-//            printf("%04x : ", i);
-//        }
-//        printf("%02x ",PPU_RAM[i]);
-//    }
-//    printf("\n");
-//}
 
 uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* spreg, uint8_t* CROM){
     uint8_t data;
@@ -70,7 +35,7 @@ uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* 
             break;
         default:
             //if(addr >= 0x800) printf("read error. addr:%04x\n", addr);
-            data = WRAM[addr&0x7FF];
+            if(addr < 0x7FF) data = WRAM[addr];
             //if(addr == 0x2002){
             //    tmp = data & ~(1 << 7);
             //    WRAM[addr] = tmp;
@@ -114,7 +79,7 @@ void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, ui
             reset_pad(data);
             break;
         default:
-            WRAM[addr&0x7FF] = data;
+            if(addr < 0x800) WRAM[addr] = data;
             break;
     }
 }

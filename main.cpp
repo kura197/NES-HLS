@@ -237,9 +237,6 @@ int main(int argc, char* argv[]){
     bool nmi = false;
     uint16_t PC;
     struct DEBUG dbg;
-    uint16_t nmi_vec = (uint16_t)PROM[0x7FFB] << 8 | PROM[0x7FFA];
-    uint16_t res_vec = (uint16_t)PROM[0x7FFD] << 8 | PROM[0x7FFC];
-    uint16_t irq_vec = (uint16_t)PROM[0x7FFF] << 8 | PROM[0x7FFE];
     exec_nes(mm_COLOR, 0, 0, 0, 0x0, true);
     //exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){
