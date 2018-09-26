@@ -14,8 +14,8 @@
 
 using namespace std;
 
-//const bool test = true;
-const bool test = false;
+const bool test = true;
+//const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint6* COLOR, uint8_t* VRAM);
@@ -59,15 +59,17 @@ struct DEBUG{
     uint8_t ACC;
     uint8_t X;
     uint8_t Y;
-    uint8_t addr;
-    struct SPREG spreg;
     bool nmi;
+    struct SPREG spreg;
+    uint8_t flag;
+    uint8_t rddata;
+    uint16_t addr;
 };
 
 //hls_avalon_slave_component
 //hls_always_run_component
 component 
-struct DEBUG exec_nes(
+void exec_nes(
             ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
             //hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
             //hls_avalon_slave_memory_argument(256*240*sizeof(uint6)) uint6 *VRAM, 
@@ -121,18 +123,20 @@ struct DEBUG exec_nes(
     //printf("sphit:%d\n", spreg.SPhit);
     nmi = ppu.render(PPU_RAM, SP_RAM, VRAM, &spreg, CROM);
 
-    struct DEBUG dbg;
-    dbg.PC = cpu.get_PC();
-    dbg.IR = cpu.get_IR();
-    dbg.cache = cpu.get_cache();
-    dbg.SP = cpu.get_SP();
-    dbg.ACC = cpu.get_ACC();
-    dbg.X = cpu.get_X();
-    dbg.Y = cpu.get_Y();
-    dbg.addr = cpu.get_addr();
-    dbg.nmi = nmi;
-    dbg.spreg = spreg;
-    return dbg;
+    //struct DEBUG dbg;
+    //dbg.PC = cpu.get_PC();
+    //dbg.IR = cpu.get_IR();
+    //dbg.cache = cpu.get_cache();
+    //dbg.SP = cpu.get_SP();
+    //dbg.ACC = cpu.get_ACC();
+    //dbg.X = cpu.get_X();
+    //dbg.Y = cpu.get_Y();
+    //dbg.addr = cpu.get_addr();
+    //dbg.nmi = nmi;
+    //dbg.spreg = spreg;
+    //dbg.flag = cpu.get_flag();
+    //dbg.rddata = cpu.get_rddata();
+    //return dbg;
 }
 
 //component int test(int arg){
@@ -238,14 +242,15 @@ int main(int argc, char* argv[]){
     bool nmi = false;
     uint16_t PC;
     struct DEBUG dbg;
-    uint16_t nmi_vec = (uint16_t)PROM[0xFFFB] << 8 | PROM[0xFFFA];
-    uint16_t res_vec = (uint16_t)PROM[0xFFFD] << 8 | PROM[0xFFFC];
-    uint16_t irq_vec = (uint16_t)PROM[0xFFFF] << 8 | PROM[0xFFFE];
+    uint16_t nmi_vec = (uint16_t)PROM[0x7FFB] << 8 | PROM[0x7FFA];
+    uint16_t res_vec = (uint16_t)PROM[0x7FFD] << 8 | PROM[0x7FFC];
+    uint16_t irq_vec = (uint16_t)PROM[0x7FFF] << 8 | PROM[0x7FFE];
     exec_nes(mm_COLOR, 0, 0, 0, 0x0, true);
     //exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){
         for(int l = 0; l < 256; l++){
-            dbg = exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
+            exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
+            //dbg = exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
             //printf("PC:%04x IR:%02x cache:%08x\n",dbg.PC, dbg.IR, dbg.cache);
             //exec_nes(mm_COLOR, 0x0, false);
         }

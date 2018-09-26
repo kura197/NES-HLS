@@ -11,7 +11,7 @@ void CPU::dump_regs(uint8_t insn){
     //printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
     //                PC, insn, ACC, X, Y, flag, SP);
     uint32_t cache = get_cache();
-    printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\tcache:%08x\n",
+    printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x    cache:%08x\n",
                     PC, insn, ACC, X, Y, flag, SP, cache);
 }
 
@@ -424,7 +424,8 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     //hls_register uint16_t addr;
     addr = addressing(adr, WRAM, PROM);
 
-    hls_register uint8_t rddata = read_mem8(addr, WRAM, PROM);
+    //hls_register uint8_t rddata = read_mem8(addr, WRAM, PROM);
+    rddata = read_mem8(addr, WRAM, PROM);
 
     if(op_adc){
         _adc(rddata);
@@ -542,7 +543,7 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
 }
 
 uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM){
-    uint16_t addr;
+    uint16_t addr = 0xFFFF;
     //uint16_t tmp16 = read_prom16(PC, PROM);
     //uint8_t tmp8 = (uint8_t)tmp16;
 
@@ -680,5 +681,14 @@ uint32_t CPU::get_cache(){
 
 uint16_t CPU::get_addr(){
     return addr;
+}
+
+uint8_t CPU::get_rddata(){
+    return rddata;
+}
+
+uint16_t CPU::get_flag(){
+    uint8_t flag = _bindFlags();
+    return flag;
 }
 

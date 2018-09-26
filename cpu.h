@@ -55,6 +55,8 @@ class CPU : RAM{
         //uint1 op_inc, op_dec, op_bra, op_jmp, op_jsr, op_rts, op_rti, op_push, op_pop;
         //uint1 acc, x, y;
         //hls_register uint16_t addr;
+        
+        uint8_t rddata;
 
     public:
 
@@ -147,6 +149,8 @@ class CPU : RAM{
         uint8_t get_X();
         uint8_t get_Y();
         uint16_t get_addr();
+        uint16_t get_flag();
+        uint8_t get_rddata();
 
 };
 
