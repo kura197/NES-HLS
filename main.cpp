@@ -228,12 +228,7 @@ int main(int argc, char* argv[]){
     //load_ROM(&ROM, WRAM, PPU_RAM);
     load_test_ROM(&ROM);
     ROM.close();
-    //ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> > mm_WRAM(WRAM, sizeof(uint8_t)*0x10000);
-    //ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8*8>, ihc::align<8> > mm_WRAM(WRAM, sizeof(uint8_t)*0x10000);
-    //ihc::mm_master<uint8_t, ihc::aspace<2>, ihc::awidth<14>, ihc::dwidth<8> > mm_PPU_RAM(PPU_RAM, sizeof(uint8_t)*0x4000);
-    //ihc::mm_master<uint8_t, ihc::aspace<3>, ihc::awidth<8>, ihc::dwidth<8> > mm_SP_RAM(SP_RAM, sizeof(uint8_t)*0x100);
     ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> > mm_COLOR(COLOR, sizeof(uint8_t)*(256*240));
-    //ihc::mm_master<uint8_t, ihc::aspace<5>, ihc::awidth<15>, ihc::dwidth<8*8>, ihc::align<8> > mm_PROM(PROM, sizeof(uint8_t)*0x8000);
 
     int index = 0;
     int f = 0;
@@ -249,22 +244,15 @@ int main(int argc, char* argv[]){
     //exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){
         for(int l = 0; l < 256; l++){
-            exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
+            if(f == 180)
+                exec_nes(mm_COLOR, 0, 0, 0, 0x08, false);
+            else exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
             //dbg = exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
             //printf("PC:%04x IR:%02x cache:%08x\n",dbg.PC, dbg.IR, dbg.cache);
             //exec_nes(mm_COLOR, 0x0, false);
         }
-        if(f == 1000)
-            exec_nes(mm_COLOR, 0, 0, 0, 0x0, true);
-        //for(int l = 0; l < 256; l++){
-        //    for(int c = 0; c < 40; c++) {
-        //        scr = exec_cpu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, false, nmi);
-        //        //scr = exec_cpu(WRAM, PPU_RAM, SP_RAM, false, nmi);
-        //        if(nmi) nmi = false;
-        //    }
-        //    nmi = exec_ppu(mm_WRAM, mm_PPU_RAM, mm_SP_RAM, mm_COLOR, scr.BGoffset_X, scr.BGoffset_Y);
-        //}
-
+        //if(f == 300)
+        //    exec_nes(mm_COLOR, 0, 0, 0, 0x04, false);
         if(en_bmp && f % interval == 0){
             set_vram(COLOR, VRAM);
             make_bmp(VRAM, index++);

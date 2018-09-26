@@ -29,6 +29,7 @@ void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint6* 
     uint8_t sc_x = spreg->BGoffset_X;
     uint8_t sc_y = spreg->BGoffset_Y;
     uint8_t tile_offset = sc_x / 8;
+    uint8_t offset_x = sc_x % 8;
     bool low = spreg->NameAddrL;
     bool high = spreg->NameAddrH;
     uint16_t name_base = (!low&!high) ? 0x2000 :
@@ -98,15 +99,24 @@ void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint6* 
                 valid = false;
             }
             bool render_en = false;
+            uint8_t x;
             if(col == 0){ 
-                if(i >= (sc_x%8)) render_en = true;
+                if(i >= (offset_x)) {
+                    render_en = true;
+                    x = i - offset_x;
+                }
             }
             else if(col == 32){
-                if(i < (sc_x%9)) render_en = true;
+                if(i < (offset_x)) {
+                    render_en = true;
+                    x = 256 - (offset_x - i);
+                }
             }
-            else render_en = true;
+            else{
+                render_en = true;
+                x = col*8 + i - offset_x;
+            }
             
-            uint8_t x = col*8 + i;
             //BG_Valid_set(x, i, valid);
             BG_Valid[x] = valid;
             if(render_en) store_vram(line, x, color, false, VRAM, spreg);

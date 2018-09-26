@@ -601,17 +601,18 @@ uint32_t CPU::read_prom_ex32(uint16_t addr, uint32_t* PROM){
 }
 
 void CPU::cache_update(uint16_t addr, uint32_t* PROM){
-    uint8_t v = 4;
+    uint8_t v;
     //for(int i = 0; i < 4; i++){
     //    if(Valid[i]){
     //        v = i;
     //        break;
     //    }
     //} 
-    if(Valid[3]) v = 3;
-    if(Valid[2]) v = 2;
-    if(Valid[1]) v = 1;
     if(Valid[0]) v = 0;
+    else if(Valid[1]) v = 1;
+    else if(Valid[2]) v = 2;
+    else if(Valid[3]) v = 3;
+    else v = 4;
 
     uint16_t read_addr;
     if(v == 4) read_addr = addr;
@@ -621,21 +622,32 @@ void CPU::cache_update(uint16_t addr, uint32_t* PROM){
     uint8_t loc = read_addr & 0x3;
 
     cache_addr = read_addr;
+
+    //uint8_t shift;
+    //if(3+v < 4 && Valid[3+v]) shift = 4;
+    //else if(2+v < 4 && Valid[2+v]) shift = 3;
+    //else if(1+v < 4 && Valid[1+v]) shift = 2;
+    //else if(v < 4 && Valid[v]) shift = 1;
+    //else shift = 0;
+
+    //switch(shift){
+    //    case 0:
+    //        cache[0] = cache[]
+    //}
+
     for(int i = 0; i < 4; i++){
         if(i+v < 4 && Valid[i+v]){
             cache[i] = cache[i+v];
             Valid[i] = true;
         }
-        else{
-            if(loc < 4){
-                cache[i] = (uint8_t)(data >> 8*loc);
-                loc++;
-                Valid[i] = true;
-                cache_addr++;
-            }
-            else
-                Valid[i] = false;
+        else if(loc < 4){
+            cache[i] = (uint8_t)(data >> 8*loc);
+            loc++;
+            Valid[i] = true;
+            cache_addr++;
         }
+        else
+            Valid[i] = false;
     }
 
 }

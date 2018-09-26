@@ -130,7 +130,7 @@ wire CLK = MAX10_CLK1_50;
 wire PCK;
 wire resetn = KEY[1];
 wire nes_reset = ~KEY[0];
-wire [7:0] key = 8'h0;
+wire [7:0] key;
 wire [15:0] nmi_vec;
 wire [15:0] res_vec;
 wire [15:0] irq_vec;
@@ -140,15 +140,12 @@ wire [7:0] SP;
 wire [31:0] cache;
 wire [255:0] returndata;
 
-//assign nmi_vec = 16'h8082;
-//assign res_vec = 16'h8000;
-//assign irq_vec = 16'hFFF0;
-assign nmi_vec = 16'hC85F;
-assign res_vec = 16'hC79E;
+assign nmi_vec = 16'h8082;
+assign res_vec = 16'h8000;
 assign irq_vec = 16'hFFF0;
-//assign nmi_vec = 16'h0000;
-//assign res_vec = 16'h8000;
-//assign irq_vec = 16'h0000;
+//assign nmi_vec = 16'hC85F;
+//assign res_vec = 16'hC79E;
+//assign irq_vec = 16'hFFF0;
 
 wire clk2x;
 wire clk;
@@ -159,11 +156,14 @@ wire [5:0] VramData;
 //  Structural coding
 //=======================================================
 
-//assign clk2x = MAX10_CLK1_50;
-//assign PCK = clk;
-//always @(posedge clk2x, negedge resetn)
-//    if(!resetn) clk <= 1'b0;
-//    else clk <= ~clk;
+assign key[0] = ~GPIO[0];
+assign key[1] = ~GPIO[1];
+assign key[2] = ~GPIO[4];
+assign key[3] = ~GPIO[5];
+assign key[4] = ~GPIO[6];
+assign key[5] = ~GPIO[7];
+assign key[6] = ~GPIO[8];
+assign key[7] = ~GPIO[9];
 
 reg [2:0] sync_resetn;
 always @(posedge clk or negedge resetn) begin
@@ -174,29 +174,6 @@ always @(posedge clk or negedge resetn) begin
     end
 end
 
-//NES nes (
-//    .clk_clk                        (clk),                        //                 clk.clk
-//    .reset_reset_n                  (sync_resetn[2]),                  //               reset.reset_n
-//    .clk2x_clk                      (clk2x),                      //               clk2x.clk
-//    .nes_0_call_valid               (1'b1),               //          nes_0_call.valid
-//    .nes_0_call_stall               (1'b0),               //                    .stall
-//    .nes_0_vram_data                (64'h0),                //          nes_0_vram.data
-//    .nes_0_nmi_vec_data             (nmi_vec),             //       nes_0_nmi_vec.data
-//    .nes_0_res_vec_data             (res_vec),             //       nes_0_res_vec.data
-//    .nes_0_irq_vec_data             (vec_vec),             //       nes_0_irq_vec.data
-//    .nes_0_key_data                 (key),                 //           nes_0_key.data
-//    .nes_0_res_data                 (nes_reset),                 //           nes_0_res.data
-//    .nes_0_return_valid             (),             //        nes_0_return.valid
-//    .nes_0_return_stall             (),             //                    .stall
-//    .onchip_memory2_0_s2_address    (VramAddr),    // onchip_memory2_0_s2.address
-//    .onchip_memory2_0_s2_chipselect (1'b1), //                    .chipselect
-//    .onchip_memory2_0_s2_clken      (1'b1),      //                    .clken
-//    .onchip_memory2_0_s2_write      (1'b0),      //                    .write
-//    .onchip_memory2_0_s2_readdata   (VramData),   //                    .readdata
-//    .onchip_memory2_0_s2_writedata  (8'h0),  //                    .writedata
-//    .clk_vram_ex_clk                (PCK),                //         clk_vram_ex.clk
-//    .reset_vram_ex_reset_n          (sync_resetn[2])           //       reset_vram_ex.reset_n
-//);
 
 wire [15:0] avmm_1_rw_address;
 wire avmm_1_rw_byteenable;
