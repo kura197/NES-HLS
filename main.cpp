@@ -18,24 +18,12 @@ const bool test = true;
 //const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
-void set_vram(uint6* COLOR, uint8_t* VRAM);
+void set_vram(uint8_t* COLOR, uint8_t* VRAM);
 void make_bmp(uint8_t* VRAM, int index);
 
 uint8_t _PROM[0x8000];
 uint8_t _CROM[0x2000];
 void load_test_ROM(ifstream *rom);
-
-void test_load(uint8_t* WRAM, uint8_t* PPU_RAM){
-    //for(uint32_t addr = 0x8000; addr <= 0xFFFF; addr++){
-        //WRAM[addr] = PROM[addr - 0x8000];
-    for(uint32_t addr = 0x0000; addr <= 0x7FFF; addr++){
-        WRAM[addr] = _PROM[addr];
-    }
-
-    for(uint32_t addr = 0x00; addr <= 0x1FFF; addr++){
-        PPU_RAM[addr] = _CROM[addr];
-    }
-}
 
 void test_load32(uint32_t* WRAM, uint8_t* PPU_RAM){
     //for(uint32_t addr = 0x8000; addr <= 0xFFFF; addr++){
@@ -66,13 +54,10 @@ struct DEBUG{
     uint16_t addr;
 };
 
-//hls_avalon_slave_component
-//hls_always_run_component
 component 
 uint16_t exec_nes(
-            ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
-            //hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
-            //hls_avalon_slave_memory_argument(256*240*sizeof(uint6)) uint6 *VRAM, 
+            //ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
+            hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
             uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_vec,
             uint8_t key, bool res
         ){
@@ -126,19 +111,6 @@ uint16_t exec_nes(
     return cpu.get_PC();
 }
 
-//component int test(int arg){
-//    int ret;
-//    switch(arg){
-//        case 0:
-//            ret = 1;
-//            break;
-//        default:
-//            ret = 0;
-//            printf("Nooo\n");
-//            break;
-//    }
-//    return ret;
-//}
 
 int main(int argc, char* argv[]){
     if(argc == 1){
@@ -206,7 +178,7 @@ int main(int argc, char* argv[]){
 
     //NES nes;
     //nes.load_ROM(&ROM);
-    uint6 COLOR[256*240];
+    uint8_t COLOR[256*240];
     uint8_t VRAM[3*256*240];
     uint8_t WRAM[0x10000];
     uint8_t PROM[0x8000];
@@ -225,18 +197,15 @@ int main(int argc, char* argv[]){
     bool nmi = false;
     uint16_t PC;
     struct DEBUG dbg;
-    exec_nes(mm_COLOR, 0, 0, 0, 0x0, true);
+    exec_nes(COLOR, 0, 0, 0, 0x0, true);
     //exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){
         for(int l = 0; l < 256; l++){
             if(f == 180)
-                exec_nes(mm_COLOR, 0, 0, 0, 0x08, false);
+                exec_nes(COLOR, 0, 0, 0, 0x08, false);
             else if(800 <= f)
                 exec_nes(mm_COLOR, 0, 0, 0, 0x80, false);
-            else exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
-            //dbg = exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
-            //printf("PC:%04x IR:%02x cache:%08x\n",dbg.PC, dbg.IR, dbg.cache);
-            //exec_nes(mm_COLOR, 0x0, false);
+            else exec_nes(COLOR, 0, 0, 0, 0x0, false);
         }
         //if(f == 300)
         //    exec_nes(mm_COLOR, 0, 0, 0, 0x04, false);
@@ -303,7 +272,7 @@ void load_test_ROM(ifstream *rom){
 }
 
 #define _rgb(r, g, b) (red = r, green = g, blue = b)
-void set_vram(uint6* COLOR, uint8_t* VRAM){
+void set_vram(uint8_t* COLOR, uint8_t* VRAM){
     for(int i = 0; i < 240*256; i++){
         //BGR
         uint8_t blue, green, red; 

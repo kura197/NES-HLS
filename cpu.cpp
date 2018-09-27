@@ -17,27 +17,19 @@ void CPU::dump_regs(uint8_t insn){
 
 void CPU::push8(uint8_t data, uint8_t* Stack){
     Stack[(uint8_t)(SP--) & 0xFF] = data;
-    //WRAM[0x100|(uint8_t)(SP--)] = data;
-    //norm_write8(0x100|(uint8_t)(SP--), data, WRAM);
 }
 
 uint8_t CPU::pop8(uint8_t* Stack){
     return Stack[(uint8_t)(++SP) & 0xFF];
-    //return WRAM[0x100|(uint8_t)(++SP)];
-    //return norm_read8(0x100|(uint8_t)(++SP), WRAM);
 }
 
 void CPU::push16(uint16_t data, uint8_t* Stack){
-    //WRAM[0x100|(uint8_t)(SP--)] = (uint8_t)(data >> 8);
-    //WRAM[0x100|(uint8_t)(SP--)] = (uint8_t)data;
     push8((uint8_t)(data >> 8), Stack);
     push8((uint8_t)data, Stack);
 }
 
 uint16_t CPU::pop16(uint8_t* Stack){
     uint16_t data;
-    //data = Stack[0x100|(uint8_t)(++SP)];
-    //data |= (uint16_t)Stack[0x100|(uint8_t)(++SP)] << 8;
     data = pop8(Stack);
     data |= (uint16_t)pop8(Stack) << 8;
     return data;
@@ -46,20 +38,14 @@ uint16_t CPU::pop16(uint8_t* Stack){
 uint8_t CPU::read_mem8(uint16_t addr, uint8_t* WRAM, uint32_t* PROM){
     uint8_t data = 0;
     if((addr >> 15) & 1)
-        //data = read_prom(addr, PROM);
         data = read_prom_ex8(addr, PROM);
-    //else if(addr < 0x800)
-    //    data = WRAM[addr];
-    else data = WRAM[addr&0x7FF];
-    //else
-    //    printf("addr:%04x\n", addr);
+    else data = WRAM[addr&0x7FF]; //ok??
     return data;
 }
 
 uint8_t CPU::norm_read8(uint16_t addr, uint8_t* WRAM){
     uint8_t data = 0;
-    //if(addr < 0x800)
-        data = WRAM[addr&0x7FF];
+    data = WRAM[addr&0x7FF];
     return data;
 }
 
@@ -71,13 +57,10 @@ uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM){
 }
 
 void CPU::norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM){
-    //if(addr >= 0x800) printf("nwrite8 error\n");
-    //if(addr < 0x800) 
-        WRAM[addr&0x7FF] = data; 
+    WRAM[addr&0x7FF] = data; 
 }
 
 uint8_t CPU::read_prom(uint16_t addr, uint8_t* PROM){
-    //if(addr < 0x8000) printf("pread error\n");
     return PROM[addr & ~(1 << 15)];
 }
 
@@ -85,7 +68,6 @@ uint16_t CPU::read_prom16(uint16_t addr, uint8_t* PROM){
     uint16_t data;
     data = read_prom(addr, PROM);
     data |= (uint16_t)read_prom(addr+1, PROM) << 8;
-    //printf("rprom16 addr:%04x data:%04x\n", addr, data);
     return data;
 }
 
@@ -101,40 +83,22 @@ void CPU::set_reset()
 }
 
 void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
-        SP_RAM[DMAAddrL] = WRAM[(uint16_t)DMAAddrH << 8 | DMAAddrL];
-        //printf("HADDR:%d\tLADDR:%d\tADDR:%d\n", DMAAddrH, DMAAddrL, (uint16_t)DMAAddrH << 8 | DMAAddrL);
-        DMAAddrL++;
-        if(DMAAddrL == 0)
-            DMAExcute = 0;
+    SP_RAM[DMAAddrL] = WRAM[(uint16_t)DMAAddrH << 8 | DMAAddrL];
+    DMAAddrL++;
+    if(DMAAddrL == 0)
+        DMAExcute = 0;
 }
 
 void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* PROM, struct SPREG* spreg, uint8_t* Stack, uint8_t* CROM){
 
-    //if(reset_line) exec_irq(RESET, WRAM, PPU_RAM, SP_RAM, PROM); reset_line = false;
-    //if(nmi_line) exec_irq(NMI, WRAM, PPU_RAM, SP_RAM, PROM); nmi_line = false;
-
-    //spreg = s;
-    //printf("SPHIT:%d\n", spreg.SPhit);
     if(DMAExcute) exec_DMA(SP_RAM, WRAM);
     else execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack, CROM);
-    //return spreg;
 }
 
 
 void CPU::exec_irq(int cause, uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_vec){
-    //uint16_t vect;
-    //switch(cause){  
-    //    case RESET: vect = 0xFFFC; break;
-    //    case NMI:   vect = 0xFFFA; break;
-    //    case IRQ:   vect = 0xFFFE; break;
-    //    default:    vect = 0xFFFE; break;
-    //}
     if(enlog) printf("nmi interrupt occur\n");
 
-    //_push16(PC);
-    //_push8(_bindFlags());
-    //push16(PC, Stack);
-    //push8(_bindFlags(), Stack);
     Stack_PC = PC;
     Stack_Flags = _bindFlags();
     //SP-=3;
@@ -145,11 +109,6 @@ void CPU::exec_irq(int cause, uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_v
     BFlag = 0;
     VFlag = 0; 
     NFlag = 0;
-    //PC = read_mem16(vect, WRAM, PPU_RAM);
-    //PC = WRAM[vect];
-    //PC |= (uint16_t)WRAM[vect+1] << 8;
-    
-    //PC = read_prom16(vect, PROM);
     switch(cause){  
         case NMI:   PC = nmi_vec; break;
         case RESET: PC = res_vec; break;
@@ -610,12 +569,6 @@ uint32_t CPU::read_prom_ex32(uint16_t addr, uint32_t* PROM){
 
 void CPU::cache_update(uint16_t addr, uint32_t* PROM){
     uint8_t v;
-    //for(int i = 0; i < 4; i++){
-    //    if(Valid[i]){
-    //        v = i;
-    //        break;
-    //    }
-    //} 
     if(Valid[0]) v = 0;
     else if(Valid[1]) v = 1;
     else if(Valid[2]) v = 2;

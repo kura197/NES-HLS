@@ -19,7 +19,7 @@
 //`define ENABLE_HEX4
 //`define ENABLE_HEX5
 `define ENABLE_KEY
-//`define ENABLE_LED
+`define ENABLE_LED
 //`define ENABLE_SW
 `define ENABLE_VGA
 //`define ENABLE_ACCELEROMETER
@@ -164,6 +164,8 @@ assign key[4] = ~GPIO[6];
 assign key[5] = ~GPIO[7];
 assign key[6] = ~GPIO[8];
 assign key[7] = ~GPIO[9];
+assign LEDR[7:0] = key;
+assign LEDR[9:8] = 2'b00;
 
 reg [2:0] sync_resetn;
 always @(posedge clk or negedge resetn) begin

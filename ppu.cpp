@@ -2,7 +2,7 @@
 #include "ppu.h"
 
 #define get_bit(data, bit) ((data >> bit) & 1)
-bool PPU::render(uint8_t* PPU_RAM, uint8_t* SP_RAM, uint6* VRAM, struct SPREG* spreg, uint8_t* CROM){
+bool PPU::render(uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* VRAM, struct SPREG* spreg, uint8_t* CROM){
     bool nmi = false;
     line++;
     if(line == 240){
@@ -25,7 +25,7 @@ bool PPU::render(uint8_t* PPU_RAM, uint8_t* SP_RAM, uint6* VRAM, struct SPREG* s
 }
 
 #define _pttnbit(data, data_bit, ret_bit) (((data >> data_bit) & 1) << ret_bit)
-void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint6* VRAM, uint8_t* CROM){
+void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t* VRAM, uint8_t* CROM){
     uint8_t sc_x = spreg->BGoffset_X;
     uint8_t sc_y = spreg->BGoffset_Y;
     uint8_t tile_offset = sc_x / 8;
@@ -124,7 +124,7 @@ void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint6* 
     }
 }
 
-void PPU::sp_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint6* VRAM, uint8_t* CROM){
+void PPU::sp_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* VRAM, uint8_t* CROM){
     int num_sp = 0;
     for(int spr = 0; spr < 64; spr++){
         uint8_t spr_y = SP_RAM[4*spr];
@@ -165,7 +165,7 @@ void PPU::sp_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t
 }
 
 #define _rgb(r, g, b) (red = r, green = g, blue = b)
-void PPU::store_vram(uint8_t line, uint8_t x, uint8_t color, bool sprite, uint6* VRAM, struct SPREG* spreg){
+void PPU::store_vram(uint8_t line, uint8_t x, uint8_t color, bool sprite, uint8_t* VRAM, struct SPREG* spreg){
     //BGR
     //if(x < 8 && ((!sprite & nes->ram->BGMSK) || (sprite & nes->ram->SPMSK)))
     bool SPMSK = spreg->SPMSK;
