@@ -134,11 +134,11 @@ wire [7:0] key;
 wire [15:0] nmi_vec;
 wire [15:0] res_vec;
 wire [15:0] irq_vec;
-wire [15:0] PC;
-wire [7:0] IR;
-wire [7:0] SP;
-wire [31:0] cache;
-wire [255:0] returndata;
+//wire [15:0] PC;
+//wire [7:0] IR;
+//wire [7:0] SP;
+//wire [31:0] cache;
+//wire [255:0] returndata;
 
 assign nmi_vec = 16'h8082;
 assign res_vec = 16'h8000;
@@ -196,7 +196,7 @@ exec_nes nes (
   .done                ( ), // 1-bit valid output
   .stall               ( 1'b0 ), // 1-bit stall input
   // Interface: returndata (conduit source)
-  .returndata          ( returndata ), // 256-bit data output
+  //.returndata          ( returndata ), // 256-bit data output
   // Interface: VRAM (conduit sink)
   .VRAM                ( 64'h0 ), // 64-bit data input
   // Interface: nmi_vec (conduit sink)
@@ -252,12 +252,12 @@ VGA vga(
     .VramData(VramData)
 );
 
-SEG7DEC addr0(PC[3:0], HEX0);
-SEG7DEC addr1(PC[7:4], HEX1);
-SEG7DEC addr2(PC[11:8], HEX2);
-SEG7DEC addr3(PC[15:12], HEX3);
-SEG7DEC SP0(SP[3:0], HEX4);
-SEG7DEC SP1(SP[7:4], HEX5);
+//SEG7DEC addr0(PC[3:0], HEX0);
+//SEG7DEC addr1(PC[7:4], HEX1);
+//SEG7DEC addr2(PC[11:8], HEX2);
+//SEG7DEC addr3(PC[15:12], HEX3);
+//SEG7DEC SP0(SP[3:0], HEX4);
+//SEG7DEC SP1(SP[7:4], HEX5);
 
 wire dbg_clk;
 PLL	PLL_inst (
@@ -268,11 +268,11 @@ PLL	PLL_inst (
 	.c3 ( dbg_clk )  //5.0MHz
 	);
 
-decode_retdata ret_debug(
-    .returndata(returndata),
-    .PC(PC),
-    .SP(SP)
-);
+//decode_retdata ret_debug(
+//    .returndata(returndata),
+//    .PC(PC),
+//    .SP(SP)
+//);
 
 endmodule
 

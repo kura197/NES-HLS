@@ -14,8 +14,8 @@
 
 using namespace std;
 
-//const bool test = true;
-const bool test = false;
+const bool test = true;
+//const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint6* COLOR, uint8_t* VRAM);
@@ -69,7 +69,7 @@ struct DEBUG{
 //hls_avalon_slave_component
 //hls_always_run_component
 component 
-void exec_nes(
+uint16_t exec_nes(
             ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
             //hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
             //hls_avalon_slave_memory_argument(256*240*sizeof(uint6)) uint6 *VRAM, 
@@ -123,6 +123,7 @@ void exec_nes(
     //printf("sphit:%d\n", spreg.SPhit);
     nmi = ppu.render(PPU_RAM, SP_RAM, VRAM, &spreg, CROM);
 
+    return cpu.get_PC();
 }
 
 //component int test(int arg){
@@ -216,6 +217,7 @@ int main(int argc, char* argv[]){
     ROM.close();
     ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> > mm_COLOR(COLOR, sizeof(uint8_t)*(256*240));
 
+    if(test == false) printf("WARNING: test is false.\n");
     int index = 0;
     int f = 0;
     uint8_t key = 0;
