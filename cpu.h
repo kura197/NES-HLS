@@ -45,7 +45,8 @@ class CPU : RAM{
         hls_register uint8_t cache[4];
         hls_register uint16_t cache_addr;
         //uint1 Valid[4];
-        uint8_t Valid[4];
+        uint8_t V[4];
+        bool PC_update;
 
         //struct ADDRESS adr;
         //uint1 op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
@@ -83,49 +84,6 @@ class CPU : RAM{
 
         uint16_t addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM);
 
-        //uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM)  
-        //    {return PC++;};
-        //uint16_t _abs(uint16_t opr_pc, uint8_t* WRAM)  
-        //    {PC+=2; return norm_read16(opr_pc, WRAM);};
-        //uint16_t _abxi(uint16_t opr_pc, uint8_t* WRAM) 
-        //    {PC+=2; return norm_read16(norm_read16(opr_pc, WRAM)+X, WRAM);};
-        //uint16_t _abx(uint16_t opr_pc, uint8_t* WRAM)  
-        //    {PC+=2; return norm_read16(opr_pc, WRAM)+X;};
-        //uint16_t _aby(uint16_t opr_pc, uint8_t* WRAM) 
-        //    {PC+=2; return norm_read16(opr_pc, WRAM)+Y;};
-        //uint16_t _absi(uint16_t opr_pc, uint8_t* WRAM) 
-        //    {PC+=2; return norm_read16(norm_read16(opr_pc, WRAM), WRAM);};
-        //uint16_t _zp(uint16_t opr_pc, uint8_t* WRAM)   
-        //    {return norm_read8(PC++, WRAM);};
-        //uint16_t _zpxi(uint16_t opr_pc, uint8_t* WRAM) 
-        //    {return norm_read16((uint8_t)(norm_read8(PC++, WRAM)+X), WRAM);};
-        //uint16_t _zpx(uint16_t opr_pc, uint8_t* WRAM)  
-        //    {return (uint8_t)(norm_read8(PC++, WRAM)+X);};
-        //uint16_t _zpy(uint16_t opr_pc, uint8_t* WRAM)  
-        //    {return (uint8_t)(norm_read8(PC++, WRAM)+Y);};
-        //uint16_t _zpiy(uint16_t opr_pc, uint8_t* WRAM) 
-        //    {return norm_read16(norm_read8(PC++, WRAM), WRAM)+Y;};
-
-        //uint16_t _imm(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {return PC++;};
-        //uint16_t _abs(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {PC+=2; return read_prom16(opr_pc, PROM);};
-        //uint16_t _abx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {PC+=2; return read_prom16(opr_pc, PROM)+X;};
-        //uint16_t _aby(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {PC+=2; return read_prom16(opr_pc, PROM)+Y;};
-        //uint16_t _absi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {PC+=2; return norm_read16(read_prom16(opr_pc, PROM), WRAM, PROM);};
-        //uint16_t _zp(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)   
-        //    {return read_prom(PC++, PROM);};
-        //uint16_t _zpxi(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {return norm_read16((uint8_t)(read_prom(PC++, PROM)+X), WRAM, PROM);};
-        //uint16_t _zpx(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {return (uint8_t)(read_prom(PC++, PROM)+X);};
-        //uint16_t _zpy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM)  
-        //    {return (uint8_t)(read_prom(PC++, PROM)+Y);};
-        //uint16_t _zpiy(uint16_t opr_pc, uint8_t* WRAM, uint8_t* PROM) 
-        //    {return norm_read16(read_prom(PC++, PROM), WRAM, PROM)+Y;};
 
         void push8(uint8_t data, uint8_t* Stack);
         void push16(uint16_t data, uint8_t* Stack);

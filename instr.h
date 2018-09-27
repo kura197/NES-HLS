@@ -159,5 +159,4 @@
 #define _bra(data) { \
   int8_t rel=(int8_t)data; \
   PC+=rel; \
-  cache_false();  \
 }

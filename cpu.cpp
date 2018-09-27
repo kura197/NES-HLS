@@ -115,7 +115,8 @@ void CPU::exec_irq(int cause, uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_v
         case IRQ:   PC = irq_vec; break;
         default:    PC = res_vec; break;
     }
-    cache_false();
+    //cache_false();
+    PC_update = true;
 }
 
 void CPU::set_mode_false(struct ADDRESS* adr){  
@@ -173,10 +174,10 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
 
 
     cache_update(PC, PROM);
-    //if(Valid[2] == false) return;
+    //if(V[2] == false) return;
 
     uint8_t IR = cache[0];
-    //Valid[0] = false;
+    //V[0] = false;
 
     //hls_register uint8_t IR = read_prom(PC, PROM);
     if(enlog) dump_regs(IR);
@@ -376,17 +377,17 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
                    break;
     }
 
-    if(Valid[2] == false && (adr.abs | adr.abx | adr.aby | adr.absi)){
+    if(V[2] == false && (adr.abs | adr.abx | adr.aby | adr.absi)){
         //printf("OK\n");
         return;
     }
-    if(Valid[1] == false && (adr.imm | adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi)){
+    if(V[1] == false && (adr.imm | adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi | op_bra_false)){
         return;
     }
 
-    //if(Valid[2] == false) return;
+    //if(V[2] == false) return;
     PC++;
-    Valid[0] = false;
+    V[0] = false;
 
     uint16_t addr;
     addr = addressing(adr, WRAM, PROM);
@@ -468,19 +469,22 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     }
     else if(op_bra){
         _bra(rddata);
+        PC_update = true;
     }
     else if(op_bra_false){
-        Valid[1] = false; 
+        V[1] = false; 
         PC++;
     }
     else if(op_jmp){
         PC = addr;
-        cache_false();
+        //cache_false();
+        PC_update = true;
     }
     else if(op_jsr){
         push16(PC-1, Stack);
         PC = addr;
-        cache_false();
+        //cache_false();
+        PC_update = true;
     }
     else if(op_push){
         if(acc) rddata = ACC;
@@ -489,13 +493,15 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     }
     else if(op_rts){
         PC=pop16(Stack)+1;
-        cache_false();
+        //cache_false();
+        PC_update = true;
     }
     else if(op_rti){
         _unbindFlags(Stack_Flags);
         PC = Stack_PC;
         //SP+=3;
-        cache_false();
+        //cache_false();
+        PC_update = true;
     }
     else if(op_pop){
         rddata = pop8(Stack);
@@ -516,12 +522,12 @@ uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM){
 
     if(adr.imm){
         addr = PC++;
-        Valid[1] = false;
+        V[1] = false;
     }
     else if(adr.abs | adr.abx | adr.aby | adr.absi){
         //uint16_t tmp16 = read_prom16(PC, PROM);
         uint16_t tmp16 = (uint16_t)cache[2] << 8 | cache[1];
-        Valid[2] = Valid[1] = false;
+        V[2] = V[1] = false;
         PC+=2;
         if(adr.abs | adr.absi) addr = tmp16;
         else if(adr.abx) addr = tmp16 + X;
@@ -530,7 +536,7 @@ uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM){
     else if(adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi){
         //uint8_t tmp8 = read_prom(PC, PROM);
         uint8_t tmp8 = cache[1];
-        Valid[1] = false;
+        V[1] = false;
         PC++;
         if(adr.zp | adr.zpiy) addr = tmp8;
         else if(adr.zpx | adr.zpxi) addr = tmp8 + X;
@@ -568,15 +574,17 @@ uint32_t CPU::read_prom_ex32(uint16_t addr, uint32_t* PROM){
 }
 
 void CPU::cache_update(uint16_t addr, uint32_t* PROM){
-    uint8_t v;
-    if(Valid[0]) v = 0;
-    else if(Valid[1]) v = 1;
-    else if(Valid[2]) v = 2;
-    else if(Valid[3]) v = 3;
-    else v = 4;
+    //uint8_t v;
+    //if(V[0]) v = 0;
+    //else if(V[1]) v = 1;
+    //else if(V[2]) v = 2;
+    //else if(V[3]) v = 3;
+    //else v = 4;
 
     uint16_t read_addr;
-    if(v == 4) read_addr = addr;
+    //if(v == 4) read_addr = addr;
+    //else read_addr = cache_addr;
+    if(PC_update) read_addr = addr;
     else read_addr = cache_addr;
     uint32_t data = read_prom_ex32(read_addr, PROM);
 
@@ -585,28 +593,342 @@ void CPU::cache_update(uint16_t addr, uint32_t* PROM){
     cache_addr = read_addr;
 
 
-    for(int i = 0; i < 4; i++){
-        if(i+v < 4 && Valid[i+v]){
-            cache[i] = cache[i+v];
-            Valid[i] = true;
+    //for(int i = 0; i < 4; i++){
+    //    if(i+v < 4 && V[i+v]){
+    //        cache[i] = cache[i+v];
+    //        V[i] = true;
+    //    }
+    //    else if(loc < 4){
+    //        cache[i] = (uint8_t)(data >> 8*loc);
+    //        loc++;
+    //        V[i] = true;
+    //        cache_addr++;
+    //    }
+    //    else
+    //        V[i] = false;
+    //}
+
+    if(PC_update){
+        switch(loc){
+            case 0:
+                cache[0] = (uint8_t)(data >> 0);
+                cache[1] = (uint8_t)(data >> 8);
+                cache[2] = (uint8_t)(data >> 16);
+                cache[3] = (uint8_t)(data >> 24);
+                V[0] = V[1] = V[2] = V[3] = true;
+                cache_addr+=4;
+                break;
+            case 1:
+                cache[0] = (uint8_t)(data >> 8);
+                cache[1] = (uint8_t)(data >> 16);
+                cache[2] = (uint8_t)(data >> 24);
+                V[0] = V[1] = V[2] = true;
+                V[3] = false;
+                cache_addr+=3;
+                break;
+            case 2:
+                cache[0] = (uint8_t)(data >> 16);
+                cache[1] = (uint8_t)(data >> 24);
+                V[0] = V[1] = true;
+                V[2] = V[3] = false;
+                cache_addr+=2;
+                break;
+            case 3:
+                cache[0] = (uint8_t)(data >> 24);
+                V[0] = true;
+                V[1] = V[2] = V[3] = false;
+                cache_addr+=1;
+                break;
         }
-        else if(loc < 4){
-            cache[i] = (uint8_t)(data >> 8*loc);
-            loc++;
-            Valid[i] = true;
-            cache_addr++;
+    }
+    else{
+        if(!V[0] & !V[1] & !V[2] & V[3]){
+            cache[0] = cache[3];
+            switch(loc){
+                case 0:
+                    cache[1] = (uint8_t)(data >> 0);
+                    cache[2] = (uint8_t)(data >> 8);
+                    cache[3] = (uint8_t)(data >> 16);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=3;
+                    break;
+                case 1:
+                    cache[1] = (uint8_t)(data >> 8);
+                    cache[2] = (uint8_t)(data >> 16);
+                    cache[3] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=3;
+                    break;
+                case 2:
+                    cache[1] = (uint8_t)(data >> 16);
+                    cache[2] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = true;
+                    V[3] = false;
+                    cache_addr+=2;
+                    break;
+                case 3:
+                    cache[1] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = true;
+                    V[2] = V[3] = false;
+                    cache_addr+=1;
+                    break;
+            }
+        }
+        else if(!V[0] & !V[1] & V[2] & V[3]){
+            cache[0] = cache[2];
+            cache[1] = cache[3];
+            switch(loc){
+                case 0:
+                    cache[2] = (uint8_t)(data >> 0);
+                    cache[3] = (uint8_t)(data >> 8);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=2;
+                    break;
+                case 1:
+                    cache[2] = (uint8_t)(data >> 8);
+                    cache[3] = (uint8_t)(data >> 16);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=2;
+                    break;
+                case 2:
+                    cache[2] = (uint8_t)(data >> 16);
+                    cache[3] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=2;
+                    break;
+                case 3:
+                    cache[2] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = true;
+                    V[3] = false;
+                    cache_addr+=1;
+                    break;
+            }
+        }
+        else if(!V[0] & !V[1] & V[2] & !V[3]){
+            cache[0] = cache[2];
+            switch(loc){
+                case 0:
+                    cache[1] = (uint8_t)(data >> 0);
+                    cache[2] = (uint8_t)(data >> 8);
+                    cache[3] = (uint8_t)(data >> 16);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=3;
+                    break;
+                case 1:
+                    cache[1] = (uint8_t)(data >> 8);
+                    cache[2] = (uint8_t)(data >> 16);
+                    cache[3] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=3;
+                    break;
+                case 2:
+                    cache[1] = (uint8_t)(data >> 16);
+                    cache[2] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = true;
+                    V[3] = false;
+                    cache_addr+=2;
+                    break;
+                case 3:
+                    cache[1] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = true;
+                    V[2] = V[3] = false;
+                    cache_addr+=1;
+                    break;
+            }
+        }
+        else if(!V[0] & !V[1] & !V[2] & !V[3]){
+            switch(loc){
+                case 0:
+                    cache[0] = (uint8_t)(data >> 0);
+                    cache[1] = (uint8_t)(data >> 8);
+                    cache[2] = (uint8_t)(data >> 16);
+                    cache[3] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=4;
+                    break;
+                case 1:
+                    cache[0] = (uint8_t)(data >> 8);
+                    cache[1] = (uint8_t)(data >> 16);
+                    cache[2] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = true;
+                    V[3] = false;
+                    cache_addr+=3;
+                    break;
+                case 2:
+                    cache[0] = (uint8_t)(data >> 16);
+                    cache[1] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = true;
+                    V[2] = V[3] = false;
+                    cache_addr+=2;
+                    break;
+                case 3:
+                    cache[0] = (uint8_t)(data >> 24);
+                    V[0] = true;
+                    V[1] = V[2] = V[3] = false;
+                    cache_addr+=1;
+                    break;
+            }
+        }
+        else if(V[0] & V[1] & !V[2] & !V[3]){
+            switch(loc){
+                case 0:
+                    cache[2] = (uint8_t)(data >> 0);
+                    cache[3] = (uint8_t)(data >> 8);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=2;
+                    break;
+                case 1:
+                    cache[2] = (uint8_t)(data >> 8);
+                    cache[3] = (uint8_t)(data >> 16);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=2;
+                    break;
+                case 2:
+                    cache[2] = (uint8_t)(data >> 16);
+                    cache[3] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=2;
+                    break;
+                case 3:
+                    cache[2] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = true;
+                    V[3] = false;
+                    cache_addr+=1;
+                    break;
+            }
+        }
+        else if(!V[0] & V[1] & V[2] & !V[3]){
+            cache[0] = cache[1];
+            cache[1] = cache[2];
+            switch(loc){
+                case 0:
+                    cache[2] = (uint8_t)(data >> 0);
+                    cache[3] = (uint8_t)(data >> 8);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=2;
+                    break;
+                case 1:
+                    cache[2] = (uint8_t)(data >> 8);
+                    cache[3] = (uint8_t)(data >> 16);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=2;
+                    break;
+                case 2:
+                    cache[2] = (uint8_t)(data >> 16);
+                    cache[3] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=2;
+                    break;
+                case 3:
+                    cache[2] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = true;
+                    V[3] = false;
+                    cache_addr+=1;
+                    break;
+            }
+        }
+        else if(V[0] & !V[1] & !V[2] & !V[3]){
+            switch(loc){
+                case 0:
+                    cache[1] = (uint8_t)(data >> 0);
+                    cache[2] = (uint8_t)(data >> 8);
+                    cache[3] = (uint8_t)(data >> 16);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=3;
+                    break;
+                case 1:
+                    cache[1] = (uint8_t)(data >> 8);
+                    cache[2] = (uint8_t)(data >> 16);
+                    cache[3] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=3;
+                    break;
+                case 2:
+                    cache[1] = (uint8_t)(data >> 16);
+                    cache[2] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = true;
+                    V[3] = false;
+                    cache_addr+=2;
+                    break;
+                case 3:
+                    cache[1] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = true;
+                    V[2] = V[3] = false;
+                    cache_addr+=1;
+                    break;
+            }
+        }
+        else if(!V[0] & V[1] & !V[2] & !V[3]){
+            cache[0] = cache[1];
+            switch(loc){
+                case 0:
+                    cache[1] = (uint8_t)(data >> 0);
+                    cache[2] = (uint8_t)(data >> 8);
+                    cache[3] = (uint8_t)(data >> 16);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=3;
+                    break;
+                case 1:
+                    cache[1] = (uint8_t)(data >> 8);
+                    cache[2] = (uint8_t)(data >> 16);
+                    cache[3] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=3;
+                    break;
+                case 2:
+                    cache[1] = (uint8_t)(data >> 16);
+                    cache[2] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = true;
+                    V[3] = false;
+                    cache_addr+=2;
+                    break;
+                case 3:
+                    cache[1] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = true;
+                    V[2] = V[3] = false;
+                    cache_addr+=1;
+                    break;
+            }
+        }
+        else if(!V[0] & V[1] & V[2] & V[3]){
+            cache[0] = cache[1];
+            cache[1] = cache[2];
+            cache[2] = cache[3];
+            switch(loc){
+                case 0:
+                    cache[3] = (uint8_t)(data >> 0);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=1;
+                    break;
+                case 1:
+                    cache[3] = (uint8_t)(data >> 8);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=1;
+                    break;
+                case 2:
+                    cache[3] = (uint8_t)(data >> 16);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=1;
+                    break;
+                case 3:
+                    cache[3] = (uint8_t)(data >> 24);
+                    V[0] = V[1] = V[2] = V[3] = true;
+                    cache_addr+=1;
+                    break;
+            }
         }
         else
-            Valid[i] = false;
+            printf("yabai\n");
     }
-
-}
-
-
+         
+    PC_update = false;
+         
+}        
+         
 void CPU::cache_false(){
     #pragma unroll
     for(int i = 0; i < 4; i++)
-        Valid[i] = false;
+        V[i] = false;
 }
 
 uint16_t CPU::get_PC(){
