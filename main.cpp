@@ -14,8 +14,8 @@
 
 using namespace std;
 
-const bool test = true;
-//const bool test = false;
+//const bool test = true;
+const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint6* COLOR, uint8_t* VRAM);

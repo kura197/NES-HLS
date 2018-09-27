@@ -626,76 +626,6 @@ void CPU::cache_update(uint16_t addr, uint32_t* PROM){
 
     cache_addr = read_addr;
 
-    //uint8_t shift;
-    //if(3+v < 4 && Valid[3+v]) shift = 4;
-    //else if(2+v < 4 && Valid[2+v]) shift = 3;
-    //else if(1+v < 4 && Valid[1+v]) shift = 2;
-    //else if(v < 4 && Valid[v]) shift = 1;
-    //else shift = 0;
-
-    //if(shift == 0){
-    //    switch(loc){
-    //        case 0:
-    //            cache[0] = (uint8_t)(data >> 0);
-    //            cache[1] = (uint8_t)(data >> 8);
-    //            cache[2] = (uint8_t)(data >> 16);
-    //            cache[3] = (uint8_t)(data >> 24);
-    //            Valid[0] = Valid[1] = Valid[2] = Valid[3] = true;
-    //            cache_addr+=4;
-    //            break;
-    //        case 1:
-    //            cache[0] = (uint8_t)(data >> 0);
-    //            cache[1] = (uint8_t)(data >> 8);
-    //            cache[2] = (uint8_t)(data >> 16);
-    //            Valid[0] = Valid[1] = Valid[2] = true;
-    //            Valid[3] = false;
-    //            cache_addr+=3;
-    //            break;
-    //        case 2:
-    //            cache[0] = (uint8_t)(data >> 0);
-    //            cache[1] = (uint8_t)(data >> 8);
-    //            Valid[0] = Valid[1] = true;
-    //            Valid[2] = Valid[3] = false;
-    //            cache_addr+=2;
-    //            break;
-    //        case 3:
-    //            cache[0] = (uint8_t)(data >> 0);
-    //            Valid[0] = true;
-    //            Valid[1] = Valid[2] = Valid[3] = false;
-    //            cache_addr+=1;
-    //            break;
-    //    }
-    //}
-    //else if(shift == 1){
-    //    switch(loc){
-    //        case 0:
-    //            cache[0] = cache[3];
-    //            cache[1] = (uint8_t)(data >> 0);
-    //            cache[2] = (uint8_t)(data >> 8);
-    //            cache[3] = (uint8_t)(data >> 16);
-    //            Valid[0] = Valid[1] = Valid[2] = Valid[3] = true;
-    //            cache_addr+=3;
-    //            break;
-    //        case 1:
-    //            cache[0] = cache[3];
-    //            cache[1] = (uint8_t)(data >> 0);
-    //            cache[2] = (uint8_t)(data >> 8);
-    //            Valid[0] = Valid[1] = Valid[2] = true;
-    //            Valid[3] = false;
-    //            cache_addr+=2;
-    //            break;
-    //        case 2:
-    //            cache[0] = cache[3];
-    //            cache[1] = (uint8_t)(data >> 0);
-    //            Valid[0] = Valid[1] = true;
-    //            Valid[2] = Valid[3] = false;
-    //            cache_addr+=1;
-    //            break;
-    //        case 3:
-    //            break;
-    //    }
-
-    //}
 
     for(int i = 0; i < 4; i++){
         if(i+v < 4 && Valid[i+v]){
@@ -716,6 +646,7 @@ void CPU::cache_update(uint16_t addr, uint32_t* PROM){
 
 
 void CPU::cache_false(){
+    #pragma unroll
     for(int i = 0; i < 4; i++)
         Valid[i] = false;
 }
