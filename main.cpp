@@ -14,8 +14,8 @@
 
 using namespace std;
 
-//const bool test = true;
-const bool test = false;
+const bool test = true;
+//const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint6* COLOR, uint8_t* VRAM);
@@ -231,6 +231,8 @@ int main(int argc, char* argv[]){
         for(int l = 0; l < 256; l++){
             if(f == 180)
                 exec_nes(mm_COLOR, 0, 0, 0, 0x08, false);
+            else if(800 <= f)
+                exec_nes(mm_COLOR, 0, 0, 0, 0x80, false);
             else exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
             //dbg = exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
             //printf("PC:%04x IR:%02x cache:%08x\n",dbg.PC, dbg.IR, dbg.cache);

@@ -48,14 +48,18 @@ uint8_t CPU::read_mem8(uint16_t addr, uint8_t* WRAM, uint32_t* PROM){
     if((addr >> 15) & 1)
         //data = read_prom(addr, PROM);
         data = read_prom_ex8(addr, PROM);
-    else if(addr < 0x800)data = WRAM[addr];
+    //else if(addr < 0x800)
+    //    data = WRAM[addr];
+    else data = WRAM[addr&0x7FF];
+    //else
+    //    printf("addr:%04x\n", addr);
     return data;
 }
 
 uint8_t CPU::norm_read8(uint16_t addr, uint8_t* WRAM){
     uint8_t data = 0;
-    if(addr < 0x800)
-        data = WRAM[addr];
+    //if(addr < 0x800)
+        data = WRAM[addr&0x7FF];
     return data;
 }
 
@@ -68,7 +72,8 @@ uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM){
 
 void CPU::norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM){
     //if(addr >= 0x800) printf("nwrite8 error\n");
-    if(addr < 0x800) WRAM[addr] = data; 
+    //if(addr < 0x800) 
+        WRAM[addr&0x7FF] = data; 
 }
 
 uint8_t CPU::read_prom(uint16_t addr, uint8_t* PROM){
