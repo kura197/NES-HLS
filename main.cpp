@@ -14,8 +14,8 @@
 
 using namespace std;
 
-//const bool test = true;
-const bool test = false;
+const bool test = true;
+//const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint8_t* COLOR, uint8_t* VRAM);
@@ -103,7 +103,7 @@ uint16_t exec_nes(
     }
 
     cpu.load_key(key);
-    for(int c = 0; c < 40; c++) {
+    for(int c = 0; c < 45; c++) {
         //printf("NMI_VBlank : %d \t", spreg.VBlank_NMI);
         cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
     }

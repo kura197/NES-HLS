@@ -87,6 +87,11 @@ void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
     DMAAddrL++;
     if(DMAAddrL == 0)
         DMAExcute = 0;
+    //uint16_t high = (uint16_t)DMAAddrH << 8;
+    //for(int low = 0; low <= 0xFF; low++){
+    //    SP_RAM[low] = WRAM[high | low];
+    //}
+    //DMAExcute = 0;
 }
 
 void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* PROM, struct SPREG* spreg, uint16_t* Stack, uint8_t* CROM){
@@ -297,25 +302,25 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         case 0x9A: SP=X; break; // TXS
 
                    /* shift */
-        case 0x0A: op_asl = true; adr.imp = true; break;
+        case 0x0A: _asla(); break;
         case 0x06: op_asl = true; adr.zp = true; break;
         case 0x16: op_asl = true; adr.zpx = true; break;
         case 0x0E: op_asl = true; adr.abs = true; break;
         case 0x1E: op_asl = true; adr.abx = true; break;
 
-        case 0x4A: op_lsr = true; adr.imp = true;  break;
+        case 0x4A: _lsra(); break;
         case 0x46: op_lsr = true; adr.zp = true;  break;
         case 0x56: op_lsr = true; adr.zpx = true; break;
         case 0x4E: op_lsr = true; adr.abs = true; break;
         case 0x5E: op_lsr = true; adr.abx = true; break;
 
-        case 0x2A: op_rol = true; adr.imp = true;  break;
+        case 0x2A: _rola(); break;
         case 0x26: op_rol = true; adr.zp = true;  break;
         case 0x36: op_rol = true; adr.zpx = true; break;
         case 0x2E: op_rol = true; adr.abs = true; break;
         case 0x3E: op_rol = true; adr.abx = true; break;
 
-        case 0x6A: op_ror = true; adr.imp = true;  break;
+        case 0x6A: _rora(); break;
         case 0x66: op_ror = true; adr.zp = true;  break;
         case 0x76: op_ror = true; adr.zpx = true; break;
         case 0x6E: op_ror = true; adr.abs = true; break;
@@ -435,45 +440,55 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         else if(y) Y = reg;
 
     } 
-    else if(op_store){
-        if(acc) rddata = ACC;
-        else if(x) rddata = X;
-        else if(y) rddata = Y;
-        _store(rddata, addr);
-    }
-    else if(op_asl){
-        if(adr.imp){
-            _asla();
-        }else{
+    //else if(op_store){
+    //    if(acc) rddata = ACC;
+    //    else if(x) rddata = X;
+    //    else if(y) rddata = Y;
+    //    _store(rddata, addr);
+    //}
+    //else if(op_asl){
+    //    _asl(addr, rddata);
+    //}
+    //else if(op_lsr){
+    //    _lsr(addr, rddata);
+    //}
+    //else if(op_rol){
+    //    _rol(addr, rddata);
+    //}
+    //else if(op_ror){
+    //    _ror(addr, rddata);
+    //}
+    //else if(op_inc){
+    //    _inc(addr, rddata);
+    //}
+    //else if(op_dec){
+    //    _dec(addr, rddata);
+    //}
+    else if(op_store|op_asl|op_lsr|op_rol|op_ror|op_inc|op_dec){
+        if(op_store){
+            if(acc) rddata = ACC;
+            else if(x) rddata = X;
+            else if(y) rddata = Y;
+        }
+        else if(op_asl){
             _asl(addr, rddata);
         }
-    }
-    else if(op_lsr){
-        if(adr.imp){
-            _lsra();
-        }else{
+        else if(op_lsr){
             _lsr(addr, rddata);
         }
-    }
-    else if(op_rol){
-        if(adr.imp){
-            _rola();
-        }else{
+        else if(op_rol){
             _rol(addr, rddata);
         }
-    }
-    else if(op_ror){
-        if(adr.imp){
-            _rora();
-        }else{
+        else if(op_ror){
             _ror(addr, rddata);
         }
-    }
-    else if(op_inc){
-        _inc(addr, rddata);
-    }
-    else if(op_dec){
-        _dec(addr, rddata);
+        else if(op_inc){
+            _inc(addr, rddata);
+        }
+        else if(op_dec){
+            _dec(addr, rddata);
+        }
+        _store(rddata, addr);
     }
     else if(op_bra){
         _bra(rddata);
