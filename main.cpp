@@ -14,8 +14,8 @@
 
 using namespace std;
 
-const bool test = true;
-//const bool test = false;
+//const bool test = true;
+const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint8_t* COLOR, uint8_t* VRAM);
@@ -72,8 +72,8 @@ uint16_t exec_nes(
     static uint8_t WRAM[0x800];
     static uint8_t SP_RAM[0x100];
     //hls_register uint8_t Stack[0x40];
-    static uint8_t Stack[0x100];
-    //static uint16_t Stack[0x100];
+    //static uint8_t Stack[0x100];
+    static uint16_t Stack[0x100];
 
     if(test){
         static bool init;
@@ -104,6 +104,7 @@ uint16_t exec_nes(
 
     cpu.load_key(key);
     for(int c = 0; c < 40; c++) {
+        //printf("NMI_VBlank : %d \t", spreg.VBlank_NMI);
         cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
     }
     //printf("sphit:%d\n", spreg.SPhit);
