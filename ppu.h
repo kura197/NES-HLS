@@ -18,7 +18,7 @@ class PPU{
         //uint8_t *PPU_RAM;
         //uint8_t *SP_RAM;
         //bool en_gray;
-        uint8_t line;
+        hls_register uint8_t line;
 
     public:
         void BG_Valid_set(uint8_t x, uint8_t bit, bool valid);

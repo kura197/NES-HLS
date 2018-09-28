@@ -20,23 +20,23 @@ struct ADDRESS{
 
 class CPU : RAM{
     private:
-        uint16_t PC;
-        uint8_t ACC;
-        uint8_t X;
-        uint8_t Y;
-        uint8_t SP;
+        hls_register uint16_t PC;
+        hls_register uint8_t ACC;
+        hls_register uint8_t X;
+        hls_register uint8_t Y;
+        hls_register uint8_t SP;
         //uint8_t Stack[0x100];
         //uint8_t CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         //bool CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
-        uint1 CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
+        hls_register uint1 CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         //int rest;
-        uint1 reset_line;
+        hls_register uint1 reset_line;
         //bool irq_line;
-        uint1 nmi_line;
+        hls_register uint1 nmi_line;
         //bool log;
         //bool op;
-        uint16_t Stack_PC;
-        uint8_t Stack_Flags;
+        hls_register uint16_t Stack_PC;
+        hls_register uint8_t Stack_Flags;
 
         //uint16_t res_vec;
         //uint16_t irq_vec;
@@ -45,12 +45,12 @@ class CPU : RAM{
         hls_register uint8_t cache[4];
         hls_register uint16_t cache_addr;
         //uint1 Valid[4];
-        uint1 V[4];
-        uint1 PC_update;
+        hls_register uint8_t V[4];
+        hls_register uint8_t PC_update;
 
         //bool wide[0x100];
         //hls_register uint1 wide[0x100];
-        bool SP_wide;
+        hls_register bool SP_wide;
         //struct ADDRESS adr;
         //uint1 op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
         //uint1 op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror, op_bra_false;

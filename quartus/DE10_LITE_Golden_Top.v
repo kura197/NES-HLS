@@ -220,25 +220,34 @@ exec_nes nes (
   .avmm_1_rw_writedata ( avmm_1_rw_writedata  )  // 8-bit writedata output
 );
 
-vram vram (
-    .clk_clk                        (clk),                        //                 clk.clk
-    .reset_reset_n                  (sync_resetn[2]),                  //               reset.reset_n
-    .clk_user_clk                   (MAX10_CLK1_50),                   //            clk_user.clk
-    .reset_user_reset_n             (sync_resetn[2]),             //          reset_user.reset_n
+//vram vram (
+//    .clk_clk                        (clk),                        //                 clk.clk
+//    .reset_reset_n                  (sync_resetn[2]),                  //               reset.reset_n
+//    .clk_user_clk                   (MAX10_CLK1_50),                   //            clk_user.clk
+//    .reset_user_reset_n             (sync_resetn[2]),             //          reset_user.reset_n
+//
+//    .onchip_memory2_0_s2_address    (VramAddr),    // onchip_memory2_0_s2.address
+//    .onchip_memory2_0_s2_chipselect (1'b1), //                    .chipselect
+//    .onchip_memory2_0_s2_clken      (1'b1),      //                    .clken
+//    .onchip_memory2_0_s2_write      (1'b0),      //                    .write
+//    .onchip_memory2_0_s2_readdata   (VramData),   //                    .readdata
+//    .onchip_memory2_0_s2_writedata  (8'h0),  //                    .writedata
+//
+//    .onchip_memory2_0_s1_address    ( avmm_1_rw_address ),    // onchip_memory2_0_s1.address
+//    .onchip_memory2_0_s1_clken      ( 1'b1 ),      //                    .clken
+//    .onchip_memory2_0_s1_chipselect ( 1'b1 ), //                    .chipselect
+//    .onchip_memory2_0_s1_write      ( avmm_1_rw_write ),      //                    .write
+//    .onchip_memory2_0_s1_readdata   ( avmm_1_rw_readdata ),   //                    .readdata
+//    .onchip_memory2_0_s1_writedata  ( avmm_1_rw_writedata )   //                    .writedata
+//);
 
-    .onchip_memory2_0_s2_address    (VramAddr),    // onchip_memory2_0_s2.address
-    .onchip_memory2_0_s2_chipselect (1'b1), //                    .chipselect
-    .onchip_memory2_0_s2_clken      (1'b1),      //                    .clken
-    .onchip_memory2_0_s2_write      (1'b0),      //                    .write
-    .onchip_memory2_0_s2_readdata   (VramData),   //                    .readdata
-    .onchip_memory2_0_s2_writedata  (8'h0),  //                    .writedata
-
-    .onchip_memory2_0_s1_address    ( avmm_1_rw_address ),    // onchip_memory2_0_s1.address
-    .onchip_memory2_0_s1_clken      ( 1'b1 ),      //                    .clken
-    .onchip_memory2_0_s1_chipselect ( 1'b1 ), //                    .chipselect
-    .onchip_memory2_0_s1_write      ( avmm_1_rw_write ),      //                    .write
-    .onchip_memory2_0_s1_readdata   ( avmm_1_rw_readdata ),   //                    .readdata
-    .onchip_memory2_0_s1_writedata  ( avmm_1_rw_writedata )   //                    .writedata
+VRAM vram (
+    .clock ( clk ),
+    .data ( avmm_1_rw_writedata ),
+    .rdaddress ( VramAddr ),
+    .wraddress ( avmm_1_rw_address ),
+    .wren ( avmm_1_rw_write ),
+    .q ( VramData )
 );
 
 
