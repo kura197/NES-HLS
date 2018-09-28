@@ -81,8 +81,9 @@
   ZFlag=(ACC&t)==0; \
 }
 
+//reg=((adr >> 15) & 1) ? data : read(adr, WRAM, PPU_RAM, spreg, CROM); 
 #define _load(reg,adr,data) { \
-  reg=((adr >> 15) & 1) ? data : read(adr, WRAM, PPU_RAM, spreg, CROM); \
+  reg = data; \
   NFlag=reg>>7; \
   ZFlag=reg==0; \
 }

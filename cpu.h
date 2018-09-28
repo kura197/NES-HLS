@@ -49,7 +49,8 @@ class CPU : RAM{
         uint1 PC_update;
 
         //bool wide[0x100];
-        uint1 wide[0x100];
+        //hls_register uint1 wide[0x100];
+        bool SP_wide;
         //struct ADDRESS adr;
         //uint1 op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
         //uint1 op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror, op_bra_false;

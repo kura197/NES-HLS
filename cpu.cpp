@@ -393,7 +393,14 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     addr = addressing(adr, WRAM, PROM);
 
     //hls_register uint8_t rddata = read_mem8(addr, WRAM, PROM);
-    uint8_t rddata = read_mem8(addr, WRAM, PROM);
+    //uint8_t rddata = read_mem8(addr, WRAM, PROM);
+    uint8_t rddata = ((addr >> 15) & 1 || op_store) ? read_prom_ex8(addr, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
+    //uint8_t rddata = ((addr >> 15) & 1) ? read_mem8(addr, WRAM, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
+    
+    //uint8_t rddata;
+    //if((addr >> 15) & 1 || op_store) rddata = read_prom_ex8(addr, PROM);
+    //else rddata = read(addr, WRAM, PPU_RAM, spreg, CROM);
+
 
     if(op_adc){
         _adc(rddata);
@@ -421,10 +428,11 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         _bit(rddata);
     }
     else if(op_load){
-        _load(rddata, addr, rddata);
-        if(acc) ACC = rddata;
-        else if(x) X = rddata;
-        else if(y) Y = rddata;
+        uint8_t reg;
+        _load(reg, addr, rddata);
+        if(acc) ACC = reg;
+        else if(x) X = reg;
+        else if(y) Y = reg;
 
     } 
     else if(op_store){
@@ -964,13 +972,15 @@ uint32_t CPU::get_cache(){
 
 void CPU::push_ex8(uint8_t data, uint16_t* Stack){
     //push_ex16((uint16_t)data, Stack);
-    wide[SP] = false;
+    //wide[SP] = false;
+    SP_wide = false;
     Stack[(uint8_t)(SP--) & 0xFF] = (uint16_t)data << 8;
     //SP++;
 }
 
 void CPU::push_ex16(uint16_t data, uint16_t* Stack){
-    wide[SP] = true;
+    //wide[SP] = true;
+    SP_wide = true;
     Stack[(uint8_t)(SP--) & 0xFF] = data;
     //SP--;
 }
@@ -981,9 +991,11 @@ uint8_t CPU::pop_ex8(uint16_t* Stack){
     
     uint16_t data = Stack[(uint8_t)(++SP) & 0xFF];
     uint8_t ret_data;
-    if(wide[SP]){
+    //if(wide[SP]){
+    if(SP_wide){
         ret_data = (uint8_t)data;
-        wide[SP] = false;
+        //wide[SP] = false;
+        SP_wide = false;
         SP--;
     }
     else
@@ -994,6 +1006,7 @@ uint8_t CPU::pop_ex8(uint16_t* Stack){
 
 uint16_t CPU::pop_ex16(uint16_t* Stack){
     //++SP;
+    SP_wide = false;
     return Stack[(uint8_t)(++SP) & 0xFF];
 }
 
