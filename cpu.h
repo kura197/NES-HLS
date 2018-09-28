@@ -46,7 +46,7 @@ class CPU : RAM{
         hls_register uint16_t cache_addr;
         //uint1 Valid[4];
         uint8_t V[4];
-        bool PC_update;
+        uint1 PC_update;
 
         //struct ADDRESS adr;
         //uint1 op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
@@ -89,6 +89,12 @@ class CPU : RAM{
         void push16(uint16_t data, uint8_t* Stack);
         uint8_t pop8(uint8_t* Stack);
         uint16_t pop16(uint8_t* Stack);
+        
+        void push_ex8(uint8_t data, uint16_t* Stack);
+        void push_ex16(uint16_t data, uint16_t* Stack);
+        uint8_t pop_ex8(uint16_t* Stack);
+        uint16_t pop_ex16(uint16_t* Stack);
+
 
         uint8_t read_prom_ex8(uint16_t addr, uint32_t* PROM);
         uint16_t read_prom_ex16(uint16_t addr, uint32_t* PROM);

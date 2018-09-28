@@ -481,6 +481,7 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         PC_update = true;
     }
     else if(op_jsr){
+        //push_ex16(PC-1, Stack);
         push16(PC-1, Stack);
         PC = addr;
         //cache_false();
@@ -489,9 +490,11 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     else if(op_push){
         if(acc) rddata = ACC;
         else rddata = _bindFlags();
+        //push_ex8(rddata, Stack);
         push8(rddata, Stack);
     }
     else if(op_rts){
+        //PC=pop_ex16(Stack)+1;
         PC=pop16(Stack)+1;
         //cache_false();
         PC_update = true;
@@ -504,6 +507,7 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         PC_update = true;
     }
     else if(op_pop){
+        //rddata = pop_ex8(Stack);
         rddata = pop8(Stack);
         if(acc){
             ACC = rddata;
@@ -917,8 +921,6 @@ void CPU::cache_update(uint16_t addr, uint32_t* PROM){
                     break;
             }
         }
-        else
-            printf("yabai\n");
     }
          
     PC_update = false;
@@ -958,5 +960,21 @@ uint32_t CPU::get_cache(){
     data |= (uint32_t)cache[2] << 16;
     data |= (uint32_t)cache[3] << 24;
     return data;
+}
+
+void CPU::push_ex8(uint8_t data, uint16_t* Stack){
+    push_ex16((uint16_t)data, Stack);
+}
+
+void CPU::push_ex16(uint16_t data, uint16_t* Stack){
+    Stack[(uint8_t)(SP--) & 0xFF] = data;
+}
+
+uint8_t CPU::pop_ex8(uint16_t* Stack){
+    return (uint8_t)pop_ex16(Stack);
+}
+
+uint16_t CPU::pop_ex16(uint16_t* Stack){
+    return Stack[(uint8_t)(++SP) & 0xFF];
 }
 

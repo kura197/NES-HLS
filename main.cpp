@@ -56,8 +56,8 @@ struct DEBUG{
 
 component 
 uint16_t exec_nes(
-            //ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
-            hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
+            ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
+            //hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
             uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_vec,
             uint8_t key, bool res
         ){
@@ -73,6 +73,7 @@ uint16_t exec_nes(
     static uint8_t SP_RAM[0x100];
     //hls_register uint8_t Stack[0x40];
     static uint8_t Stack[0x100];
+    //static uint16_t Stack[0x100];
 
     if(test){
         static bool init;
@@ -197,15 +198,15 @@ int main(int argc, char* argv[]){
     bool nmi = false;
     uint16_t PC;
     struct DEBUG dbg;
-    exec_nes(COLOR, 0, 0, 0, 0x0, true);
+    exec_nes(mm_COLOR, 0, 0, 0, 0x0, true);
     //exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){
         for(int l = 0; l < 256; l++){
             if(f == 180)
-                exec_nes(COLOR, 0, 0, 0, 0x08, false);
+                exec_nes(mm_COLOR, 0, 0, 0, 0x08, false);
             else if(800 <= f)
                 exec_nes(mm_COLOR, 0, 0, 0, 0x80, false);
-            else exec_nes(COLOR, 0, 0, 0, 0x0, false);
+            else exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
         }
         //if(f == 300)
         //    exec_nes(mm_COLOR, 0, 0, 0, 0x04, false);
