@@ -83,21 +83,24 @@ void CPU::set_reset()
 }
 
 void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
-    SP_RAM[DMAAddrL] = WRAM[(uint16_t)DMAAddrH << 8 | DMAAddrL];
-    DMAAddrL++;
-    if(DMAAddrL == 0)
+    //SP_RAM[DMAAddrL] = WRAM[(uint16_t)DMAAddrH << 8 | DMAAddrL];
+    //DMAAddrL++;
+    //if(DMAAddrL == 0)
+    //    DMAExcute = 0;
+    if(DMAExcute){
+        uint16_t high = (uint16_t)DMAAddrH << 8;
+        for(int low = 0; low <= 0xFF; low++){
+            SP_RAM[low] = WRAM[high | low];
+        }
         DMAExcute = 0;
-    //uint16_t high = (uint16_t)DMAAddrH << 8;
-    //for(int low = 0; low <= 0xFF; low++){
-    //    SP_RAM[low] = WRAM[high | low];
-    //}
-    //DMAExcute = 0;
+    }
 }
 
 void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* PROM, struct SPREG* spreg, uint16_t* Stack, uint8_t* CROM){
 
-    if(DMAExcute) exec_DMA(SP_RAM, WRAM);
-    else execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack, CROM);
+    //if(DMAExcute) exec_DMA(SP_RAM, WRAM);
+    //else execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack, CROM);
+    execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack, CROM);
 }
 
 
