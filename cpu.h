@@ -21,10 +21,10 @@ struct ADDRESS{
 class CPU : RAM{
     private:
         uint16_t PC;
-        uint8_t ACC;
-        uint8_t X;
-        uint8_t Y;
-        uint8_t SP;
+        uint8 ACC;
+        uint8 X;
+        uint8 Y;
+        uint8 SP;
         //uint8_t Stack[0x100];
         //uint8_t CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         //bool CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
@@ -42,10 +42,12 @@ class CPU : RAM{
         //uint16_t irq_vec;
         //uint16_t nmi_vec;
 
-        uint8 cache[4];
         uint16_t cache_addr;
-        uint8_t V[4];
-        uint8_t PC_update;
+        //uint8 cache[4];
+        //uint8_t V[4];
+        uint32 cache;
+        uint4 V;
+        uint1 PC_update;
 
         //bool wide[0x100];
         //hls_register uint1 wide[0x100];

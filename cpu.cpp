@@ -10,9 +10,9 @@ void CPU::dump_regs(uint8_t insn){
     uint8_t flag = bindFlags();
     //printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
     //                PC, insn, ACC, X, Y, flag, SP);
-    uint32_t cache = get_cache();
-    printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x    cache:%08x\n",
-                    PC, insn, ACC, X, Y, flag, SP, cache);
+    //uint32_t cache = get_cache();
+    //printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x    cache:%08x\n",
+    //                PC, insn, ACC, X, Y, flag, SP, cache);
 }
 
 void CPU::push8(uint8_t data, uint8_t* Stack){
@@ -184,7 +184,8 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     cache_update(PC, PROM);
     //if(V[2] == false) return;
 
-    uint8_t IR = cache[0];
+    //uint8_t IR = cache[0];
+    uint8_t IR = cache.slc<8>(0);
     //V[0] = false;
 
     //hls_register uint8_t IR = read_prom(PC, PROM);
@@ -397,12 +398,12 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     PC++;
     V[0] = false;
 
-    uint16_t addr;
+    uint16 addr;
     addr = addressing(adr, WRAM, PROM);
 
     //hls_register uint8_t rddata = read_mem8(addr, WRAM, PROM);
     //uint8_t rddata = read_mem8(addr, WRAM, PROM);
-    uint8_t rddata = ((addr >> 15) & 1 || op_store) ? read_prom_ex8(addr, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
+    uint8_t rddata = (addr[15] || op_store) ? read_prom_ex8(addr, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
     //uint8_t rddata = ((addr >> 15) & 1) ? read_mem8(addr, WRAM, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
     
     //uint8_t rddata;
@@ -436,7 +437,7 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         _bit(rddata);
     }
     else if(op_load){
-        uint8_t reg;
+        uint8 reg;
         _load(reg, addr, rddata);
         if(acc) ACC = reg;
         else if(x) X = reg;
@@ -556,7 +557,8 @@ uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM){
     }
     else if(adr.abs | adr.abx | adr.aby | adr.absi){
         //uint16_t tmp16 = read_prom16(PC, PROM);
-        uint16_t tmp16 = (uint16_t)cache[2] << 8 | cache[1];
+        //uint16_t tmp16 = (uint16_t)cache[2] << 8 | cache[1];
+        uint16_t tmp16 = cache.slc<16>(8);
         V[2] = V[1] = false;
         PC+=2;
         if(adr.abs | adr.absi) addr = tmp16;
@@ -565,7 +567,8 @@ uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM){
     }
     else if(adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi){
         //uint8_t tmp8 = read_prom(PC, PROM);
-        uint8_t tmp8 = cache[1];
+        //uint8_t tmp8 = cache[1];
+        uint8_t tmp8 = cache.slc<8>(8);
         V[1] = false;
         PC++;
         if(adr.zp | adr.zpiy) addr = tmp8;
@@ -629,6 +632,7 @@ void CPU::cache_update(uint16_t addr, uint32_t* PROM){
     //else read_addr = cache_addr;
     if(PC_update) read_addr = addr;
     else read_addr = cache_addr;
+
     hls_register uint32 data = read_prom_ex32(read_addr, PROM);
 
     uint2 loc = read_addr & 0x3;
@@ -659,17 +663,19 @@ void CPU::cache_update(uint16_t addr, uint32_t* PROM){
     #pragma unroll
     for(uint8_t i = 0; i < 4; i++){
         if(i < k){
-            cache[i] = cache[i+v];
-            V[i] = true;
+            //cache[i] = cache[i+v];
+            cache.set_slc(8*i, cache.slc<8>(8*(i+v)));
+            V[(uint2)i] = true;
         }
         else if(i + y < 4){
             //cache[i] = (uint8_t)(data >> 8*(i + y));
-            cache[i] = (uint8_t)(data.slc<8>(8*(i + y)));
-            V[i] = true;
+            //cache[i] = (uint8_t)(data.slc<8>(8*(i + y)));
+            cache.set_slc(8*i, data.slc<8>(8*(i+y)));
+            V[(uint2)i] = true;
             cache_addr++;
         }
         else
-            V[i] = false;
+            V[(uint2)i] = false;
     }
     PC_update = false;
          

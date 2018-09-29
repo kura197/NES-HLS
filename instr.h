@@ -56,38 +56,38 @@
   ACC=(uint8_t)t.slc<8>(0); \
 }
 #define _cmp(reg,data) { \
-  uint16_t t=(uint16_t)reg-data; \
+  uint16 t=(uint16_t)reg-data; \
   CFlag=t<0x100; \
-  ZFlag=(t&0xff)==0; \
-  NFlag=(t>>7)&1; \
+  ZFlag=(t.slc<8>(0))==0; \
+  NFlag=t[7]; \
 }
 
 #define _and(data) { \
   ACC&=data; \
-  NFlag=ACC>>7; \
+  NFlag=ACC[7]; \
   ZFlag=ACC==0; \
 }
 #define _ora(data) { \
   ACC|=data; \
-  NFlag=ACC>>7; \
+  NFlag=ACC[7]; \
   ZFlag=ACC==0; \
 }
 #define _eor(data) { \
   ACC^=data; \
-  NFlag=ACC>>7; \
+  NFlag=ACC[7]; \
   ZFlag=ACC==0; \
 }
 
 #define _bit(data) { \
-  uint8_t t=data; \
-  NFlag=t>>7; \
-  VFlag=(t>>6)&1; \
+  uint8 t=data; \
+  NFlag=t[7]; \
+  VFlag=t[6]; \
   ZFlag=(ACC&t)==0; \
 }
 
 #define _load(reg,adr,data) { \
   reg = data; \
-  NFlag=reg>>7; \
+  NFlag=reg[7]; \
   ZFlag=reg==0; \
 }
 #define _store(reg,adr) { \
@@ -96,7 +96,7 @@
 
 #define _mov(dest,src) { \
   dest=src; \
-  NFlag=src>>7; \
+  NFlag=src[7]; \
   ZFlag=src==0; \
 }
 

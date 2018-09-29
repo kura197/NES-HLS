@@ -18,18 +18,18 @@ using namespace std;
 struct SPREG{
     uint8_t BGoffset_X;
     uint8_t BGoffset_Y;
-    bool VBlank_NMI;
-    bool BGPtnAddr;
-    bool SPPtnAddr;
-    bool NameAddrH;
-    bool NameAddrL;
-    bool EnSP;
-    bool EnBG;
-    bool SPMSK;
-    bool BGMSK;
-    bool VBlank;
-    bool SPhit;
-    bool num_ScanSP;
+    uint1 VBlank_NMI;
+    uint1 BGPtnAddr;
+    uint1 SPPtnAddr;
+    uint1 NameAddrH;
+    uint1 NameAddrL;
+    uint1 EnSP;
+    uint1 EnBG;
+    uint1 SPMSK;
+    uint1 BGMSK;
+    uint1 VBlank;
+    uint1 SPhit;
+    uint1 num_ScanSP;
 };
 
 
@@ -44,7 +44,7 @@ class RAM{
 
         //PAD
         uint8_t key_input;
-        uint8_t pad_input;
+        uint8 pad_input;
         uint8_t pad_reset_state;
         uint8_t pad_read_state;
 
@@ -54,7 +54,7 @@ class RAM{
         //bool SPSize;
         //bool BGPtnAddr;
         //bool SPPtnAddr;
-        bool PPUInc;
+        uint1 PPUInc;
         //bool NameAddrH;
         //bool NameAddrL;
         //$2001
@@ -81,7 +81,7 @@ class RAM{
         uint1 PPUAddr_sel_H;
         //uint8_t PPUAddr_H;
         //uint8_t PPUAddr_L;
-        uint16_t PPUAddr;
+        uint16 PPUAddr;
 
         uint8_t DMAAddrH;
         uint8_t DMAAddrL;
@@ -95,16 +95,16 @@ class RAM{
         uint8_t read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* spreg, uint8_t* CROM);
         void write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, struct SPREG* spreg, uint8_t* CROM);
         //void set_VBlank(bool vblank, bool nmi);
-        void write_2000(uint8_t data, struct SPREG* spreg);
-        void write_2001(uint8_t data, struct SPREG* spreg);
+        void write_2000(uint8 data, struct SPREG* spreg);
+        void write_2001(uint8 data, struct SPREG* spreg);
         void write_2003(uint8_t data);
         void write_2004(uint8_t data, uint8_t* SP_RAM);
         void write_2005(uint8_t data, struct SPREG* spreg);
-        void write_2006(uint8_t data);
+        void write_2006(uint8 data);
         void write_2007(uint8_t data, uint8_t* PPU_RAM, uint8_t* CROM);
         uint8_t read_2007(uint8_t* PPU_RAM, uint8_t* CROM);
         void DMA_start(uint8_t addr_H, uint8_t* WRAM, uint8_t* SP_RAM);
-        void reset_pad(uint8_t data);
+        void reset_pad(uint8 data);
         uint8_t read_pad_1();
         uint8_t read_pad_2();
         void Input_Key(uint8_t key) {key_input = key;};

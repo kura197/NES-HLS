@@ -8,21 +8,21 @@ using namespace std;
 
 
 uint8_t RAM::read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* spreg, uint8_t* CROM){
-    uint8_t data;
+    uint8 data = 0;
     //if(addr < 0x2000)   addr = addr & 0x7FF;
     //else if(addr < 0x4000) addr = addr & 0x2007;
     //if(addr >= 0x8000) printf("read error. addr:%04x\n", addr);
     //uint8_t tmp;
     switch(addr){
         case 0x2002: 
-              data = _set(spreg->VBlank,7)|_set(spreg->SPhit,6)|_set(spreg->num_ScanSP,5);
-              //printf("reg[0x2002] : %02x\n", data);
+              //data = _set(spreg->VBlank,7)|_set(spreg->SPhit,6)|_set(spreg->num_ScanSP,5);
+              data[7] = spreg->VBlank;
+              data[6] = spreg->SPhit;
+              data[5] = spreg->num_ScanSP;
+
               spreg->VBlank = false;
               BGoffset_sel_X = false;
               PPUAddr_sel_H = false;
-        //    data = WRAM[addr];
-        //    tmp = data & ~(1 << 7);
-        //    WRAM[addr] = tmp;
             break;
         case 0x2007:
             data = read_2007(PPU_RAM, CROM);
@@ -91,26 +91,30 @@ void RAM::write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, ui
 //        nes->cpu->set_nmi(VBlank);
 //}
 
-void RAM::write_2000(uint8_t data, struct SPREG* spreg){
-    spreg->VBlank_NMI = (bool)((data >> 7) & 1);    
-    //spreg.SPSize =     (bool)((data >> 5) & 1);    
-    spreg->BGPtnAddr =  (bool)((data >> 4) & 1);    
-    spreg->SPPtnAddr =  (bool)((data >> 3) & 1);    
-    PPUInc =     (bool)((data >> 2) & 1);    
-    spreg->NameAddrH =  (bool)((data >> 1) & 1);    
-    spreg->NameAddrL =  (bool)((data >> 0) & 1);    
+void RAM::write_2000(uint8 data, struct SPREG* spreg){
+    //spreg->VBlank_NMI = (bool)((data >> 7) & 1);    
+    //spreg->BGPtnAddr =  (bool)((data >> 4) & 1);    
+    //spreg->SPPtnAddr =  (bool)((data >> 3) & 1);    
+    //PPUInc =            (bool)((data >> 2) & 1);    
+    //spreg->NameAddrH =  (bool)((data >> 1) & 1);    
+    //spreg->NameAddrL =  (bool)((data >> 0) & 1);    
+    spreg->VBlank_NMI = data[7];    
+    spreg->BGPtnAddr =  data[4];    
+    spreg->SPPtnAddr =  data[3];    
+    PPUInc =            data[2];    
+    spreg->NameAddrH =  data[1];    
+    spreg->NameAddrL =  data[0];    
 }
 
-void RAM::write_2001(uint8_t data, struct SPREG* spreg){
-    //printf("write $2001. data = %02x\n",data);
-    //BGColor2 =  (bool)((data >> 7) & 1);    
-    //BGColor1 =  (bool)((data >> 6) & 1);    
-    //BGColor0 =  (bool)((data >> 5) & 1);    
-    spreg->EnSP =      (bool)((data >> 4) & 1);    
-    spreg->EnBG =      (bool)((data >> 3) & 1);    
-    spreg->SPMSK =     (bool)((data >> 2) & 1);    
-    spreg->BGMSK =     (bool)((data >> 1) & 1);    
-    //DispType =  (bool)((data >> 0) & 1);    
+void RAM::write_2001(uint8 data, struct SPREG* spreg){
+    //spreg->EnSP =      (bool)((data >> 4) & 1);    
+    //spreg->EnBG =      (bool)((data >> 3) & 1);    
+    //spreg->SPMSK =     (bool)((data >> 2) & 1);    
+    //spreg->BGMSK =     (bool)((data >> 1) & 1);    
+    spreg->EnSP =      data[4];    
+    spreg->EnBG =      data[3];    
+    spreg->SPMSK =     data[2];    
+    spreg->BGMSK =     data[1];    
 }
 
 void RAM::write_2003(uint8_t data){
@@ -133,24 +137,23 @@ void RAM::write_2005(uint8_t data, struct SPREG* spreg){
     }
 }
 
-void RAM::write_2006(uint8_t data){
+void RAM::write_2006(uint8 data){
     if(!PPUAddr_sel_H){
-        //PPUAddr_H = data;
-        PPUAddr = (uint16_t)data << 8;
+        //PPUAddr = (uint16_t)data << 8;
+        PPUAddr.set_slc(8, data);
         PPUAddr_sel_H = true;
     }
     else{
-        //PPUAddr_L = data;
-        PPUAddr |= data;
+        //PPUAddr |= data;
+        PPUAddr.set_slc(0, data);
         PPUAddr_sel_H = false;
-        //printf("PPUAddr:%04x\n",PPUAddr);
     } 
 }
 
 void RAM::write_2007(uint8_t data, uint8_t* PPU_RAM, uint8_t* CROM){
     //uint16_t PPU_Addr = ((uint16_t)PPUAddr_H << 8) | PPUAddr_L;
     //uint32_t addr = PPUAddr & 0x3fff;
-    uint16_t addr = PPUAddr;
+    uint16 addr = PPUAddr;
     switch(addr){
         case 0x3f10:
             addr = 0x3f00;
@@ -168,7 +171,7 @@ void RAM::write_2007(uint8_t data, uint8_t* PPU_RAM, uint8_t* CROM){
             break;
     }
     //printf("ppu_ram write addr:%04x data:%02x\n", addr, data);
-    if((addr >> 13) & 1)    PPU_RAM[addr & 0x1FFF] = data;
+    if(addr[13])    PPU_RAM[addr & 0x1FFF] = data;
     else CROM[addr] = data;
     PPUAddr = (PPUInc) ? PPUAddr + 32 : PPUAddr + 1;
     //PPUAddr_H = (uint8_t)(PPU_Addr >> 8);
@@ -179,7 +182,7 @@ uint8_t RAM::read_2007(uint8_t* PPU_RAM, uint8_t* CROM){
     uint8_t data;
     //uint16_t PPU_Addr = ((uint16_t)PPUAddr_H << 8) | PPUAddr_L;
     //uint32_t addr = PPUAddr & 0x3fff;
-    uint16_t addr = PPUAddr;
+    uint16 addr = PPUAddr;
     switch(addr){
         case 0x3f10:
             addr = 0x3f00;
@@ -199,7 +202,7 @@ uint8_t RAM::read_2007(uint8_t* PPU_RAM, uint8_t* CROM){
 
     //uint8_t tmp_data = PPU_RAM[addr];
     uint8_t tmp_data;
-    if((addr >> 13) & 1) tmp_data = PPU_RAM[addr & 0x1FFF];
+    if(addr[13]) tmp_data = PPU_RAM[addr & 0x1FFF];
     else tmp_data = CROM[addr];
     if(addr < 0x3F00){
         data = spram_buf;
@@ -225,11 +228,11 @@ void RAM::DMA_start(uint8_t addr_H, uint8_t* WRAM, uint8_t* SP_RAM){
     DMAAddrL = 0;
 }
 
-void RAM::reset_pad(uint8_t data){
-    if(pad_reset_state == 1 && ((data & 1) == 0))
+void RAM::reset_pad(uint8 data){
+    if(pad_reset_state == 1 && (data[0] == 0))
         pad_reset_state = 2;
     
-    if(pad_reset_state == 0 && ((data & 1) == 1))
+    if(pad_reset_state == 0 && (data[0] == 1))
         pad_reset_state = 1;
 
     if(pad_reset_state == 2){
@@ -244,42 +247,42 @@ uint8_t RAM::read_pad_1(){
     switch(pad_read_state){
        //A
        case 0: 
-           data = (pad_input & 1);
+           data = pad_input[0];
            pad_read_state++;
            break;
        //B
        case 1: 
-           data = ((pad_input >> 1) & 1);
+           data = pad_input[1];
            pad_read_state++;
            break;
        //SELECT
        case 2: 
-           data = ((pad_input >> 2) & 1);
+           data = pad_input[2];
            pad_read_state++;
            break;
        //START
        case 3: 
-           data = ((pad_input >> 3) & 1);
+           data = pad_input[3];
            pad_read_state++;
            break;
        //UP
        case 4: 
-           data = ((pad_input >> 4) & 1);
+           data = pad_input[4];
            pad_read_state++;
            break;
        //DOWN
        case 5: 
-           data = ((pad_input >> 5) & 1);
+           data = pad_input[5];
            pad_read_state++;
            break;
        //LEFT
        case 6: 
-           data = ((pad_input >> 6) & 1);
+           data = pad_input[6];
            pad_read_state++;
            break;
        //RIGHT
        case 7: 
-           data = ((pad_input >> 7) & 1);
+           data = pad_input[7];
            pad_read_state = 0;
            break;
        default:
