@@ -65,7 +65,7 @@ class CPU : RAM{
         uint8_t read_prom(uint16_t addr, uint8_t* PROM);
         uint16_t read_prom16(uint16_t addr, uint8_t* PROM);
         void norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM);
-        uint8_t norm_read8(uint16_t addr, uint8_t* WRAM);
+        uint8_t norm_read8(uint16 addr, uint8_t* WRAM);
         uint16_t norm_read16(uint16_t addr, uint8_t* WRAM);
         uint8_t read_mem8(uint16_t addr, uint8_t* WRAM, uint32_t* PROM);
 

@@ -279,6 +279,12 @@ PLL	PLL_inst (
 	.c3 ( dbg_clk )  //5.0MHz
 	);
 
+//fast_PLL	fast_PLL_inst (
+//	.inclk0 ( MAX10_CLK1_50 ),  //50MHz
+//	.c0 ( clk ),    //145MHz
+//	.c1 ( clk2x )   //290MHz
+//	);
+
 //decode_retdata ret_debug(
 //    .returndata(returndata),
 //    .PC(PC),

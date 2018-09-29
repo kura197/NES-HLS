@@ -43,17 +43,22 @@ uint8_t CPU::read_mem8(uint16_t addr, uint8_t* WRAM, uint32_t* PROM){
     return data;
 }
 
-uint8_t CPU::norm_read8(uint16_t addr, uint8_t* WRAM){
+uint8_t CPU::norm_read8(uint16 addr, uint8_t* WRAM){
     uint8_t data = 0;
-    data = WRAM[addr&0x7FF];
+    //data = WRAM[addr&0x7FF];
+    data = WRAM[addr.slc<11>(0)];
     return data;
 }
 
 uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM){
-    uint16_t data;
-    data = norm_read8(addr, WRAM);
-    data |= (uint16_t)norm_read8(addr+1, WRAM) << 8;
-    return data;
+    uint16 data;
+    //data = norm_read8(addr, WRAM);
+    //data |= (uint16_t)norm_read8(addr+1, WRAM) << 8;
+    uint8 low = norm_read8(addr, WRAM);
+    uint8 high = norm_read8(addr+1, WRAM);
+    data.set_slc(0, low);
+    data.set_slc(8, high);
+    return (uint16_t)data;
 }
 
 void CPU::norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM){
@@ -538,7 +543,7 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         //rddata = pop8(Stack);
         if(acc){
             ACC = rddata;
-            NFlag=ACC>>7;
+            NFlag=ACC[7];
             ZFlag=ACC==0;
         }
         else _unbindFlags(rddata);
@@ -628,7 +633,7 @@ uint32_t CPU::read_prom_ex32(uint16 addr, uint32_t* PROM){
 
 void CPU::cache_update(uint16_t addr, uint32_t* PROM){
 
-    uint16_t read_addr;
+    uint16 read_addr;
     //if(v == 4) read_addr = addr;
     //else read_addr = cache_addr;
     if(PC_update) read_addr = addr;
@@ -636,7 +641,8 @@ void CPU::cache_update(uint16_t addr, uint32_t* PROM){
 
     hls_register uint32 data = read_prom_ex32(read_addr, PROM);
 
-    uint2 loc = read_addr & 0x3;
+    //uint2 loc = read_addr & 0x3;
+    uint2 loc = read_addr.slc<2>(0);
 
     cache_addr = read_addr;
 

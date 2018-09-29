@@ -46,7 +46,8 @@ class RAM{
         uint8_t key_input;
         uint8 pad_input;
         uint8_t pad_reset_state;
-        uint8_t pad_read_state;
+        //uint8_t pad_read_state;
+        uint3 pad_read_state;
 
     public:
         //$2000
