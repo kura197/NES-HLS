@@ -101,34 +101,38 @@
 }
 
 #define _asli(arg) \
-  CFlag=arg>>7; \
+  CFlag=arg[7]; \
   arg<<=1; \
-  NFlag=arg>>7; \
+  NFlag=arg[7]; \
   ZFlag=arg==0;
 #define _lsri(arg) \
-  CFlag=arg&1; \
+  CFlag=arg[0]; \
   arg>>=1; \
-  NFlag=arg>>7; \
+  NFlag=arg[7]; \
   ZFlag=arg==0;
 #define _roli(arg) \
-  uint8_t u=arg; \
+  uint8 u=arg; \
   arg=(arg<<1)|CFlag; \
-  CFlag=u>>7; \
-  NFlag=arg>>7; \
+  CFlag=u[7]; \
+  NFlag=arg[7]; \
   ZFlag=arg==0;
+
+  //arg=(arg>>1)|((uint8_t)CFlag[7]); \
+  
 #define _rori(arg) \
-  uint8_t u=arg; \
-  arg=(arg>>1)|((uint8_t)CFlag<<7); \
-  CFlag=u&1; \
-  NFlag=arg>>7; \
+  uint8 u=arg; \
+  arg.set_slc(0, arg.slc<7>(1)); \
+  arg[7] = CFlag; \
+  CFlag=u[0]; \
+  NFlag=arg[7]; \
   ZFlag=arg==0;
 #define _inci(arg) \
   arg++; \
-  NFlag=arg>>7; \
+  NFlag=arg[7]; \
   ZFlag=arg==0;
 #define _deci(arg) \
   arg--; \
-  NFlag=arg>>7; \
+  NFlag=arg[7]; \
   ZFlag=arg==0;
 
 #define _sfta(reg,op) { op(reg); }

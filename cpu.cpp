@@ -403,7 +403,7 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
 
     //hls_register uint8_t rddata = read_mem8(addr, WRAM, PROM);
     //uint8_t rddata = read_mem8(addr, WRAM, PROM);
-    uint8_t rddata = (addr[15] || op_store) ? read_prom_ex8(addr, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
+    uint8 rddata = (addr[15] || op_store) ? read_prom_ex8(addr, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
     //uint8_t rddata = ((addr >> 15) & 1) ? read_mem8(addr, WRAM, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
     
     //uint8_t rddata;
