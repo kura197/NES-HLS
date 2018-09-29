@@ -622,7 +622,8 @@ uint16_t CPU::read_prom_ex16(uint16 addr, uint32_t* PROM){
 }
 
 uint32_t CPU::read_prom_ex32(uint16 addr, uint32_t* PROM){
-    return PROM[(addr & 0x7FFF) >> 2];
+    //return PROM[(addr & 0x7FFF) >> 2];
+    return PROM[addr.slc<13>(2)];
 }
 
 void CPU::cache_update(uint16_t addr, uint32_t* PROM){

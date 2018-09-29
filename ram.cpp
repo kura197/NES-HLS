@@ -248,46 +248,47 @@ uint8_t RAM::read_pad_1(){
        //A
        case 0: 
            data = pad_input[0];
-           pad_read_state++;
+           //pad_read_state++;
            break;
        //B
        case 1: 
            data = pad_input[1];
-           pad_read_state++;
+           //pad_read_state++;
            break;
        //SELECT
        case 2: 
            data = pad_input[2];
-           pad_read_state++;
+           //pad_read_state++;
            break;
        //START
        case 3: 
            data = pad_input[3];
-           pad_read_state++;
+           //pad_read_state++;
            break;
        //UP
        case 4: 
            data = pad_input[4];
-           pad_read_state++;
+           //pad_read_state++;
            break;
        //DOWN
        case 5: 
            data = pad_input[5];
-           pad_read_state++;
+           //pad_read_state++;
            break;
        //LEFT
        case 6: 
            data = pad_input[6];
-           pad_read_state++;
+           //pad_read_state++;
            break;
        //RIGHT
        case 7: 
            data = pad_input[7];
-           pad_read_state = 0;
+           //pad_read_state = 0;
            break;
        default:
            break;
     }
+    pad_read_state++;
     return data;
 }
 
