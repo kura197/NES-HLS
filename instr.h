@@ -1,7 +1,7 @@
 
-#define _bindFlags() (((uint8_t)NFlag<<7)|((uint8_t)VFlag<<6)|0x20|((uint8_t)BFlag<<4)|  \
+//#define _bindFlags() (((uint8_t)NFlag<<7)|((uint8_t)VFlag<<6)|0x20|((uint8_t)BFlag<<4)|  \
                      ((uint8_t)DFlag<<3)|((uint8_t)IFlag<<2)|((uint8_t)ZFlag<<1)|CFlag)
-#define _unbindFlags(dd) { \
+//#define _unbindFlags(dd) { \
   uint8_t dat=dd; \
   NFlag=dat>>7; \
   VFlag=(dat>>6)&1; \
@@ -12,25 +12,48 @@
   CFlag=dat&1; \
 }
 
+//#define _bindFlags(data) { \
+    (uint8)data[7] = NFlag; \
+    (uint8)data[6] = VFlag; \
+    (uint8)data[5] = 1; \
+    (uint8)data[4] = BFlag; \
+    (uint8)data[3] = DFlag; \
+    (uint8)data[2] = IFlag; \
+    (uint8)data[1] = ZFlag; \
+    (uint8)data[0] = CFlag; \
+}
+                         
+
+#define _unbindFlags(dd) { \
+  uint8 dat=dd; \
+  NFlag=dat[7]; \
+  VFlag=dat[6]; \
+  BFlag=dat[4]; \
+  DFlag=dat[3]; \
+  IFlag=dat[2]; /* (iがクリアされた場合、割り込まれる可能性が) */ \
+  ZFlag=dat[1]; \
+  CFlag=dat[0]; \
+}
+
 // TODO : decimal support
 #define _adc(data) { \
   uint16_t  s=data; \
-  uint16_t t=ACC+s+CFlag; \
-  CFlag=(uint8_t)(t>>8); \
-  ZFlag=(t&0xff)==0; \
-  NFlag=(t>>7)&1; \
+  uint16 t=ACC+s+CFlag; \
+  CFlag=t[8]; \
+  ZFlag=(t.slc<8>(0))==0; \
+  NFlag=t[7]; \
   VFlag=!((ACC^s)&0x80)&&((ACC^t)&0x80); \
-  ACC=(uint8_t)t; \
+  ACC=(uint8_t)t.slc<8>(0); \
 }
 // TODO : decimal support
 #define _sbc(data) { \
   uint16_t  s=data; \
-  uint16_t t=ACC-s-(CFlag?0:1); \
+  uint16 t=ACC-s-(CFlag?0:1); \
   CFlag=t<0x100; \
-  ZFlag=(t&0xff)==0; \
-  NFlag=(t>>7)&1; \
+  ZFlag=(t.slc<8>(0))==0; \
+  NFlag=t[7]; \
   VFlag=((ACC^s)&0x80)&&((ACC^t)&0x80); \
-  ACC=(uint8_t)t; \
+  ACC=(uint8_t)t.slc<8>(0); \
 }
 #define _cmp(reg,data) { \
   uint16_t t=(uint16_t)reg-data; \

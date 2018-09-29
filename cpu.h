@@ -20,43 +20,36 @@ struct ADDRESS{
 
 class CPU : RAM{
     private:
-        hls_register uint16_t PC;
-        hls_register uint8_t ACC;
-        hls_register uint8_t X;
-        hls_register uint8_t Y;
-        hls_register uint8_t SP;
+        uint16_t PC;
+        uint8_t ACC;
+        uint8_t X;
+        uint8_t Y;
+        uint8_t SP;
         //uint8_t Stack[0x100];
         //uint8_t CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         //bool CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
-        hls_register uint1 CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
+        uint1 CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         //int rest;
-        hls_register uint1 reset_line;
+        uint1 reset_line;
         //bool irq_line;
-        hls_register uint1 nmi_line;
+        uint1 nmi_line;
         //bool log;
         //bool op;
-        hls_register uint16_t Stack_PC;
-        hls_register uint8_t Stack_Flags;
+        uint16_t Stack_PC;
+        uint8_t Stack_Flags;
 
         //uint16_t res_vec;
         //uint16_t irq_vec;
         //uint16_t nmi_vec;
 
-        hls_register uint8_t cache[4];
-        hls_register uint16_t cache_addr;
-        //uint1 Valid[4];
-        hls_register uint8_t V[4];
-        hls_register uint8_t PC_update;
+        uint8 cache[4];
+        uint16_t cache_addr;
+        uint8_t V[4];
+        uint8_t PC_update;
 
         //bool wide[0x100];
         //hls_register uint1 wide[0x100];
-        hls_register bool SP_wide;
-        //struct ADDRESS adr;
-        //uint1 op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
-        //uint1 op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror, op_bra_false;
-        //uint1 op_inc, op_dec, op_bra, op_jmp, op_jsr, op_rts, op_rti, op_push, op_pop;
-        //uint1 acc, x, y;
-        //hls_register uint16_t addr;
+        hls_register uint1 SP_wide;
         
 
     public:
@@ -99,9 +92,12 @@ class CPU : RAM{
         uint16_t pop_ex16(uint16_t* Stack);
 
 
-        uint8_t read_prom_ex8(uint16_t addr, uint32_t* PROM);
-        uint16_t read_prom_ex16(uint16_t addr, uint32_t* PROM);
-        uint32_t read_prom_ex32(uint16_t addr, uint32_t* PROM);
+        //uint8_t read_prom_ex8(uint16_t addr, uint32_t* PROM);
+        //uint16_t read_prom_ex16(uint16_t addr, uint32_t* PROM);
+        //uint32_t read_prom_ex32(uint16_t addr, uint32_t* PROM);
+        uint8_t read_prom_ex8(uint16 addr, uint32_t* PROM);
+        uint16_t read_prom_ex16(uint16 addr, uint32_t* PROM);
+        uint32_t read_prom_ex32(uint16 addr, uint32_t* PROM);
         void cache_update(uint16_t addr, uint32_t* PROM);
         void cache_false();
 
@@ -113,6 +109,8 @@ class CPU : RAM{
         uint8_t get_X();
         uint8_t get_Y();
         uint16_t get_addr();
+
+        uint8_t bindFlags();
 
 };
 
