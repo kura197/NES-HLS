@@ -1,16 +1,15 @@
+#include "HLS/hls.h"
+#include "HLS/ac_int.h"
+#include "HLS/stdio.h"
 #include <iostream>
 #include <fstream>
 #include <stdint.h>
 #include <string.h>
-#include <unistd.h>
 #include <stdlib.h>
 //#include "nes.h"
 #include "ram.h"
 #include "cpu.h"
 #include "ppu.h"
-#include "HLS/hls.h"
-#include "HLS/ac_int.h"
-#include "HLS/stdio.h"
 
 using namespace std;
 
@@ -54,12 +53,14 @@ struct DEBUG{
     uint16_t addr;
 };
 
-component 
-uint16_t exec_nes(
+component uint16_t exec_nes(
             ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
             //hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
-            uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_vec,
-            uint8_t key, bool res
+            hls_stable_argument uint16_t nmi_vec, 
+            hls_stable_argument uint16_t res_vec, 
+            hls_stable_argument uint16_t irq_vec,
+            uint8_t key, 
+            bool res
         ){
     static CPU cpu;
     static PPU ppu;
@@ -105,10 +106,9 @@ uint16_t exec_nes(
     cpu.load_key(key);
     //cpu.exec_DMA(SP_RAM, WRAM);
     for(int c = 0; c < 45; c++) {
-        //printf("NMI_VBlank : %d \t", spreg.VBlank_NMI);
         cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
     }
-    //printf("sphit:%d\n", spreg.SPhit);
+    //cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
     nmi = ppu.render(PPU_RAM, SP_RAM, VRAM, &spreg, CROM);
 
     return cpu.get_PC();
