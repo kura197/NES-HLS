@@ -447,30 +447,6 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         else if(y) Y = reg;
 
     } 
-    //else if(op_store){
-    //    if(acc) rddata = ACC;
-    //    else if(x) rddata = X;
-    //    else if(y) rddata = Y;
-    //    _store(rddata, addr);
-    //}
-    //else if(op_asl){
-    //    _asl(addr, rddata);
-    //}
-    //else if(op_lsr){
-    //    _lsr(addr, rddata);
-    //}
-    //else if(op_rol){
-    //    _rol(addr, rddata);
-    //}
-    //else if(op_ror){
-    //    _ror(addr, rddata);
-    //}
-    //else if(op_inc){
-    //    _inc(addr, rddata);
-    //}
-    //else if(op_dec){
-    //    _dec(addr, rddata);
-    //}
     else if(op_store|op_asl|op_lsr|op_rol|op_ror|op_inc|op_dec){
         if(op_store){
             if(acc) rddata = ACC;
@@ -550,7 +526,7 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
 }
 
 uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM){
-    uint16_t addr;
+    uint16 addr;
     //uint16_t tmp16 = read_prom16(PC, PROM);
     //uint8_t tmp8 = (uint8_t)tmp16;
 
@@ -571,17 +547,24 @@ uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM){
     else if(adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi){
         //uint8_t tmp8 = read_prom(PC, PROM);
         //uint8_t tmp8 = cache[1];
-        uint8_t tmp8 = cache.slc<8>(8);
+        //uint8_t tmp8 = cache.slc<8>(8);
+        addr = cache.slc<8>(8);
         V[1] = false;
         PC++;
-        if(adr.zp | adr.zpiy) addr = tmp8;
-        else if(adr.zpx | adr.zpxi) addr = tmp8 + X;
-        else if(adr.zpy) addr = tmp8 + Y;
+        if(adr.zpx | adr.zpxi) addr += X;
+        else if(adr.zpy) addr += Y;
+        //if(adr.zp | adr.zpiy) addr = tmp8;
+        //else if(adr.zpx | adr.zpxi) addr = tmp8 + X;
+        //else if(adr.zpy) addr = tmp8 + Y;
     } 
 
     if(adr.absi | adr.zpxi | adr.zpiy){
-        if(adr.zpxi) addr &= 0xff;
-        addr = norm_read16(addr, WRAM);
+        //if(adr.zpxi) addr &= 0xff;
+        uint16_t rdaddr;
+        if(adr.zpxi) rdaddr = addr.slc<8>(0);
+        else rdaddr = addr;
+
+        addr = norm_read16(rdaddr, WRAM);
         if(adr.zpiy) addr += Y;
     }
 
