@@ -154,18 +154,28 @@ void RAM::write_2007(uint8_t data, uint8_t* PPU_RAM, uint8_t* CROM){
     //uint16_t PPU_Addr = ((uint16_t)PPUAddr_H << 8) | PPUAddr_L;
     //uint32_t addr = PPUAddr & 0x3fff;
     uint16 addr = PPUAddr;
+    //switch(addr){
+    //    case 0x3f10:
+    //        addr = 0x3f00;
+    //        break;
+    //    case 0x3f14:
+    //        addr = 0x3f04;
+    //        break;
+    //    case 0x3f18:
+    //        addr = 0x3f08;
+    //        break;
+    //    case 0x3f1C:
+    //        addr = 0x3f0C;
+    //        break;
+    //    default:
+    //        break;
+    //}
     switch(addr){
-        case 0x3f10:
-            addr = 0x3f00;
-            break;
-        case 0x3f14:
-            addr = 0x3f04;
-            break;
-        case 0x3f18:
-            addr = 0x3f08;
-            break;
-        case 0x3f1C:
-            addr = 0x3f0C;
+        case 0x3F10:
+        case 0x3F14:
+        case 0x3F18:
+        case 0x3F1C:
+            addr &= 0xFFEF;
             break;
         default:
             break;
@@ -183,18 +193,28 @@ uint8_t RAM::read_2007(uint8_t* PPU_RAM, uint8_t* CROM){
     //uint16_t PPU_Addr = ((uint16_t)PPUAddr_H << 8) | PPUAddr_L;
     //uint32_t addr = PPUAddr & 0x3fff;
     uint16 addr = PPUAddr;
+    //switch(addr){
+    //    case 0x3f10:
+    //        addr = 0x3f00;
+    //        break;
+    //    case 0x3f14:
+    //        addr = 0x3f04;
+    //        break;
+    //    case 0x3f18:
+    //        addr = 0x3f08;
+    //        break;
+    //    case 0x3f1C:
+    //        addr = 0x3f0C;
+    //        break;
+    //    default:
+    //        break;
+    //}
     switch(addr){
-        case 0x3f10:
-            addr = 0x3f00;
-            break;
-        case 0x3f14:
-            addr = 0x3f04;
-            break;
-        case 0x3f18:
-            addr = 0x3f08;
-            break;
-        case 0x3f1C:
-            addr = 0x3f0C;
+        case 0x3F10:
+        case 0x3F14:
+        case 0x3F18:
+        case 0x3F1C:
+            addr &= 0xFFEF;
             break;
         default:
             break;
