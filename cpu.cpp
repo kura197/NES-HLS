@@ -88,24 +88,24 @@ void CPU::set_reset()
 }
 
 void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
-    //SP_RAM[DMAAddrL] = WRAM[(uint16_t)DMAAddrH << 8 | DMAAddrL];
-    //DMAAddrL++;
-    //if(DMAAddrL == 0)
-    //    DMAExcute = 0;
-    if(DMAExcute){
-        uint16_t high = (uint16_t)DMAAddrH << 8;
-        for(int low = 0; low <= 0xFF; low++){
-            SP_RAM[low] = WRAM[high | low];
-        }
+    SP_RAM[DMAAddrL] = WRAM[(uint16_t)DMAAddrH << 8 | DMAAddrL];
+    DMAAddrL++;
+    if(DMAAddrL == 0)
         DMAExcute = 0;
-    }
+    //if(DMAExcute){
+    //    uint16_t high = (uint16_t)DMAAddrH << 8;
+    //    for(int low = 0; low <= 0xFF; low++){
+    //        SP_RAM[low] = WRAM[high | low];
+    //    }
+    //    DMAExcute = 0;
+    //}
 }
 
 void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* PROM, struct SPREG* spreg, uint16_t* Stack, uint8_t* CROM){
 
-    //if(DMAExcute) exec_DMA(SP_RAM, WRAM);
-    //else execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack, CROM);
-    execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack, CROM);
+    if(DMAExcute) exec_DMA(SP_RAM, WRAM);
+    else execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack, CROM);
+    //execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack, CROM);
 }
 
 
@@ -406,10 +406,8 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     uint16 addr;
     addr = addressing(adr, WRAM, PROM);
 
-    //hls_register uint8_t rddata = read_mem8(addr, WRAM, PROM);
-    //uint8_t rddata = read_mem8(addr, WRAM, PROM);
-    uint8 rddata = (addr[15] || op_store) ? read_prom_ex8(addr, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
-    //uint8_t rddata = ((addr >> 15) & 1) ? read_mem8(addr, WRAM, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
+    uint8 rddata = read_mem8(addr, WRAM, PROM);
+    //uint8 rddata = (addr[15] || op_store) ? read_prom_ex8(addr, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
     
     //uint8_t rddata;
     //if((addr >> 15) & 1 || op_store) rddata = read_prom_ex8(addr, PROM);

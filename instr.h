@@ -85,8 +85,10 @@
   ZFlag=(ACC&t)==0; \
 }
 
+//reg = data; \
+  
 #define _load(reg,adr,data) { \
-  reg = data; \
+  reg = (adr[15]) ? (uint8_t)data : read(adr, WRAM, PPU_RAM, spreg, CROM); \
   NFlag=reg[7]; \
   ZFlag=reg==0; \
 }
