@@ -8,11 +8,14 @@ const bool enlog = false;
 
 void CPU::dump_regs(uint8_t insn){
     uint8_t flag = bindFlags();
-    //printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
-    //                PC, insn, ACC, X, Y, flag, SP);
-    //uint32_t cache = get_cache();
+    uint16_t pc = PC;
+    uint8_t acc = ACC;
+    uint8_t x = X;
+    uint8_t y = Y;
+    uint8_t sp = SP;
+    uint32_t c = cache;
     //printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x    cache:%08x\n",
-    //                PC, insn, ACC, X, Y, flag, SP, cache);
+    //                pc, insn, acc, x, y, flag, sp, c);
 }
 
 void CPU::push8(uint8_t data, uint8_t* Stack){
@@ -45,15 +48,12 @@ uint8_t CPU::read_mem8(uint16_t addr, uint8_t* WRAM, uint32_t* PROM){
 
 uint8_t CPU::norm_read8(uint16 addr, uint8_t* WRAM){
     uint8_t data = 0;
-    //data = WRAM[addr&0x7FF];
     data = WRAM[addr.slc<11>(0)];
     return data;
 }
 
 uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM){
     uint16 data;
-    //data = norm_read8(addr, WRAM);
-    //data |= (uint16_t)norm_read8(addr+1, WRAM) << 8;
     uint8 low = norm_read8(addr, WRAM);
     uint8 high = norm_read8(addr+1, WRAM);
     data.set_slc(0, low);
@@ -88,6 +88,7 @@ void CPU::set_reset()
 }
 
 void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
+    //printf("DMAAddrH:%04x\n", DMAAddrH);
     SP_RAM[DMAAddrL] = WRAM[(uint16_t)DMAAddrH << 8 | DMAAddrL];
     DMAAddrL++;
     if(DMAAddrL == 0)
@@ -114,7 +115,6 @@ void CPU::exec_irq(int cause, uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_v
 
     Stack_PC = PC;
     Stack_Flags = bindFlags();
-    //SP-=3;
     CFlag = 0;
     ZFlag = 0;
     IFlag = 1;
@@ -128,7 +128,6 @@ void CPU::exec_irq(int cause, uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_v
         case IRQ:   PC = irq_vec; break;
         default:    PC = res_vec; break;
     }
-    //cache_false();
     PC_update = true;
 }
 
@@ -187,15 +186,10 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
 
 
     cache_update(PC, PROM);
-    //if(V[2] == false) return;
 
-    //uint8_t IR = cache[0];
     uint8_t IR = cache.slc<8>(0);
-    //V[0] = false;
 
-    //hls_register uint8_t IR = read_prom(PC, PROM);
     if(enlog) dump_regs(IR);
-    //PC++;
 
     switch(IR){
         /* ALU */
@@ -387,7 +381,6 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         case 0xEA: break; // NOP
 
         default:
-                   //printf("undefined opcode: %02x\n", (uint)IR);
                    break;
     }
 
@@ -409,9 +402,6 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     uint8 rddata = read_mem8(addr, WRAM, PROM);
     //uint8 rddata = (addr[15] || op_store) ? read_prom_ex8(addr, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
     
-    //uint8_t rddata;
-    //if((addr >> 15) & 1 || op_store) rddata = read_prom_ex8(addr, PROM);
-    //else rddata = read(addr, WRAM, PPU_RAM, spreg, CROM);
 
 
     if(op_adc){
@@ -483,38 +473,29 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     }
     else if(op_jmp){
         PC = addr;
-        //cache_false();
         PC_update = true;
     }
     else if(op_jsr){
         push_ex16(PC-1, Stack);
-        //push16(PC-1, Stack);
         PC = addr;
-        //cache_false();
         PC_update = true;
     }
     else if(op_push){
         if(acc) rddata = ACC;
         else rddata = bindFlags();
         push_ex8(rddata, Stack);
-        //push8(rddata, Stack);
     }
     else if(op_rts){
         PC=pop_ex16(Stack)+1;
-        //PC=pop16(Stack)+1;
-        //cache_false();
         PC_update = true;
     }
     else if(op_rti){
         _unbindFlags(Stack_Flags);
         PC = Stack_PC;
-        //SP+=3;
-        //cache_false();
         PC_update = true;
     }
     else if(op_pop){
         rddata = pop_ex8(Stack);
-        //rddata = pop8(Stack);
         if(acc){
             ACC = rddata;
             NFlag=ACC[7];
@@ -527,16 +508,12 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
 
 uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM){
     uint16 addr;
-    //uint16_t tmp16 = read_prom16(PC, PROM);
-    //uint8_t tmp8 = (uint8_t)tmp16;
 
     if(adr.imm){
         addr = PC++;
         V[1] = false;
     }
     else if(adr.abs | adr.abx | adr.aby | adr.absi){
-        //uint16_t tmp16 = read_prom16(PC, PROM);
-        //uint16_t tmp16 = (uint16_t)cache[2] << 8 | cache[1];
         uint16_t tmp16 = cache.slc<16>(8);
         V[2] = V[1] = false;
         PC+=2;
@@ -545,21 +522,14 @@ uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM){
         else if(adr.aby) addr = tmp16 + Y;
     }
     else if(adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi){
-        //uint8_t tmp8 = read_prom(PC, PROM);
-        //uint8_t tmp8 = cache[1];
-        //uint8_t tmp8 = cache.slc<8>(8);
         addr = cache.slc<8>(8);
         V[1] = false;
         PC++;
         if(adr.zpx | adr.zpxi) addr += X;
         else if(adr.zpy) addr += Y;
-        //if(adr.zp | adr.zpiy) addr = tmp8;
-        //else if(adr.zpx | adr.zpxi) addr = tmp8 + X;
-        //else if(adr.zpy) addr = tmp8 + Y;
     } 
 
     if(adr.absi | adr.zpxi | adr.zpiy){
-        //if(adr.zpxi) addr &= 0xff;
         uint16_t rdaddr;
         if(adr.zpxi) rdaddr = addr.slc<8>(0);
         else rdaddr = addr;
@@ -570,26 +540,6 @@ uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM){
 
     return addr;
 }
-
-//uint8_t CPU::read_prom_ex8(uint16_t addr, uint32_t* PROM){
-//    uint16_t tmp = read_prom_ex16(addr, PROM);
-//    uint8_t data;
-//    if(addr & 1) data = (uint8_t)(tmp >> 8);
-//    else data = (uint8_t)tmp;
-//    return data;
-//}
-//
-//uint16_t CPU::read_prom_ex16(uint16_t addr, uint32_t* PROM){
-//    uint32_t tmp = read_prom_ex32(addr, PROM);
-//    uint16_t data;
-//    if((addr >> 1) & 1) data = (uint16_t)(tmp >> 16);
-//    else data = (uint16_t)tmp;
-//    return data;
-//}
-//
-//uint32_t CPU::read_prom_ex32(uint16_t addr, uint32_t* PROM){
-//    return PROM[(addr & 0x7FFF) >> 2];
-//}
 
 uint8_t CPU::read_prom_ex8(uint16 addr, uint32_t* PROM){
     uint16 tmp = read_prom_ex16(addr, PROM);
@@ -608,15 +558,12 @@ uint16_t CPU::read_prom_ex16(uint16 addr, uint32_t* PROM){
 }
 
 uint32_t CPU::read_prom_ex32(uint16 addr, uint32_t* PROM){
-    //return PROM[(addr & 0x7FFF) >> 2];
     return PROM[addr.slc<13>(2)];
 }
 
 void CPU::cache_update(uint16_t addr, uint32_t* PROM){
 
     uint16 read_addr;
-    //if(v == 4) read_addr = addr;
-    //else read_addr = cache_addr;
     if(PC_update) read_addr = addr;
     else read_addr = cache_addr;
 
@@ -651,13 +598,10 @@ void CPU::cache_update(uint16_t addr, uint32_t* PROM){
     #pragma unroll
     for(uint8_t i = 0; i < 4; i++){
         if(i < k){
-            //cache[i] = cache[i+v];
             cache.set_slc(8*i, cache.slc<8>(8*(i+v)));
             V[(uint2)i] = true;
         }
         else if(i + y < 4){
-            //cache[i] = (uint8_t)(data >> 8*(i + y));
-            //cache[i] = (uint8_t)(data.slc<8>(8*(i + y)));
             cache.set_slc(8*i, data.slc<8>(8*(i+y)));
             V[(uint2)i] = true;
             cache_addr++;
@@ -679,22 +623,6 @@ uint16_t CPU::get_PC(){
     return PC;
 }
 
-uint8_t CPU::get_SP(){
-    return SP;
-}
-
-uint8_t CPU::get_ACC(){
-    return ACC;
-}
-
-uint8_t CPU::get_X(){
-    return X;
-}
-
-uint8_t CPU::get_Y(){
-    return Y;
-}
-
 uint32_t CPU::get_cache(){
     uint32_t data = 0;
     data |= (uint32_t)cache[0] << 0;
@@ -705,8 +633,6 @@ uint32_t CPU::get_cache(){
 }
 
 void CPU::push_ex8(uint8_t data, uint16_t* Stack){
-    //push_ex16((uint16_t)data, Stack);
-    //wide[SP] = false;
     SP_wide = false;
     uint16 wrdata = 0;
     wrdata.set_slc(8, (uint8)data);
@@ -716,7 +642,6 @@ void CPU::push_ex8(uint8_t data, uint16_t* Stack){
 }
 
 void CPU::push_ex16(uint16_t data, uint16_t* Stack){
-    //wide[SP] = true;
     SP_wide = true;
     Stack[(uint8_t)(SP--) & 0xFF] = data;
     //SP--;
@@ -728,10 +653,8 @@ uint8_t CPU::pop_ex8(uint16_t* Stack){
     
     uint16_t data = Stack[(uint8_t)(++SP) & 0xFF];
     uint8_t ret_data;
-    //if(wide[SP]){
     if(SP_wide){
         ret_data = (uint8_t)data;
-        //wide[SP] = false;
         SP_wide = false;
         SP--;
     }

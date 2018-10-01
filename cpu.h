@@ -25,42 +25,25 @@ class CPU : RAM{
         uint8 X;
         uint8 Y;
         uint8 SP;
-        //uint8_t Stack[0x100];
-        //uint8_t CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
-        //bool CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
         uint1 CFlag, ZFlag, IFlag, DFlag, BFlag, VFlag, NFlag;
-        //int rest;
         uint1 reset_line;
-        //bool irq_line;
         uint1 nmi_line;
-        //bool log;
-        //bool op;
         uint16_t Stack_PC;
         uint8_t Stack_Flags;
 
-        //uint16_t res_vec;
-        //uint16_t irq_vec;
-        //uint16_t nmi_vec;
 
         uint16_t cache_addr;
-        //uint8 cache[4];
-        //uint8_t V[4];
         uint32 cache;
         uint4 V;
         uint1 PC_update;
 
-        //bool wide[0x100];
-        //hls_register uint1 wide[0x100];
         hls_register uint1 SP_wide;
         
 
     public:
 
-        //CPU(uint8_t* PROM);
         void dump_regs(uint8_t insn);
-        //uint8_t read_mem8(uint16_t addr);
         uint16_t read_mem16(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM);
-        //void write_mem8(uint16_t addr, uint8_t data);
         void write_mem16(uint16_t addr, uint16_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
         uint8_t read_prom(uint16_t addr, uint8_t* PROM);
         uint16_t read_prom16(uint16_t addr, uint8_t* PROM);
@@ -94,9 +77,6 @@ class CPU : RAM{
         uint16_t pop_ex16(uint16_t* Stack);
 
 
-        //uint8_t read_prom_ex8(uint16_t addr, uint32_t* PROM);
-        //uint16_t read_prom_ex16(uint16_t addr, uint32_t* PROM);
-        //uint32_t read_prom_ex32(uint16_t addr, uint32_t* PROM);
         uint8_t read_prom_ex8(uint16 addr, uint32_t* PROM);
         uint16_t read_prom_ex16(uint16 addr, uint32_t* PROM);
         uint32_t read_prom_ex32(uint16 addr, uint32_t* PROM);

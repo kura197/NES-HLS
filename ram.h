@@ -35,18 +35,12 @@ struct SPREG{
 
 class RAM{
     private:
-        //uint8_t WRAM[WRAM_SIZE];
-        //uint8_t* PROM;
-        //uint8_t* CROM;
-        //uint8_t PPU_RAM[PPU_RAM_SIZE];
-        //uint8_t SP_RAM[SP_RAM_SIZE];
         uint8_t spram_buf;
 
         //PAD
         uint8_t key_input;
         uint8 pad_input;
         uint8_t pad_reset_state;
-        //uint8_t pad_read_state;
         uint3 pad_read_state;
 
     public:
@@ -88,11 +82,6 @@ class RAM{
         uint8_t DMAAddrL;
         uint1 DMAExcute;
 
-        //RAM(NES *n, uint8_t* prom, uint8_t* crom);
-        //RAM();
-        //void dump_WRAM(uint16_t start_addr, uint16_t size);
-        //void dump_PROM(uint16_t start_addr, uint16_t size);
-        //void dump_PPURAM(uint16_t start_addr, uint16_t size);
         uint8_t read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* spreg, uint8_t* CROM);
         void write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, struct SPREG* spreg, uint8_t* CROM);
         //void set_VBlank(bool vblank, bool nmi);
@@ -109,7 +98,6 @@ class RAM{
         uint8_t read_pad_1();
         uint8_t read_pad_2();
         void Input_Key(uint8_t key) {key_input = key;};
-        //void frame_end(uint8_t* WRAM);
 
 };
 
