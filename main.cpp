@@ -13,8 +13,8 @@
 
 using namespace std;
 
-const bool test = true;
-//const bool test = false;
+//const bool test = true;
+const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint8_t* COLOR, uint8_t* VRAM);
@@ -31,6 +31,16 @@ void test_load32(uint32_t* WRAM, uint8_t* PPU_RAM){
         for(int shift = 0; shift < 4; shift++){
             WRAM[addr] |= (uint32_t)_PROM[addr*4+shift] << shift*8;
         }
+    }
+
+    for(uint32_t addr = 0x00; addr <= 0x1FFF; addr++){
+        PPU_RAM[addr] = _CROM[addr];
+    }
+}
+
+void test_load(uint8_t* WRAM, uint8_t* PPU_RAM){
+    for(uint32_t addr = 0x0000; addr <= 0x7FFF; addr++){
+        WRAM[addr] = (uint8_t)_PROM[addr];
     }
 
     for(uint32_t addr = 0x00; addr <= 0x1FFF; addr++){
@@ -65,8 +75,8 @@ component uint16_t exec_nes(
     static CPU cpu;
     static PPU ppu;
 
-    //hls_init_on_powerup static uint8_t PROM[0x8000];
-    hls_init_on_powerup static uint32_t PROM[0x2000];
+    hls_init_on_powerup hls_doublepump static uint8_t PROM[0x8000];
+    //hls_init_on_powerup static uint32_t PROM[0x2000];
     hls_init_on_powerup static uint8_t CROM[0x2000];
     //hls_init_on_powerup static uint16_t VEC[3];
     static uint8_t PPU_RAM[0x2000];
@@ -78,15 +88,15 @@ component uint16_t exec_nes(
 
     if(test){
         static bool init;
-        //if(!init) test_load(PROM, CROM);
-        if(!init) test_load32(PROM, CROM);
+        if(!init) test_load(PROM, CROM);
+        //if(!init) test_load32(PROM, CROM);
         init = true;
-        //nmi_vec = (uint16_t)PROM[0x7FFB] << 8 | PROM[0x7FFA];
-        //res_vec = (uint16_t)PROM[0x7FFD] << 8 | PROM[0x7FFC];
-        //irq_vec = (uint16_t)PROM[0x7FFF] << 8 | PROM[0x7FFE];
-        nmi_vec = cpu.read_prom_ex16(0xFFFA, PROM);
-        res_vec = cpu.read_prom_ex16(0xFFFC, PROM);
-        irq_vec = cpu.read_prom_ex16(0xFFFE, PROM);
+        nmi_vec = (uint16_t)PROM[0x7FFB] << 8 | PROM[0x7FFA];
+        res_vec = (uint16_t)PROM[0x7FFD] << 8 | PROM[0x7FFC];
+        irq_vec = (uint16_t)PROM[0x7FFF] << 8 | PROM[0x7FFE];
+        //nmi_vec = cpu.read_prom_ex16(0xFFFA, PROM);
+        //res_vec = cpu.read_prom_ex16(0xFFFC, PROM);
+        //irq_vec = cpu.read_prom_ex16(0xFFFE, PROM);
     }
 
 
@@ -105,7 +115,7 @@ component uint16_t exec_nes(
 
     cpu.load_key(key);
     //cpu.exec_DMA(SP_RAM, WRAM);
-    for(int c = 0; c < 40; c++) {
+    for(int c = 0; c < 38; c++) {
         cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
     }
     //cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
@@ -204,12 +214,12 @@ int main(int argc, char* argv[]){
     //exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){
         for(int l = 0; l < 256; l++){
-            //if(f == 180)
-            //    exec_nes(mm_COLOR, 0, 0, 0, 0x08, false);
-            //else if(500 <= f)
-            //    exec_nes(mm_COLOR, 0, 0, 0, 0x80, false);
-            //else exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
-            exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
+            if(f == 180)
+                exec_nes(mm_COLOR, 0, 0, 0, 0x08, false);
+            else if(500 <= f)
+                exec_nes(mm_COLOR, 0, 0, 0, 0x80, false);
+            else exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
+            //exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
         }
         //if(f == 300)
         //    exec_nes(mm_COLOR, 0, 0, 0, 0x04, false);

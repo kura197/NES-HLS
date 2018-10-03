@@ -45,12 +45,12 @@ class CPU : RAM{
         void dump_regs(uint8_t insn);
         uint16_t read_mem16(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM);
         void write_mem16(uint16_t addr, uint16_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
-        uint8_t read_prom(uint16_t addr, uint8_t* PROM);
+        uint8_t read_prom(uint16 addr, uint8_t* PROM);
         uint16_t read_prom16(uint16_t addr, uint8_t* PROM);
         void norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM);
         uint8_t norm_read8(uint16 addr, uint8_t* WRAM);
         uint16_t norm_read16(uint16_t addr, uint8_t* WRAM);
-        uint8_t read_mem8(uint16_t addr, uint8_t* WRAM, uint32_t* PROM);
+        uint8_t read_mem8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM);
 
         void load_key(uint8_t key){Input_Key(key);};
         void exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM);
@@ -59,11 +59,11 @@ class CPU : RAM{
         void set_reset();
         //void reset(uint8_t* WRAM, uint8_t* PPU_RAM);
         void set_mode_false(struct ADDRESS* adr);
-        void exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* PROM, struct SPREG* spreg, uint16_t* Stack, uint8_t* CROM);
+        void exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint16_t* Stack, uint8_t* CROM);
         void exec_irq(int cause, uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_vec);
-        void execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* PROM, struct SPREG* spreg, uint16_t* Stack, uint8_t* CROM);
+        void execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint16_t* Stack, uint8_t* CROM);
 
-        uint16_t addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM);
+        uint16_t addressing(struct ADDRESS adr, uint8_t* WRAM, uint8_t* PROM);
 
 
         void push8(uint8_t data, uint8_t* Stack);
