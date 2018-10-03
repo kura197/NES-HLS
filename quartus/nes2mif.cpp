@@ -6,8 +6,9 @@
 
 using namespace std;
 
-#define PROM_WIDTH 32
-#define PROM_DEPTH (0x8000 / (PROM_WIDTH / 8))
+#define PROM_WIDTH 8
+#define PROM_BYTE (PROM_WIDTH / 8)
+#define PROM_DEPTH (0x8000 / PROM_BYTE)
 #define CROM_WIDTH 8
 #define CROM_DEPTH (0x2000 / (CROM_WIDTH / 8))
 
@@ -46,13 +47,16 @@ int main(int argc, char* argv[]){
     sprintf(str, "BEGIN\n\n");
     prom_mif << str;
 
-    uint32_t data = 0;
-    for(uint32_t addr = 0x0000; addr <= 0x1FFF; addr++){
-        for(int shift = 0; shift < 4; shift++){
+    //uint32_t data = 0;
+    uint8_t data = 0;
+    for(uint32_t addr = 0x0000; addr < 0x8000/PROM_BYTE; addr++){
+        for(int shift = 0; shift < PROM_BYTE; shift++){
             //printf("%04x:%02x\n", addr*4+shift, PROM[addr*4+shift]);
-            data |= (uint32_t)PROM[addr*4+shift] << (shift*8);
+            //data |= (uint32_t)PROM[addr*PROM_BYTE+shift] << (shift*8);
+            data |= (uint8_t)PROM[addr*PROM_BYTE+shift] << (shift*8);
         }
-        sprintf(str, "%04x : %08x;\n", addr, data);
+        //sprintf(str, "%04x : %08x;\n", addr, data);
+        sprintf(str, "%04x : %02x;\n", addr, data);
         prom_mif << str;
         data = 0;
     }

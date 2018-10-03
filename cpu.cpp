@@ -38,10 +38,11 @@ uint16_t CPU::pop16(uint8_t* Stack){
     return data;
 }
 
-uint8_t CPU::read_mem8(uint16_t addr, uint8_t* WRAM, uint32_t* PROM){
+uint8_t CPU::read_mem8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
     uint8_t data = 0;
     if((addr >> 15) & 1)
-        data = read_prom_ex8(addr, PROM);
+        data = read_prom(addr, PROM);
+        //data = read_prom_ex8(addr, PROM);
     else data = WRAM[addr&0x7FF]; //ok??
     return data;
 }
@@ -65,14 +66,18 @@ void CPU::norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM){
     WRAM[addr&0x7FF] = data; 
 }
 
-uint8_t CPU::read_prom(uint16_t addr, uint8_t* PROM){
-    return PROM[addr & ~(1 << 15)];
+uint8_t CPU::read_prom(uint16 addr, uint8_t* PROM){
+    return PROM[addr.slc<15>(0)];
 }
 
 uint16_t CPU::read_prom16(uint16_t addr, uint8_t* PROM){
-    uint16_t data;
-    data = read_prom(addr, PROM);
-    data |= (uint16_t)read_prom(addr+1, PROM) << 8;
+    uint16 data;
+    //data = read_prom(addr, PROM);
+    //data |= (uint16_t)read_prom(addr+1, PROM) << 8;
+    uint8 low = read_prom(addr, PROM);
+    uint8 high = read_prom(addr+1, PROM);
+    data.set_slc(0, low);
+    data.set_slc(8, high);
     return data;
 }
 
@@ -102,7 +107,7 @@ void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
     //}
 }
 
-void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* PROM, struct SPREG* spreg, uint16_t* Stack, uint8_t* CROM){
+void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint16_t* Stack, uint8_t* CROM){
 
     if(DMAExcute) exec_DMA(SP_RAM, WRAM);
     else execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack, CROM);
@@ -172,7 +177,7 @@ void CPU::set_mode_false(struct ADDRESS* adr){
     op_bra_false = false; \
 }
 
-void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* PROM, struct SPREG* spreg, uint16_t* Stack, uint8_t* CROM){
+void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint16_t* Stack, uint8_t* CROM){
 
     hls_register struct ADDRESS adr;
     hls_register uint1 op_adc, op_sbc, op_cmp, op_and, op_ora, op_eor, op_bit;
@@ -187,9 +192,9 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     set_op_false;
 
 
-    cache_update(PC, PROM);
-
-    uint8_t IR = cache.slc<8>(0);
+    //cache_update(PC, PROM);
+    //uint8_t IR = cache.slc<8>(0);
+    uint8_t IR = read_prom(PC, PROM);
 
     if(enlog) dump_regs(IR);
 
@@ -385,21 +390,21 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         default: skip = true; break;
     }
 
-    if(V[2] == false && (adr.abs | adr.abx | adr.aby | adr.absi)){
-        //printf("OK\n");
-        return;
-    }
-    if(V[1] == false && (adr.imm | adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi | op_bra_false)){
-        return;
-    }
+    //if(V[2] == false && (adr.abs | adr.abx | adr.aby | adr.absi)){
+    //    //printf("OK\n");
+    //    return;
+    //}
+    //if(V[1] == false && (adr.imm | adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi | op_bra_false)){
+    //    return;
+    //}
 
     //if(V[2] == false) return;
     PC++;
-    V[0] = false;
+    //V[0] = false;
 
     if(skip) return;
     else if(op_bra_false){
-        V[1] = false; 
+        //V[1] = false; 
         PC++;
         return;
     }
@@ -408,9 +413,10 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     addr = addressing(adr, WRAM, PROM);
 
     uint8 rddata;
-    if(adr.imm) rddata = cache.slc<8>(8);
-    else rddata = read_mem8(addr, WRAM, PROM);
+    //if(adr.imm) rddata = cache.slc<8>(8);
+    //else rddata = read_mem8(addr, WRAM, PROM);
     //uint8 rddata = (addr[15] || op_store) ? read_prom_ex8(addr, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
+    rddata = read_mem8(addr, WRAM, PROM);
     
 
 
@@ -477,10 +483,6 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         _bra(rddata);
         PC_update = true;
     }
-    //else if(op_bra_false){
-    //    V[1] = false; 
-    //    PC++;
-    //}
     else if(op_jmp){
         PC = addr;
         PC_update = true;
@@ -516,25 +518,27 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
 
 }
 
-uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM){
+uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint8_t* PROM){
     uint16 addr;
 
     if(adr.imm){
         addr = PC++;
         //PC++;
-        V[1] = false;
+        //V[1] = false;
     }
     else if(adr.abs | adr.abx | adr.aby | adr.absi){
-        uint16_t tmp16 = cache.slc<16>(8);
-        V[2] = V[1] = false;
+        //uint16_t tmp16 = cache.slc<16>(8);
+        uint16_t tmp16 = read_prom16(PC, PROM);
+        //V[2] = V[1] = false;
         PC+=2;
         if(adr.abs | adr.absi) addr = tmp16;
         else if(adr.abx) addr = tmp16 + X;
         else if(adr.aby) addr = tmp16 + Y;
     }
     else if(adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi){
-        addr = cache.slc<8>(8);
-        V[1] = false;
+        //addr = cache.slc<8>(8);
+        //V[1] = false;
+        addr = read_prom(PC, PROM);
         PC++;
         if(adr.zpx | adr.zpxi) addr += X;
         else if(adr.zpy) addr += Y;
