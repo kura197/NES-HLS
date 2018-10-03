@@ -214,12 +214,12 @@ int main(int argc, char* argv[]){
     //exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){
         for(int l = 0; l < 256; l++){
-            //if(f == 180)
-            //    exec_nes(mm_COLOR, 0, 0, 0, 0x08, false);
-            //else if(500 <= f)
-            //    exec_nes(mm_COLOR, 0, 0, 0, 0x80, false);
-            //else exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
-            exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
+            if(f == 180)
+                exec_nes(mm_COLOR, 0, 0, 0, 0x08, false);
+            else if(500 <= f)
+                exec_nes(mm_COLOR, 0, 0, 0, 0x80, false);
+            else exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
+            //exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
         }
         //if(f == 300)
         //    exec_nes(mm_COLOR, 0, 0, 0, 0x04, false);
