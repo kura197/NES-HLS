@@ -13,8 +13,8 @@
 
 using namespace std;
 
-//const bool test = true;
-const bool test = false;
+const bool test = true;
+//const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint8_t* COLOR, uint8_t* VRAM);
@@ -105,7 +105,7 @@ component uint16_t exec_nes(
 
     cpu.load_key(key);
     //cpu.exec_DMA(SP_RAM, WRAM);
-    for(int c = 0; c < 45; c++) {
+    for(int c = 0; c < 40; c++) {
         cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
     }
     //cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
@@ -204,11 +204,12 @@ int main(int argc, char* argv[]){
     //exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){
         for(int l = 0; l < 256; l++){
-            if(f == 180)
-                exec_nes(mm_COLOR, 0, 0, 0, 0x08, false);
-            else if(500 <= f)
-                exec_nes(mm_COLOR, 0, 0, 0, 0x80, false);
-            else exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
+            //if(f == 180)
+            //    exec_nes(mm_COLOR, 0, 0, 0, 0x08, false);
+            //else if(500 <= f)
+            //    exec_nes(mm_COLOR, 0, 0, 0, 0x80, false);
+            //else exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
+            exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
         }
         //if(f == 300)
         //    exec_nes(mm_COLOR, 0, 0, 0, 0x04, false);
