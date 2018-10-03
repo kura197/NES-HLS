@@ -179,7 +179,9 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     hls_register uint1 op_load, op_store, op_mov, op_asl, op_lsr, op_rol, op_ror, op_bra_false;
     hls_register uint1 op_inc, op_dec, op_bra, op_jmp, op_jsr, op_rts, op_rti, op_push, op_pop;
     hls_register uint1 acc, x, y;
+    hls_register uint1 skip;
 
+    skip = false;
     acc = false, x = false, y = false;
     set_mode_false(&adr);
     set_op_false;
@@ -297,33 +299,33 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         case 0x8C: op_store = true; y = true; adr.abs = true;  break;
 
                    /* transfer */
-        case 0xAA: _mov(X,ACC); break; // TAX
-        case 0xA8: _mov(Y,ACC); break; // TAY
-        case 0x8A: _mov(ACC,X); break; // TXA
-        case 0x98: _mov(ACC,Y); break; // TYA
-        case 0xBA: _mov(X,SP);  break; // TSX
-        case 0x9A: SP=X; break; // TXS
+        case 0xAA: _mov(X,ACC); skip = true; break; // TAX
+        case 0xA8: _mov(Y,ACC); skip = true; break; // TAY
+        case 0x8A: _mov(ACC,X); skip = true; break; // TXA
+        case 0x98: _mov(ACC,Y); skip = true; break; // TYA
+        case 0xBA: _mov(X,SP);  skip = true; break; // TSX
+        case 0x9A: SP=X; skip = true; break; // TXS
 
                    /* shift */
-        case 0x0A: _asla(); break;
+        case 0x0A: _asla(); skip = true; break;
         case 0x06: op_asl = true; adr.zp = true; break;
         case 0x16: op_asl = true; adr.zpx = true; break;
         case 0x0E: op_asl = true; adr.abs = true; break;
         case 0x1E: op_asl = true; adr.abx = true; break;
 
-        case 0x4A: _lsra(); break;
+        case 0x4A: _lsra(); skip = true; break;
         case 0x46: op_lsr = true; adr.zp = true;  break;
         case 0x56: op_lsr = true; adr.zpx = true; break;
         case 0x4E: op_lsr = true; adr.abs = true; break;
         case 0x5E: op_lsr = true; adr.abx = true; break;
 
-        case 0x2A: _rola(); break;
+        case 0x2A: _rola(); skip = true; break;
         case 0x26: op_rol = true; adr.zp = true;  break;
         case 0x36: op_rol = true; adr.zpx = true; break;
         case 0x2E: op_rol = true; adr.abs = true; break;
         case 0x3E: op_rol = true; adr.abx = true; break;
 
-        case 0x6A: _rora(); break;
+        case 0x6A: _rora(); skip = true; break;
         case 0x66: op_ror = true; adr.zp = true;  break;
         case 0x76: op_ror = true; adr.zpx = true; break;
         case 0x6E: op_ror = true; adr.abs = true; break;
@@ -333,24 +335,24 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         case 0xF6: op_inc = true; adr.zpx = true; break;
         case 0xEE: op_inc = true; adr.abs = true; break;
         case 0xFE: op_inc = true; adr.abx = true; break;
-        case 0xE8: _incr(X); break;
-        case 0xC8: _incr(Y); break;
+        case 0xE8: _incr(X); skip = true; break;
+        case 0xC8: _incr(Y); skip = true; break;
 
         case 0xC6: op_dec = true; adr.zp = true;  break;
         case 0xD6: op_dec = true; adr.zpx = true; break;
         case 0xCE: op_dec = true; adr.abs = true; break;
         case 0xDE: op_dec = true; adr.abx = true; break;
-        case 0xCA: _decr(X);  break;
-        case 0x88: _decr(Y);  break;
+        case 0xCA: _decr(X); skip = true;  break;
+        case 0x88: _decr(Y); skip = true;  break;
 
-        case 0x90: if(!CFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BCC
-        case 0xB0: if( CFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BCS
-        case 0xD0: if(!ZFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BNE
-        case 0xF0: if( ZFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BEQ
-        case 0x10: if(!NFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BPL
-        case 0x30: if( NFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BMI
-        case 0x50: if(!VFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BVC
-        case 0x70: if( VFlag) {op_bra = true; adr.imm = true; } else  op_bra_false = true; break; // BVS
+        case 0x90: if(!CFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BCC
+        case 0xB0: if( CFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BCS
+        case 0xD0: if(!ZFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BNE
+        case 0xF0: if( ZFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BEQ
+        case 0x10: if(!NFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BPL
+        case 0x30: if( NFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BMI
+        case 0x50: if(!VFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BVC
+        case 0x70: if( VFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BVS
 
                        /* jump / call / return */
         case 0x4C: op_jmp = true; adr.abs  = true; break; // JMP abs
@@ -362,14 +364,14 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         case 0x40: op_rti = true; break; // RTI
 
                    /* flag */
-        case 0x38: CFlag=1;  break; // SEC
-        case 0xF8: DFlag=1;  break; // SED
-        case 0x78: IFlag=1;  break; // SEI
+        case 0x38: CFlag=1; skip = true; break; // SEC
+        case 0xF8: DFlag=1; skip = true; break; // SED
+        case 0x78: IFlag=1; skip = true; break; // SEI
 
-        case 0x18: CFlag=0;  break; // CLC
-        case 0xD8: DFlag=0;  break; // CLD
-        case 0x58: IFlag=0;  break; // CLI 
-        case 0xB8: VFlag=0;  break; // CLV
+        case 0x18: CFlag=0; skip = true; break; // CLC
+        case 0xD8: DFlag=0; skip = true; break; // CLD
+        case 0x58: IFlag=0; skip = true; break; // CLI 
+        case 0xB8: VFlag=0; skip = true; break; // CLV
 
                    /* stack */
         case 0x48: op_push = true; acc = true; break; // PHA
@@ -378,10 +380,9 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         case 0x28: op_pop = true; break; // PLP
 
 
-        case 0xEA: break; // NOP
+        case 0xEA: skip = true; break; // NOP
 
-        default:
-                   break;
+        default: skip = true; break;
     }
 
     if(V[2] == false && (adr.abs | adr.abx | adr.aby | adr.absi)){
@@ -396,10 +397,19 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
     PC++;
     V[0] = false;
 
+    if(skip) return;
+    else if(op_bra_false){
+        V[1] = false; 
+        PC++;
+        return;
+    }
+
     uint16 addr;
     addr = addressing(adr, WRAM, PROM);
 
-    uint8 rddata = read_mem8(addr, WRAM, PROM);
+    uint8 rddata;
+    if(adr.imm) rddata = cache.slc<8>(8);
+    else rddata = read_mem8(addr, WRAM, PROM);
     //uint8 rddata = (addr[15] || op_store) ? read_prom_ex8(addr, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
     
 
@@ -467,10 +477,10 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint32_t* 
         _bra(rddata);
         PC_update = true;
     }
-    else if(op_bra_false){
-        V[1] = false; 
-        PC++;
-    }
+    //else if(op_bra_false){
+    //    V[1] = false; 
+    //    PC++;
+    //}
     else if(op_jmp){
         PC = addr;
         PC_update = true;
@@ -511,6 +521,7 @@ uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint32_t* PROM){
 
     if(adr.imm){
         addr = PC++;
+        //PC++;
         V[1] = false;
     }
     else if(adr.abs | adr.abx | adr.aby | adr.absi){

@@ -271,19 +271,28 @@ SEG7DEC addr3(PC[15:12], HEX3);
 //SEG7DEC SP1(SP[7:4], HEX5);
 
 wire dbg_clk;
+wire clk_100;
 PLL	PLL_inst (
 	.inclk0 ( MAX10_CLK1_50 ), //50MHz
 //	.c0 ( clk ), //100MHz
+	.c0 ( clk_100 ), //100MHz
 //	.c1 ( clk2x ), //200MHz
 	.c2 ( PCK ), //25MHz
 	.c3 ( dbg_clk )  //5.0MHz
 	);
 
-fast_PLL	fast_PLL_inst (
-	.inclk0 ( MAX10_CLK1_50 ),  //50MHz
-	.c0 ( clk ),    //145MHz
-	.c1 ( clk2x )   //290MHz
+//fast_PLL	fast_PLL_inst (
+//	.inclk0 ( MAX10_CLK1_50 ),  //50MHz
+//	.c0 ( clk ),    //145MHz
+//	.c1 ( clk2x )   //290MHz
+//	);
+
+very_fast_PLL	very_fast_PLL_inst (
+	.inclk0 ( clk_100 ), //100MHz
+	.c0 ( clk ),     //180MHz
+	.c1 ( clk2x )      //360MHz
 	);
+
 
 //decode_retdata ret_debug(
 //    .returndata(returndata),
