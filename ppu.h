@@ -18,8 +18,6 @@ class PPU{
         void bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t* VRAM, uint8_t* CROM);
         void sp_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* VRAM, uint8_t* CROM);
         void store_vram(uint8_t line, uint8_t x, uint8_t color, bool sprite, uint8_t* VRAM, struct SPREG* spreg);
-        void set_bit(uint8_t* WRAM, uint16_t addr, uint8_t bit);
-        void clr_bit(uint8_t* WRAM, uint16_t addr, uint8_t bit);
         uint8_t read_PPURAM(uint16_t addr, uint8_t* PPU_RAM);
 
 };

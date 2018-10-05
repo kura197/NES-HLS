@@ -44,38 +44,11 @@ class RAM{
         uint3 pad_read_state;
 
     public:
-        //$2000
-        //bool VBlank_NMI;
-        //bool SPSize;
-        //bool BGPtnAddr;
-        //bool SPPtnAddr;
         uint1 PPUInc;
-        //bool NameAddrH;
-        //bool NameAddrL;
-        //$2001
-        //bool BGColor2;
-        //bool BGColor1;
-        //bool BGColor0;
-        //bool EnSP;
-        //bool EnBG;
-        //bool SPMSK;
-        //bool BGMSK;
-        //bool DispType;
-        //$2002
-        //bool VBlank;
-        //bool SPhit;
-        //bool num_ScanSP;
-        //$2003
         uint8_t SPAddr;
-        //$2005
         uint1 BGoffset_sel_X;
-        //uint8_t BGoffset_X;
-        //uint8_t BGoffset_Y;
         struct SPREG spreg;
-        //$2006
         uint1 PPUAddr_sel_H;
-        //uint8_t PPUAddr_H;
-        //uint8_t PPUAddr_L;
         uint16 PPUAddr;
 
         uint8_t DMAAddrH;
@@ -84,7 +57,6 @@ class RAM{
 
         uint8_t read(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM, struct SPREG* spreg, uint8_t* CROM);
         void write(uint16_t addr, uint8_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, struct SPREG* spreg, uint8_t* CROM);
-        //void set_VBlank(bool vblank, bool nmi);
         void write_2000(uint8 data, struct SPREG* spreg);
         void write_2001(uint8 data, struct SPREG* spreg);
         void write_2003(uint8_t data);

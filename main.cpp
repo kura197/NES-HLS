@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-//#include "nes.h"
 #include "ram.h"
 #include "cpu.h"
 #include "ppu.h"
@@ -23,20 +22,6 @@ void make_bmp(uint8_t* VRAM, int index);
 uint8_t _PROM[0x8000];
 uint8_t _CROM[0x2000];
 void load_test_ROM(ifstream *rom);
-
-void test_load32(uint32_t* WRAM, uint8_t* PPU_RAM){
-    //for(uint32_t addr = 0x8000; addr <= 0xFFFF; addr++){
-        //WRAM[addr] = PROM[addr - 0x8000];
-    for(uint32_t addr = 0x0000; addr <= 0x1FFF; addr++){
-        for(int shift = 0; shift < 4; shift++){
-            WRAM[addr] |= (uint32_t)_PROM[addr*4+shift] << shift*8;
-        }
-    }
-
-    for(uint32_t addr = 0x00; addr <= 0x1FFF; addr++){
-        PPU_RAM[addr] = _CROM[addr];
-    }
-}
 
 void test_load(uint8_t* WRAM, uint8_t* PPU_RAM){
     for(uint32_t addr = 0x0000; addr <= 0x7FFF; addr++){
@@ -65,7 +50,6 @@ struct DEBUG{
 
 component uint16_t exec_nes(
             ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
-            //hls_avalon_slave_memory_argument(256*240*sizeof(uint8_t)) uint8_t *VRAM, 
             hls_stable_argument uint16_t nmi_vec, 
             hls_stable_argument uint16_t res_vec, 
             hls_stable_argument uint16_t irq_vec,
@@ -76,35 +60,23 @@ component uint16_t exec_nes(
     static PPU ppu;
 
     hls_init_on_powerup hls_doublepump static uint8_t PROM[0x8000];
-    //hls_init_on_powerup static uint32_t PROM[0x2000];
     hls_init_on_powerup static uint8_t CROM[0x2000];
-    //hls_init_on_powerup static uint16_t VEC[3];
     static uint8_t PPU_RAM[0x2000];
     static uint8_t WRAM[0x800];
     static uint8_t SP_RAM[0x100];
-    //hls_register uint8_t Stack[0x40];
-    //static uint8_t Stack[0x100];
     static uint16_t Stack[0x100];
 
     if(test){
         static bool init;
         if(!init) test_load(PROM, CROM);
-        //if(!init) test_load32(PROM, CROM);
         init = true;
         nmi_vec = (uint16_t)PROM[0x7FFB] << 8 | PROM[0x7FFA];
         res_vec = (uint16_t)PROM[0x7FFD] << 8 | PROM[0x7FFC];
         irq_vec = (uint16_t)PROM[0x7FFF] << 8 | PROM[0x7FFE];
-        //nmi_vec = cpu.read_prom_ex16(0xFFFA, PROM);
-        //res_vec = cpu.read_prom_ex16(0xFFFC, PROM);
-        //irq_vec = cpu.read_prom_ex16(0xFFFE, PROM);
     }
-
 
     static struct SPREG spreg;
     static bool nmi;
-
-    //if(res) cpu.set_reset();
-    //if(nmi) cpu.set_nmi();
     
     uint8_t irq_num;
     if(nmi) irq_num = NMI;
@@ -114,11 +86,9 @@ component uint16_t exec_nes(
     }
 
     cpu.load_key(key);
-    //cpu.exec_DMA(SP_RAM, WRAM);
     for(int c = 0; c < 38; c++) {
         cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
     }
-    //cpu.exec(WRAM, PPU_RAM, SP_RAM, PROM, &spreg, Stack, CROM);
     nmi = ppu.render(PPU_RAM, SP_RAM, VRAM, &spreg, CROM);
 
     return cpu.get_PC();
@@ -135,32 +105,12 @@ int main(int argc, char* argv[]){
         cout << "cannot open ROM file." << endl;
         return 1;
     }
-    bool en_key = false;
-    bool en_gray = false;
-    bool en_socket = false;
     bool en_bmp = false;
-    bool en_log = false;
-    uint16_t port = 7000;
     int frame = 1000;
     int interval = 8;
-    char key_file[64];
     int opt;
-    while((opt = getopt(argc, argv, "k:gsp:f:bi:l")) != -1){
+    while((opt = getopt(argc, argv, "f:bi:")) != -1){
         switch(opt){
-            case 'k':
-                en_key = true;
-                strcpy(key_file, optarg);
-                break;
-            case 'g':
-                en_gray = true;
-                break;
-            case 's':
-                en_socket = true;
-                break;
-            case 'p':
-                en_socket = true;
-                port = atoi(optarg);
-                break;
             case 'f':
                 frame = atoi(optarg);
                 break;
@@ -170,34 +120,15 @@ int main(int argc, char* argv[]){
             case 'i':
                 interval = atoi(optarg);
                 break;
-            case 'l':
-                en_log = true;
-                break;
             default:
-                cout<< "usage: nes [ROM] [-k KEY] [-g] [-s] [-p port] [-f frame] [-b] [-i interval] [-l]" << endl;
+                cout<< "usage: nes [ROM] [-f frame] [-b] [-i interval]" << endl;
                 return -1;
                 break;
         }
     }
 
-    ifstream KEY;
-    if(en_key){
-        KEY.open(key_file);
-        if(!KEY){
-            cout << "cannot open KEY file." << endl;
-            return 1;
-        }
-    }
-
-    //NES nes;
-    //nes.load_ROM(&ROM);
     uint8_t COLOR[256*240];
     uint8_t VRAM[3*256*240];
-    uint8_t WRAM[0x10000];
-    uint8_t PROM[0x8000];
-    uint8_t PPU_RAM[0x4000];
-    uint8_t SP_RAM[0x100];
-    //load_ROM(&ROM, WRAM, PPU_RAM);
     load_test_ROM(&ROM);
     ROM.close();
     ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> > mm_COLOR(COLOR, sizeof(uint8_t)*(256*240));
@@ -205,13 +136,7 @@ int main(int argc, char* argv[]){
     if(test == false) printf("WARNING: test is false.\n");
     int index = 0;
     int f = 0;
-    uint8_t key = 0;
-    struct SPREG spreg;
-    bool nmi = false;
-    uint16_t PC;
-    struct DEBUG dbg;
     exec_nes(mm_COLOR, 0, 0, 0, 0x0, true);
-    //exec_nes(mm_COLOR, 0x0, true);
     while(f++ < frame){
         for(int l = 0; l < 256; l++){
             if(f == 180)
@@ -219,10 +144,7 @@ int main(int argc, char* argv[]){
             else if(500 <= f)
                 exec_nes(mm_COLOR, 0, 0, 0, 0x80, false);
             else exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
-            //exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
         }
-        //if(f == 300)
-        //    exec_nes(mm_COLOR, 0, 0, 0, 0x04, false);
         if(en_bmp && f % interval == 0){
             set_vram(COLOR, VRAM);
             make_bmp(VRAM, index++);
@@ -251,7 +173,6 @@ void load_ROM(ifstream *rom, uint8_t* WRAM, uint8_t* PPU_RAM){
 
     rom->seekg(16,ios_base::beg);
     uint8_t *prom_ptr = (prom_size == 1) ? WRAM + 0xC000 : WRAM + 0x8000;
-    //uint8_t *prom_ptr = (prom_size == 1) ? WRAM + 0x4000 : WRAM;
     for(int i=0;i<psize;i++)
         rom->read((char*)(prom_ptr+i), sizeof(uint8_t));
     

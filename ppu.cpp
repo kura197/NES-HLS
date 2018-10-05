@@ -109,7 +109,6 @@ void PPU::bg_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t
                 x = col*8 + i - offset_x;
             }
             
-            //BG_Valid_set(x, i, valid);
             BG_Valid[x] = valid;
             if(render_en) store_vram(line, x, color, false, VRAM, spreg);
         }
@@ -143,7 +142,6 @@ void PPU::sp_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t
             int8_t offset;
             if(lr_rev) offset = _pttnbit(pttn_H,i,1) | _pttnbit(pttn_L,i,0);
             else offset = _pttnbit(pttn_H,(7-i),1) | _pttnbit(pttn_L,(7-i),0);
-            //if(offset == 0) continue;
             bool endraw = true;
             if(offset == 0) endraw = false;
             if(spr == 0 && endraw) spreg->SPhit = true;
@@ -158,27 +156,12 @@ void PPU::sp_render(uint8_t line, struct SPREG* spreg, uint8_t* PPU_RAM, uint8_t
 #define _rgb(r, g, b) (red = r, green = g, blue = b)
 void PPU::store_vram(uint8_t line, uint8_t x, uint8_t color, bool sprite, uint8_t* VRAM, struct SPREG* spreg){
     //BGR
-    //if(x < 8 && ((!sprite & nes->ram->BGMSK) || (sprite & nes->ram->SPMSK)))
     bool SPMSK = spreg->SPMSK;
     bool BGMSK = spreg->BGMSK;
     if(x < 8 && ((!sprite & BGMSK) || (sprite & SPMSK)))
         VRAM[256*line + x] = 0x3F;
     else 
         VRAM[256*line + x] = color;
-}
-
-void PPU::set_bit(uint8_t* WRAM, uint16_t addr, uint8_t bit){
-    //uint8_t tmp = WRAM[addr];
-    //tmp |= (1 << bit);
-    //WRAM[addr] = tmp;
-    WRAM[addr] |= (1 << bit);
-}
-
-void PPU::clr_bit(uint8_t* WRAM, uint16_t addr, uint8_t bit){
-    //uint8_t tmp = WRAM[addr];
-    //tmp &= ~(1 << bit);
-    //WRAM[addr] = tmp;
-    WRAM[addr] &= ~(1 << bit);
 }
 
 void PPU::BG_Valid_set(uint8_t x, uint8_t bit, bool valid){
