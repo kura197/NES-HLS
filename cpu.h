@@ -31,33 +31,22 @@ class CPU : RAM{
         uint16_t Stack_PC;
         uint8_t Stack_Flags;
 
-
-        uint16_t cache_addr;
-        uint32 cache;
-        uint4 V;
-        uint1 PC_update;
-
         hls_register uint1 SP_wide;
-        
 
     public:
 
         void dump_regs(uint8_t insn);
-        uint16_t read_mem16(uint16_t addr, uint8_t* WRAM, uint8_t* PPU_RAM);
-        void write_mem16(uint16_t addr, uint16_t data, uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM);
-        uint8_t read_prom(uint16 addr, uint8_t* PROM);
+
+        uint8_t read_prom8(uint16 addr, uint8_t* PROM);
         uint16_t read_prom16(uint16_t addr, uint8_t* PROM);
-        void norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM);
-        uint8_t norm_read8(uint16 addr, uint8_t* WRAM);
-        uint16_t norm_read16(uint16_t addr, uint8_t* WRAM);
+        uint8_t read_wram8(uint16 addr, uint8_t* WRAM);
+        uint16_t read_wram16(uint16_t addr, uint8_t* WRAM);
         uint8_t read_mem8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM);
 
         void load_key(uint8_t key){Input_Key(key);};
         void exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM);
         void set_nmi();
-        //void set_irq(bool signal);
         void set_reset();
-        //void reset(uint8_t* WRAM, uint8_t* PPU_RAM);
         void set_mode_false(struct ADDRESS* adr);
         void exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, struct SPREG* spreg, uint16_t* Stack, uint8_t* CROM);
         void exec_irq(int cause, uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_vec);
@@ -76,22 +65,10 @@ class CPU : RAM{
         uint8_t pop_ex8(uint16_t* Stack);
         uint16_t pop_ex16(uint16_t* Stack);
 
-
         uint8_t read_prom_ex8(uint16 addr, uint32_t* PROM);
         uint16_t read_prom_ex16(uint16 addr, uint32_t* PROM);
         uint32_t read_prom_ex32(uint16 addr, uint32_t* PROM);
-        void cache_update(uint16_t addr, uint32_t* PROM);
-        void cache_false();
-
         uint16_t get_PC();
-        uint16_t get_IR();
-        uint32_t get_cache();
-        uint8_t get_SP();
-        uint8_t get_ACC();
-        uint8_t get_X();
-        uint8_t get_Y();
-        uint16_t get_addr();
-
         uint8_t bindFlags();
 
 };

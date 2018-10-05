@@ -13,69 +13,42 @@ void CPU::dump_regs(uint8_t insn){
     uint8_t x = X;
     uint8_t y = Y;
     uint8_t sp = SP;
-    uint32_t c = cache;
-    //printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x    cache:%08x\n",
-    //                pc, insn, acc, x, y, flag, sp, c);
+    //printf("%04x %02x   A:%02x X:%02x Y:%02x P:%02x SP:%02x\n",
+    //                pc, insn, acc, x, y, flag, sp);
 }
 
-void CPU::push8(uint8_t data, uint8_t* Stack){
-    Stack[(uint8_t)(SP--) & 0xFF] = data;
-}
-
-uint8_t CPU::pop8(uint8_t* Stack){
-    return Stack[(uint8_t)(++SP) & 0xFF];
-}
-
-void CPU::push16(uint16_t data, uint8_t* Stack){
-    push8((uint8_t)(data >> 8), Stack);
-    push8((uint8_t)data, Stack);
-}
-
-uint16_t CPU::pop16(uint8_t* Stack){
-    uint16_t data;
-    data = pop8(Stack);
-    data |= (uint16_t)pop8(Stack) << 8;
-    return data;
-}
 
 uint8_t CPU::read_mem8(uint16_t addr, uint8_t* WRAM, uint8_t* PROM){
     uint8_t data = 0;
     if((addr >> 15) & 1)
-        data = read_prom(addr, PROM);
-        //data = read_prom_ex8(addr, PROM);
+        data = read_prom8(addr, PROM);
     else data = WRAM[addr&0x7FF]; //ok??
     return data;
 }
 
-uint8_t CPU::norm_read8(uint16 addr, uint8_t* WRAM){
+uint8_t CPU::read_wram8(uint16 addr, uint8_t* WRAM){
     uint8_t data = 0;
     data = WRAM[addr.slc<11>(0)];
     return data;
 }
 
-uint16_t CPU::norm_read16(uint16_t addr, uint8_t* WRAM){
+uint16_t CPU::read_wram16(uint16_t addr, uint8_t* WRAM){
     uint16 data;
-    uint8 low = norm_read8(addr, WRAM);
-    uint8 high = norm_read8(addr+1, WRAM);
+    uint8 low = read_wram8(addr, WRAM);
+    uint8 high = read_wram8(addr+1, WRAM);
     data.set_slc(0, low);
     data.set_slc(8, high);
     return (uint16_t)data;
 }
 
-void CPU::norm_write8(uint16_t addr, uint8_t data, uint8_t* WRAM){
-    WRAM[addr&0x7FF] = data; 
-}
-
-uint8_t CPU::read_prom(uint16 addr, uint8_t* PROM){
+uint8_t CPU::read_prom8(uint16 addr, uint8_t* PROM){
     return PROM[addr.slc<15>(0)];
 }
 
 uint16_t CPU::read_prom16(uint16_t addr, uint8_t* PROM){
     uint16 data;
-    //data = read_prom(addr, PROM);
-    //data |= (uint16_t)read_prom(addr+1, PROM) << 8;
-    uint8 low = read_prom(addr, PROM);
-    uint8 high = read_prom(addr+1, PROM);
+    uint8 low = read_prom8(addr, PROM);
+    uint8 high = read_prom8(addr+1, PROM);
     data.set_slc(0, low);
     data.set_slc(8, high);
     return data;
@@ -93,7 +66,6 @@ void CPU::set_reset()
 }
 
 void CPU::exec_DMA(uint8_t* SP_RAM, uint8_t* WRAM){
-    //printf("DMAAddrH:%04x\n", DMAAddrH);
     SP_RAM[DMAAddrL] = WRAM[(uint16_t)DMAAddrH << 8 | DMAAddrL];
     DMAAddrL++;
     if(DMAAddrL == 0)
@@ -111,7 +83,6 @@ void CPU::exec(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* PROM, 
 
     if(DMAExcute) exec_DMA(SP_RAM, WRAM);
     else execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack, CROM);
-    //execution(WRAM, PPU_RAM, SP_RAM, PROM, spreg, Stack, CROM);
 }
 
 
@@ -133,7 +104,6 @@ void CPU::exec_irq(int cause, uint16_t nmi_vec, uint16_t res_vec, uint16_t irq_v
         case IRQ:   PC = irq_vec; break;
         default:    PC = res_vec; break;
     }
-    PC_update = true;
 }
 
 void CPU::set_mode_false(struct ADDRESS* adr){  
@@ -191,10 +161,7 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     set_mode_false(&adr);
     set_op_false;
 
-
-    //cache_update(PC, PROM);
-    //uint8_t IR = cache.slc<8>(0);
-    uint8_t IR = read_prom(PC, PROM);
+    uint8_t IR = read_prom8(PC, PROM);
 
     if(enlog) dump_regs(IR);
 
@@ -312,9 +279,6 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
         case 0x68: op_pop = true; acc = true; break; // PLA
         case 0x28: op_pop = true; break; // PLP
 
-
-        //case 0xEA: skip = true; break; // NOP
-
         default: break;
     }
 
@@ -361,26 +325,6 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
 
         case 0x6C: adr.absi = true; break; // JMP (abs)
 
-
-        //case 0x90: if(!CFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BCC
-        //case 0xB0: if( CFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BCS
-        //case 0xD0: if(!ZFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BNE
-        //case 0xF0: if( ZFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BEQ
-        //case 0x10: if(!NFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BPL
-        //case 0x30: if( NFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BMI
-        //case 0x50: if(!VFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BVC
-        //case 0x70: if( VFlag) {op_bra = true; adr.imm = true; } else  {op_bra_false  = true;} break; // BVS
-
-
-
-        //case 0x60: op_rts = true; break; // RTS
-        //case 0x40: op_rti = true; break; // RTI
-
-        //case 0x48: op_push = true; acc = true; break; // PHA
-        //case 0x08: op_push = true; break; // PHP
-        //case 0x68: op_pop = true; acc = true; break; // PLA
-        //case 0x28: op_pop = true; break; // PLP
-
         case 0xAA: case 0xA8: case 0x8A: case 0x98: case 0xBA: case 0x9A:
         case 0x0A: case 0x4A: case 0x2A: case 0x6A: case 0xE8: case 0xC8: case 0xCA: case 0x88: 
         case 0x38: case 0xF8: case 0x78: case 0x18: case 0xD8: case 0x58: case 0xB8: case 0xEA:
@@ -401,9 +345,6 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     addr = addressing(adr, WRAM, PROM);
 
     uint8 rddata;
-    //if(adr.imm) rddata = cache.slc<8>(8);
-    //else rddata = read_mem8(addr, WRAM, PROM);
-    //uint8 rddata = (addr[15] || op_store) ? read_prom_ex8(addr, PROM) : read(addr, WRAM, PPU_RAM, spreg, CROM);
     rddata = read_mem8(addr, WRAM, PROM);
     
 
@@ -469,16 +410,13 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     }
     else if(op_bra){
         _bra(rddata);
-        PC_update = true;
     }
     else if(op_jmp){
         PC = addr;
-        PC_update = true;
     }
     else if(op_jsr){
         push_ex16(PC-1, Stack);
         PC = addr;
-        PC_update = true;
     }
     else if(op_push){
         if(acc) rddata = ACC;
@@ -487,12 +425,10 @@ void CPU::execution(uint8_t* WRAM, uint8_t* PPU_RAM, uint8_t* SP_RAM, uint8_t* P
     }
     else if(op_rts){
         PC=pop_ex16(Stack)+1;
-        PC_update = true;
     }
     else if(op_rti){
         _unbindFlags(Stack_Flags);
         PC = Stack_PC;
-        PC_update = true;
     }
     else if(op_pop){
         rddata = pop_ex8(Stack);
@@ -511,22 +447,16 @@ uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint8_t* PROM){
 
     if(adr.imm){
         addr = PC++;
-        //PC++;
-        //V[1] = false;
     }
     else if(adr.abs | adr.abx | adr.aby | adr.absi){
-        //uint16_t tmp16 = cache.slc<16>(8);
         uint16_t tmp16 = read_prom16(PC, PROM);
-        //V[2] = V[1] = false;
         PC+=2;
         if(adr.abs | adr.absi) addr = tmp16;
         else if(adr.abx) addr = tmp16 + X;
         else if(adr.aby) addr = tmp16 + Y;
     }
     else if(adr.zp | adr.zpx | adr.zpy | adr.zpiy | adr.zpxi){
-        //addr = cache.slc<8>(8);
-        //V[1] = false;
-        addr = read_prom(PC, PROM);
+        addr = read_prom8(PC, PROM);
         PC++;
         if(adr.zpx | adr.zpxi) addr += X;
         else if(adr.zpy) addr += Y;
@@ -537,123 +467,30 @@ uint16_t CPU::addressing(struct ADDRESS adr, uint8_t* WRAM, uint8_t* PROM){
         if(adr.zpxi) rdaddr = addr.slc<8>(0);
         else rdaddr = addr;
 
-        addr = norm_read16(rdaddr, WRAM);
+        addr = read_wram16(rdaddr, WRAM);
         if(adr.zpiy) addr += Y;
     }
 
     return addr;
 }
 
-uint8_t CPU::read_prom_ex8(uint16 addr, uint32_t* PROM){
-    uint16 tmp = read_prom_ex16(addr, PROM);
-    uint8_t data;
-    if(addr[0]) data = (uint8_t)(tmp.slc<8>(8));
-    else data = (uint8_t)(tmp.slc<8>(0));
-    return data;
-}
-
-uint16_t CPU::read_prom_ex16(uint16 addr, uint32_t* PROM){
-    uint32 tmp = read_prom_ex32(addr, PROM);
-    uint16_t data;
-    if(addr[1]) data = (uint16_t)(tmp.slc<16>(16));
-    else data = (uint16_t)(tmp.slc<16>(0));
-    return data;
-}
-
-uint32_t CPU::read_prom_ex32(uint16 addr, uint32_t* PROM){
-    return PROM[addr.slc<13>(2)];
-}
-
-void CPU::cache_update(uint16_t addr, uint32_t* PROM){
-
-    uint16 read_addr;
-    if(PC_update) read_addr = addr;
-    else read_addr = cache_addr;
-
-    hls_register uint32 data = read_prom_ex32(read_addr, PROM);
-
-    //uint2 loc = read_addr & 0x3;
-    uint2 loc = read_addr.slc<2>(0);
-
-    cache_addr = read_addr;
-
-    uint8_t v;
-    if(V[0]) v = 0;
-    else if(V[1]) v = 1;
-    else if(V[2]) v = 2;
-    else if(V[3]) v = 3;
-    else v = 4;
-
-    if(PC_update) {
-        cache_false();
-        v = 4;
-    }
-
-    uint8_t k = 0;
-    #pragma unroll
-    for(uint3 i = 0; i < 4; i++){
-        uint3 x = i + v;
-        if(x < 4 && V[x])
-            k++;
-    }
-
-    int8_t y = loc - k;
-    #pragma unroll
-    for(uint8_t i = 0; i < 4; i++){
-        if(i < k){
-            cache.set_slc(8*i, cache.slc<8>(8*(i+v)));
-            V[(uint2)i] = true;
-        }
-        else if(i + y < 4){
-            cache.set_slc(8*i, data.slc<8>(8*(i+y)));
-            V[(uint2)i] = true;
-            cache_addr++;
-        }
-        else
-            V[(uint2)i] = false;
-    }
-    PC_update = false;
-         
-}        
-         
-void CPU::cache_false(){
-    #pragma unroll
-    for(int i = 0; i < 4; i++)
-        V[i] = false;
-}
-
 uint16_t CPU::get_PC(){
     return PC;
-}
-
-uint32_t CPU::get_cache(){
-    uint32_t data = 0;
-    data |= (uint32_t)cache[0] << 0;
-    data |= (uint32_t)cache[1] << 8;
-    data |= (uint32_t)cache[2] << 16;
-    data |= (uint32_t)cache[3] << 24;
-    return data;
 }
 
 void CPU::push_ex8(uint8_t data, uint16_t* Stack){
     SP_wide = false;
     uint16 wrdata = 0;
     wrdata.set_slc(8, (uint8)data);
-    //Stack[(uint8_t)(SP--) & 0xFF] = (uint16_t)data << 8;
     Stack[(uint8_t)(SP--) & 0xFF] = (uint16_t)wrdata;
-    //SP++;
 }
 
 void CPU::push_ex16(uint16_t data, uint16_t* Stack){
     SP_wide = true;
     Stack[(uint8_t)(SP--) & 0xFF] = data;
-    //SP--;
 }
 
 uint8_t CPU::pop_ex8(uint16_t* Stack){
-    //--SP;
-    //return (uint8_t)pop_ex16(Stack);
-    
     uint16_t data = Stack[(uint8_t)(++SP) & 0xFF];
     uint8_t ret_data;
     if(SP_wide){
@@ -668,9 +505,28 @@ uint8_t CPU::pop_ex8(uint16_t* Stack){
 }
 
 uint16_t CPU::pop_ex16(uint16_t* Stack){
-    //++SP;
     SP_wide = false;
     return Stack[(uint8_t)(++SP) & 0xFF];
+}
+
+void CPU::push8(uint8_t data, uint8_t* Stack){
+    Stack[(uint8_t)(SP--) & 0xFF] = data;
+}
+
+uint8_t CPU::pop8(uint8_t* Stack){
+    return Stack[(uint8_t)(++SP) & 0xFF];
+}
+
+void CPU::push16(uint16_t data, uint8_t* Stack){
+    push8((uint8_t)(data >> 8), Stack);
+    push8((uint8_t)data, Stack);
+}
+
+uint16_t CPU::pop16(uint8_t* Stack){
+    uint16_t data;
+    data = pop8(Stack);
+    data |= (uint16_t)pop8(Stack) << 8;
+    return data;
 }
 
 uint8_t CPU::bindFlags(){ 

@@ -8,9 +8,9 @@ module NES(
     input [15:0] res_vec,
     input [15:0] irq_vec,
     input [7:0] key,
-    output VGA_R,
-    output VGA_G,
-    output VGA_B, 
+    output [3:0] VGA_R,
+    output [3:0] VGA_G,
+    output [3:0] VGA_B, 
     output VGA_HS,
     output VGA_VS,
     output [15:0] PC
@@ -22,6 +22,9 @@ wire avmm_1_rw_read;
 wire [7:0] avmm_1_rw_readdata;
 wire avmm_1_rw_write;     
 wire [7:0] avmm_1_rw_writedata;
+
+wire [15:0] VramAddr;
+wire [5:0] VramData;
 
 reg [2:0] sync_resetn;
 always @(posedge clk or negedge resetn) begin

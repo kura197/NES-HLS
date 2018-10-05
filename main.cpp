@@ -33,21 +33,6 @@ void test_load(uint8_t* WRAM, uint8_t* PPU_RAM){
     }
 }
 
-struct DEBUG{
-    uint16_t PC;
-    uint8_t IR;
-    uint8_t SP;
-    uint32_t cache;
-    uint8_t ACC;
-    uint8_t X;
-    uint8_t Y;
-    bool nmi;
-    struct SPREG spreg;
-    uint8_t flag;
-    uint8_t rddata;
-    uint16_t addr;
-};
-
 component uint16_t exec_nes(
             ihc::mm_master<uint8_t, ihc::aspace<1>, ihc::awidth<16>, ihc::dwidth<8> >& VRAM,
             hls_stable_argument uint16_t nmi_vec, 
@@ -60,6 +45,8 @@ component uint16_t exec_nes(
     static PPU ppu;
 
     hls_init_on_powerup hls_doublepump static uint8_t PROM[0x8000];
+    //this line can reduce II to 33 but incerease MEM blocks
+    //hls_init_on_powerup static uint8_t PROM[0x8000];
     hls_init_on_powerup static uint8_t CROM[0x2000];
     static uint8_t PPU_RAM[0x2000];
     static uint8_t WRAM[0x800];

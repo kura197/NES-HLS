@@ -1,41 +1,14 @@
-
-//#define _bindFlags() (((uint8_t)NFlag<<7)|((uint8_t)VFlag<<6)|0x20|((uint8_t)BFlag<<4)|  \
-                     ((uint8_t)DFlag<<3)|((uint8_t)IFlag<<2)|((uint8_t)ZFlag<<1)|CFlag)
-//#define _unbindFlags(dd) { \
-  uint8_t dat=dd; \
-  NFlag=dat>>7; \
-  VFlag=(dat>>6)&1; \
-  BFlag=(dat>>4)&1; \
-  DFlag=(dat>>3)&1; \
-  IFlag=(dat>>2)&1; /* (iがクリアされた場合、割り込まれる可能性が) */ \
-  ZFlag=(dat>>1)&1; \
-  CFlag=dat&1; \
-}
-
-//#define _bindFlags(data) { \
-    (uint8)data[7] = NFlag; \
-    (uint8)data[6] = VFlag; \
-    (uint8)data[5] = 1; \
-    (uint8)data[4] = BFlag; \
-    (uint8)data[3] = DFlag; \
-    (uint8)data[2] = IFlag; \
-    (uint8)data[1] = ZFlag; \
-    (uint8)data[0] = CFlag; \
-}
-                         
-
 #define _unbindFlags(dd) { \
   uint8 dat=dd; \
   NFlag=dat[7]; \
   VFlag=dat[6]; \
   BFlag=dat[4]; \
   DFlag=dat[3]; \
-  IFlag=dat[2]; /* (iがクリアされた場合、割り込まれる可能性が) */ \
+  IFlag=dat[2]; \
   ZFlag=dat[1]; \
   CFlag=dat[0]; \
 }
 
-// TODO : decimal support
 #define _adc(data) { \
   uint16_t  s=data; \
   uint16 t=ACC+s+CFlag; \
@@ -45,7 +18,7 @@
   VFlag=!((ACC^s)&0x80)&&((ACC^t)&0x80); \
   ACC=(uint8_t)t.slc<8>(0); \
 }
-// TODO : decimal support
+
 #define _sbc(data) { \
   uint16_t  s=data; \
   uint16 t=ACC-s-(CFlag?0:1); \
@@ -85,8 +58,6 @@
   ZFlag=(ACC&t)==0; \
 }
 
-//reg = data; \
-  
 #define _load(reg,adr,data) { \
   reg = (adr[15]) ? (uint8_t)data : read(adr, WRAM, PPU_RAM, spreg, CROM); \
   NFlag=reg[7]; \
@@ -119,8 +90,6 @@
   NFlag=arg[7]; \
   ZFlag=arg==0;
 
-  //arg=(arg>>1)|((uint8_t)CFlag[7]); \
-  
 #define _rori(arg) \
   uint8 u=arg; \
   arg.set_slc(0, arg.slc<7>(1)); \
