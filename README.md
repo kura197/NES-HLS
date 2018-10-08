@@ -18,5 +18,5 @@ This is a part of summary report of quartus prime. Target board is DE10-Lite (MA
 
 ## Support ROMs
 Now supports only mapper 0.
-Super Mario Bros and Donkey Kong work correctly. 
+Super Mario Bros works correctly. 
 
