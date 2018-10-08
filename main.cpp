@@ -12,8 +12,8 @@
 
 using namespace std;
 
-//const bool test = true;
-const bool test = false;
+const bool test = true;
+//const bool test = false;
 
 void load_ROM(ifstream *rom, uint8_t* PROM, uint8_t* CROM);
 void set_vram(uint8_t* COLOR, uint8_t* VRAM);
@@ -23,13 +23,13 @@ uint8_t _PROM[0x8000];
 uint8_t _CROM[0x2000];
 void load_test_ROM(ifstream *rom);
 
-void test_load(uint8_t* WRAM, uint8_t* PPU_RAM){
+void test_load(uint8_t* PROM, uint8_t* CROM){
     for(uint32_t addr = 0x0000; addr <= 0x7FFF; addr++){
-        WRAM[addr] = (uint8_t)_PROM[addr];
+        PROM[addr] = (uint8_t)_PROM[addr];
     }
 
     for(uint32_t addr = 0x00; addr <= 0x1FFF; addr++){
-        PPU_RAM[addr] = _CROM[addr];
+        CROM[addr] = _CROM[addr];
     }
 }
 
@@ -126,11 +126,7 @@ int main(int argc, char* argv[]){
     exec_nes(mm_COLOR, 0, 0, 0, 0x0, true);
     while(f++ < frame){
         for(int l = 0; l < 256; l++){
-            if(f == 180)
-                exec_nes(mm_COLOR, 0, 0, 0, 0x08, false);
-            else if(500 <= f)
-                exec_nes(mm_COLOR, 0, 0, 0, 0x80, false);
-            else exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
+            exec_nes(mm_COLOR, 0, 0, 0, 0x0, false);
         }
         if(en_bmp && f % interval == 0){
             set_vram(COLOR, VRAM);
@@ -141,32 +137,6 @@ int main(int argc, char* argv[]){
     cout << "Finish" << endl;
     return 0;
 }
-
-void load_ROM(ifstream *rom, uint8_t* WRAM, uint8_t* PPU_RAM){
-    uint32_t magic;
-    uint8_t prom_size;
-    uint8_t crom_size;
-    int psize;
-    int csize;
-    rom->read((char*)&magic, sizeof(uint32_t));
-    if(magic != 0x1A53454E){
-        cout << "This is not iNES format file." << endl;
-    }
-    rom->read((char*)&prom_size, sizeof(uint8_t));
-    rom->read((char*)&crom_size, sizeof(uint8_t));
-
-    psize = prom_size * 0x4000;
-    csize = crom_size * 0x2000;
-
-    rom->seekg(16,ios_base::beg);
-    uint8_t *prom_ptr = (prom_size == 1) ? WRAM + 0xC000 : WRAM + 0x8000;
-    for(int i=0;i<psize;i++)
-        rom->read((char*)(prom_ptr+i), sizeof(uint8_t));
-    
-    for(int i=0;i<csize;i++)
-        rom->read((char*)(PPU_RAM+i), sizeof(uint8_t));
-}
-
 
 void load_test_ROM(ifstream *rom){
     uint32_t magic;
