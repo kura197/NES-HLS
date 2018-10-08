@@ -1,6 +1,6 @@
 //R,G,B
 module CONVRGB(
-	input [5:0] color,
+    input [5:0] color,
     input VGAspan,
     output [3:0] vga_r,
     output [3:0] vga_g,

@@ -13,7 +13,7 @@ module NES(
     output [3:0] VGA_B, 
     output VGA_HS,
     output VGA_VS,
-    output [15:0] PC
+    output [15:0] PC   //debug use
 );
 
 wire [15:0] avmm_1_rw_address;
@@ -71,13 +71,14 @@ exec_nes nes (
   .avmm_1_rw_writedata ( avmm_1_rw_writedata  )  // 8-bit writedata output
 );
 
+//dual port RAM IP
 VRAM vram (
     .clock ( clk ),
-    .data ( avmm_1_rw_writedata ),
-    .rdaddress ( VramAddr ),
-    .wraddress ( avmm_1_rw_address ),
+    .data ( avmm_1_rw_writedata ),  //6-bit
+    .rdaddress ( VramAddr ),        //16-bit
+    .wraddress ( avmm_1_rw_address ),   //16-bit
     .wren ( avmm_1_rw_write ),
-    .q ( VramData )
+    .q ( VramData )     //6-bit
 );
 
 VGA vga(
